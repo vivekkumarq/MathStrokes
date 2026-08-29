@@ -1,0 +1,20 @@
+# Development profile. Loaded when SPRING_PROFILES_ACTIVE=dev (the default).
+spring:
+  jpa:
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+  flyway:
+    clean-disabled: false
+
+springdoc:
+  swagger-ui:
+    enabled: true
+  api-docs:
+    enabled: true
+
+logging:
+  level:
+    com.mathstrokes: DEBUG
+    org.hibernate.orm.jdbc.bind: WARN

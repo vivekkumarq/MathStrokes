@@ -1,0 +1,115 @@
+<div class="auth-shell">
+  <section class="auth-card ms-card">
+    <header class="auth-head">
+      <p class="brand">MathStrokes</p>
+      <h1>Create your account</h1>
+      <p class="sub">Sign up to start practising JEE Mathematics.</p>
+    </header>
+
+    @if (formError()) {
+      <p class="ms-alert ms-alert--error" role="alert">{{ formError() }}</p>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="ms-field">
+        <label for="fullName">Full name</label>
+        <input
+          id="fullName"
+          class="ms-input"
+          formControlName="fullName"
+          type="text"
+          autocomplete="name"
+          [class.is-invalid]="showError('fullName')"
+        />
+        @if (showError('fullName')) {
+          <span class="ms-error">{{ errorFor('fullName') }}</span>
+        }
+      </div>
+
+      <div class="ms-field">
+        <label for="phoneNumber">Phone number</label>
+        <input
+          id="phoneNumber"
+          class="ms-input"
+          formControlName="phoneNumber"
+          type="tel"
+          inputmode="numeric"
+          autocomplete="tel"
+          [class.is-invalid]="showError('phoneNumber')"
+        />
+        @if (showError('phoneNumber')) {
+          <span class="ms-error">{{ errorFor('phoneNumber') }}</span>
+        } @else {
+          <span class="ms-hint">You will use this to sign in.</span>
+        }
+      </div>
+
+      <div class="grid-2">
+        <div class="ms-field">
+          <label for="password">Password</label>
+          <input
+            id="password"
+            class="ms-input"
+            formControlName="password"
+            type="password"
+            autocomplete="new-password"
+            [class.is-invalid]="showError('password')"
+          />
+          @if (showError('password')) {
+            <span class="ms-error">{{ errorFor('password') }}</span>
+          }
+        </div>
+
+        <div class="ms-field">
+          <label for="confirmPassword">Confirm password</label>
+          <input
+            id="confirmPassword"
+            class="ms-input"
+            formControlName="confirmPassword"
+            type="password"
+            autocomplete="new-password"
+            [class.is-invalid]="showError('confirmPassword') || mismatch"
+          />
+          @if (mismatch) {
+            <span class="ms-error">Passwords do not match.</span>
+          } @else if (showError('confirmPassword')) {
+            <span class="ms-error">{{ errorFor('confirmPassword') }}</span>
+          }
+        </div>
+      </div>
+
+      <div class="ms-field">
+        <label for="securityQuestion">Security question</label>
+        <select id="securityQuestion" class="ms-input" formControlName="securityQuestion">
+          @for (question of questions(); track question.id) {
+            <option [value]="question.text">{{ question.text }}</option>
+          }
+        </select>
+        <span class="ms-hint">This is how you recover your account — there is no email reset.</span>
+      </div>
+
+      <div class="ms-field">
+        <label for="securityAnswer">Your answer</label>
+        <input
+          id="securityAnswer"
+          class="ms-input"
+          formControlName="securityAnswer"
+          type="text"
+          autocomplete="off"
+          [class.is-invalid]="showError('securityAnswer')"
+        />
+        @if (showError('securityAnswer')) {
+          <span class="ms-error">{{ errorFor('securityAnswer') }}</span>
+        }
+      </div>
+
+      <button class="ms-btn ms-btn--primary ms-btn--block" type="submit" [disabled]="submitting()">
+        {{ submitting() ? 'Creating account...' : 'Create account' }}
+      </button>
+    </form>
+
+    <footer class="auth-foot">
+      Already have an account? <a routerLink="/login">Sign in</a>
+    </footer>
+  </section>
+</div>

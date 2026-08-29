@@ -1,0 +1,67 @@
+<div class="auth-shell">
+  <section class="auth-card ms-card">
+    <header class="auth-head">
+      <p class="brand">MathStrokes</p>
+      <h1>Sign in</h1>
+      <p class="sub">JEE Mathematics practice tests</p>
+    </header>
+
+    @if (sessionExpired()) {
+      <p class="ms-alert ms-alert--info" role="status">
+        Your session expired. Please sign in again.
+      </p>
+    }
+
+    @if (formError()) {
+      <p class="ms-alert ms-alert--error" role="alert">{{ formError() }}</p>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="ms-field">
+        <label for="phoneNumber">Phone number</label>
+        <input
+          id="phoneNumber"
+          class="ms-input"
+          formControlName="phoneNumber"
+          type="tel"
+          inputmode="numeric"
+          autocomplete="tel"
+          placeholder="10-digit mobile number"
+          [class.is-invalid]="showError('phoneNumber')"
+          [attr.aria-invalid]="showError('phoneNumber')"
+          [attr.aria-describedby]="showError('phoneNumber') ? 'phoneNumber-error' : null"
+        />
+        @if (showError('phoneNumber')) {
+          <span id="phoneNumber-error" class="ms-error">{{ errorFor('phoneNumber') }}</span>
+        }
+      </div>
+
+      <div class="ms-field">
+        <label for="password">Password</label>
+        <input
+          id="password"
+          class="ms-input"
+          formControlName="password"
+          type="password"
+          autocomplete="current-password"
+          [class.is-invalid]="showError('password')"
+          [attr.aria-invalid]="showError('password')"
+          [attr.aria-describedby]="showError('password') ? 'password-error' : null"
+        />
+        @if (showError('password')) {
+          <span id="password-error" class="ms-error">{{ errorFor('password') }}</span>
+        }
+      </div>
+
+      <button class="ms-btn ms-btn--primary ms-btn--block" type="submit" [disabled]="submitting()">
+        {{ submitting() ? 'Signing in...' : 'Sign in' }}
+      </button>
+    </form>
+
+    <footer class="auth-foot">
+      <a routerLink="/forgot-password">Forgot password?</a>
+      <span class="sep">·</span>
+      <a routerLink="/register">Create a student account</a>
+    </footer>
+  </section>
+</div>

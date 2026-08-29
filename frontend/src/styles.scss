@@ -1,0 +1,241 @@
+/* MathStrokes global styles: design tokens, reset, and the primitives every screen shares. */
+
+:root {
+  /* Brand. Indigo reads as "study platform" without the alarm of a saturated blue. */
+  --ms-primary: #4338ca;
+  --ms-primary-strong: #3730a3;
+  --ms-primary-soft: #eef2ff;
+  --ms-primary-border: #c7d2fe;
+
+  /* Exam palette states. These are load-bearing, not decorative: a student reads the
+     question palette at a glance, so each state needs its own unambiguous hue. */
+  --ms-state-not-visited: #e2e8f0;
+  --ms-state-not-visited-ink: #475569;
+  --ms-state-not-answered: #ef4444;
+  --ms-state-answered: #16a34a;
+  --ms-state-review: #9333ea;
+  --ms-state-answered-review: #0891b2;
+
+  --ms-success: #16a34a;
+  --ms-warning: #d97706;
+  --ms-danger: #dc2626;
+  --ms-danger-soft: #fef2f2;
+  --ms-danger-border: #fecaca;
+
+  --ms-ink: #0f172a;
+  --ms-ink-muted: #475569;
+  --ms-ink-subtle: #94a3b8;
+  --ms-surface: #ffffff;
+  --ms-surface-sunken: #f8fafc;
+  --ms-border: #e2e8f0;
+  --ms-border-strong: #cbd5e1;
+
+  --ms-radius-sm: 6px;
+  --ms-radius: 10px;
+  --ms-radius-lg: 16px;
+
+  --ms-shadow-sm: 0 1px 2px rgb(15 23 42 / 6%);
+  --ms-shadow: 0 4px 12px rgb(15 23 42 / 8%);
+  --ms-shadow-lg: 0 12px 32px rgb(15 23 42 / 12%);
+
+  --ms-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
+  /* Maths sits alongside prose constantly; a tabular-friendly mono keeps digits aligned. */
+  --ms-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--ms-font);
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ms-ink);
+  background: var(--ms-surface-sunken);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: var(--ms-primary);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+button {
+  font: inherit;
+}
+
+/* Never remove the focus ring — an exam runner has to be keyboard-navigable. */
+:focus-visible {
+  outline: 2px solid var(--ms-primary);
+  outline-offset: 2px;
+}
+
+/* --- Shared primitives ------------------------------------------------------------- */
+
+.ms-card {
+  background: var(--ms-surface);
+  border: 1px solid var(--ms-border);
+  border-radius: var(--ms-radius-lg);
+  box-shadow: var(--ms-shadow-sm);
+}
+
+.ms-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.ms-field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ms-ink-muted);
+}
+
+.ms-input {
+  width: 100%;
+  padding: 10px 12px;
+  font: inherit;
+  color: var(--ms-ink);
+  background: var(--ms-surface);
+  border: 1px solid var(--ms-border-strong);
+  border-radius: var(--ms-radius);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ms-input:hover:not(:disabled) {
+  border-color: var(--ms-ink-subtle);
+}
+
+.ms-input:focus {
+  outline: none;
+  border-color: var(--ms-primary);
+  box-shadow: 0 0 0 3px var(--ms-primary-soft);
+}
+
+.ms-input:disabled {
+  background: var(--ms-surface-sunken);
+  color: var(--ms-ink-subtle);
+  cursor: not-allowed;
+}
+
+.ms-input.is-invalid {
+  border-color: var(--ms-danger);
+}
+
+.ms-input.is-invalid:focus {
+  box-shadow: 0 0 0 3px var(--ms-danger-soft);
+}
+
+.ms-error {
+  font-size: 12.5px;
+  color: var(--ms-danger);
+}
+
+.ms-hint {
+  font-size: 12.5px;
+  color: var(--ms-ink-subtle);
+}
+
+.ms-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  border-radius: var(--ms-radius);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.ms-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.ms-btn--primary {
+  color: #fff;
+  background: var(--ms-primary);
+}
+
+.ms-btn--primary:hover:not(:disabled) {
+  background: var(--ms-primary-strong);
+}
+
+.ms-btn--ghost {
+  color: var(--ms-ink-muted);
+  background: transparent;
+  border-color: var(--ms-border-strong);
+}
+
+.ms-btn--ghost:hover:not(:disabled) {
+  background: var(--ms-surface-sunken);
+  color: var(--ms-ink);
+}
+
+.ms-btn--block {
+  width: 100%;
+}
+
+.ms-alert {
+  padding: 10px 14px;
+  font-size: 13.5px;
+  border: 1px solid transparent;
+  border-radius: var(--ms-radius);
+}
+
+.ms-alert--error {
+  color: #991b1b;
+  background: var(--ms-danger-soft);
+  border-color: var(--ms-danger-border);
+}
+
+.ms-alert--info {
+  color: var(--ms-primary-strong);
+  background: var(--ms-primary-soft);
+  border-color: var(--ms-primary-border);
+}
+
+.ms-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}

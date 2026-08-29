@@ -1,0 +1,25 @@
+# Production profile. Every secret arrives through the environment; nothing is defaulted here.
+spring:
+  jpa:
+    show-sql: false
+  flyway:
+    clean-disabled: true
+
+# Swagger is disabled in production by default. Set SWAGGER_ENABLED=true only for a
+# deliberate, temporary investigation; the endpoints stay behind authentication either way.
+springdoc:
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:false}
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:false}
+
+server:
+  error:
+    include-stacktrace: never
+    include-message: never
+    include-binding-errors: never
+
+logging:
+  level:
+    root: WARN
+    com.mathstrokes: INFO
