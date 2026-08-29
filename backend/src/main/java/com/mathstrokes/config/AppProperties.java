@@ -40,6 +40,9 @@ public class AppProperties {
          * decides whether the submission is recorded as SUBMITTED or AUTO_SUBMITTED.
          */
         private int submissionGraceSeconds = 5;
+
+        /** How often the sweep looks for attempts whose clock has run out, in milliseconds. */
+        private long expirySweepIntervalMs = 30_000L;
     }
 
     @Getter

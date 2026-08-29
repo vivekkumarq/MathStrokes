@@ -84,6 +84,7 @@ mathstrokes:
       default-duration-minutes: 60
       default-question-count: 25
       submission-grace-seconds: 5
+      expiry-sweep-interval-ms: ${EXPIRY_SWEEP_INTERVAL_MS:30000}
     rate-limit:
       enabled: ${RATE_LIMIT_ENABLED:true}
       max-attempts: ${RATE_LIMIT_MAX_ATTEMPTS:10}
