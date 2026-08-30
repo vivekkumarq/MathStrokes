@@ -16,6 +16,4 @@ public interface MarkingSchemeRepository extends JpaRepository<MarkingScheme, Lo
     Optional<MarkingScheme> findByName(String name);
 
     List<MarkingScheme> findAllByOrderByExamPatternAscQuestionTypeAscNameAsc();
-
-    List<MarkingScheme> findAllByActiveTrue();
 }

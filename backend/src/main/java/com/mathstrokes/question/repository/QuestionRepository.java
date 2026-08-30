@@ -70,11 +70,4 @@ public interface QuestionRepository
                         @Param("difficulty") Difficulty difficulty);
 
     long countByStatus(QuestionStatus status);
-
-    @Query("""
-            select count(q) from Question q
-            where q.chapter.id = :chapterId
-              and q.status = com.mathstrokes.common.enums.QuestionStatus.PUBLISHED
-            """)
-    long countPublishedInChapter(@Param("chapterId") Long chapterId);
 }

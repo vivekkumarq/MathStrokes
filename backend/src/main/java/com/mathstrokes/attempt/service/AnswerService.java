@@ -115,9 +115,12 @@ public class AnswerService {
      * showing a running timer after the deadline still cannot write.
      */
     private void assertWritable(TestAttempt attempt) {
-        if (attempt.getStatus() != AttemptStatus.ACTIVE) {
+        if (attempt.getStatus().isFinalised()) {
             throw new BusinessRuleException(ErrorCode.ATTEMPT_ALREADY_FINALISED,
                     "This attempt has already been submitted and can no longer be changed.");
+        }
+        if (attempt.getStatus() != AttemptStatus.ACTIVE) {
+            throw new BusinessRuleException("This attempt has not been started.");
         }
         if (attempt.hasExpired(Instant.now())) {
             throw new BusinessRuleException(ErrorCode.ATTEMPT_EXPIRED,

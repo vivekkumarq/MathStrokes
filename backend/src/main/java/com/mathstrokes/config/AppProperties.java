@@ -34,15 +34,6 @@ public class AppProperties {
     public static class Exam {
         private int defaultDurationMinutes = 60;
         private int defaultQuestionCount = 25;
-        /**
-         * Grace period allowed between the client clock and the server clock when a submission
-         * arrives fractionally after expiry. Answers are still rejected past expiresAt; this only
-         * decides whether the submission is recorded as SUBMITTED or AUTO_SUBMITTED.
-         */
-        private int submissionGraceSeconds = 5;
-
-        /** How often the sweep looks for attempts whose clock has run out, in milliseconds. */
-        private long expirySweepIntervalMs = 30_000L;
     }
 
     @Getter

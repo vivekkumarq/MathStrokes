@@ -83,7 +83,7 @@ mathstrokes:
     exam:
       default-duration-minutes: 60
       default-question-count: 25
-      submission-grace-seconds: 5
+      # How often the sweep finalises attempts whose clock has run out, milliseconds.
       expiry-sweep-interval-ms: ${EXPIRY_SWEEP_INTERVAL_MS:30000}
     rate-limit:
       enabled: ${RATE_LIMIT_ENABLED:true}

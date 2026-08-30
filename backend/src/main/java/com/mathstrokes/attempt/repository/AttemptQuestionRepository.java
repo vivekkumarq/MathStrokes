@@ -21,14 +21,6 @@ public interface AttemptQuestionRepository extends JpaRepository<AttemptQuestion
     @Query("""
             select aq from AttemptQuestion aq
             left join fetch aq.options
-            where aq.attempt.id = :attemptId and aq.questionOrder = :questionOrder
-            """)
-    Optional<AttemptQuestion> findByAttemptAndOrder(@Param("attemptId") Long attemptId,
-                                                    @Param("questionOrder") int questionOrder);
-
-    @Query("""
-            select aq from AttemptQuestion aq
-            left join fetch aq.options
             where aq.id = :id
             """)
     Optional<AttemptQuestion> findByIdWithOptions(@Param("id") Long id);

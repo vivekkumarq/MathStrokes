@@ -22,14 +22,6 @@ public interface ExamTestRepository extends JpaRepository<ExamTest, Long> {
             """)
     Optional<ExamTest> findByIdWithCatalog(@Param("id") Long id);
 
-    @Query("""
-            select t from ExamTest t
-            left join fetch t.questions q
-            left join fetch q.question
-            where t.id = :id
-            """)
-    Optional<ExamTest> findByIdWithQuestions(@Param("id") Long id);
-
     /** Student-facing browse: published tests only, optionally narrowed by chapter and pattern. */
     @Query("""
             select t from ExamTest t
@@ -65,6 +57,4 @@ public interface ExamTestRepository extends JpaRepository<ExamTest, Long> {
                                 Pageable pageable);
 
     long countByStatus(TestStatus status);
-
-    boolean existsByChapterIdAndTitleIgnoreCase(Long chapterId, String title);
 }

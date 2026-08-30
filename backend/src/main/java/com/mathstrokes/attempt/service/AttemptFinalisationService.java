@@ -38,7 +38,12 @@ public class AttemptFinalisationService {
         }
         if (attempt.getStatus() == AttemptStatus.ACTIVE) {
             boolean expired = attempt.hasExpired(now);
-            attempt.setStatus(expired ? AttemptStatus.AUTO_SUBMITTED : AttemptStatus.SUBMITTED);
+            AttemptStatus target = expired ? AttemptStatus.AUTO_SUBMITTED : AttemptStatus.SUBMITTED;
+            if (!attempt.getStatus().canTransitionTo(target)) {
+                throw new IllegalStateException("Cannot move attempt " + attemptId + " from "
+                        + attempt.getStatus() + " to " + target);
+            }
+            attempt.setStatus(target);
             // Clamp to the deadline, so an attempt the sweep finalises a few seconds late does
             // not report a time taken beyond the paper's own duration.
             attempt.setSubmittedAt(expired ? attempt.getExpiresAt() : now);
