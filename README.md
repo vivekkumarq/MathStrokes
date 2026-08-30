@@ -381,7 +381,7 @@ written by students and then frozen. Nothing in a lower layer is ever mutated by
 | `questions` | 1,522 | LaTeX stem, explanation, difficulty, status, pattern |
 | `question_options` | 6,088 | Four per question; holds the answer key |
 | **Papers** — which questions form which test | | |
-| `tests` | 61 | 59 chapter tests and 2 full-syllabus papers |
+| `tests` | 61 | 58 on a fresh database; see [Seed data](#seed-data) for why this one has 61 |
 | `test_questions` | 1,525 | Ordered membership, one row per question per paper |
 | **Attempts** — append-mostly, frozen on submission | | |
 | `test_attempts` | 15 | One per sitting; owns `expires_at` and the final score |
@@ -540,17 +540,19 @@ On a fresh database the application creates:
 - **1,522 published questions** with LaTeX stems, options and worked solutions, across the whole
   syllabus — quadratic equations, complex numbers, integrals, limits, matrices, determinants,
   vectors, conic sections, probability and the rest.
-- **61 published tests**, each 25 questions over 60 minutes: 59 chapter tests and 2 full-syllabus
-  papers that draw one question per chapter.
-
-`V5` seeds one chapter test per chapter per exam pattern, which is 28 × 2 = 56. The count is 59
-because *Circles* and *Quadratic Equations* still carry the three sample tests seeded earlier by
-`V3`. Every chapter is covered in both patterns; three of them simply have a spare. They are
-harmless and were left in place rather than removed by editing an applied migration.
+- **58 published tests**, each 25 questions over 60 minutes: 56 chapter tests — one per chapter per
+  exam pattern, 28 × 2 — and 2 full-syllabus papers that draw one question per chapter.
 
 Each chapter test exists in a JEE Main form (single correct, +4 / −1) and a JEE Advanced form
 (multiple correct with partial marking), so both marking engines are exercised by real data on a
 fresh database.
+
+There is also a Java `TestSeeder` that creates two sample tests, but on a fresh database it never
+fires. Flyway runs before the application seeders, so `V5` has already inserted its 56 tests by the
+time the seeder looks; the seeder skips when any test exists, and does nothing. It only produces
+tests on a database that was migrated before `V5` was written — which is why a long-lived
+development database can show a higher count than a freshly migrated one, with a chapter appearing
+twice in the same exam pattern. That never happens on a database created from empty.
 
 The questions were generated from known integer roots rather than typed by hand, so every answer
 key agrees with its own worked solution.
