@@ -13,6 +13,7 @@ public record TestResponse(
         String description,
         Long subjectId,
         String subjectName,
+        /** Absent for a full-syllabus test. Absence is the signal, not a sentinel value. */
         Long chapterId,
         String chapterName,
         ExamPattern examPattern,
