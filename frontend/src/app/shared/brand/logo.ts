@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 /**
- * The Iota mark: the Greek letter ι — a dot above a stem that curves away at the foot.
+ * The iota mark: the Greek letter ι — a dot above a stem that curves away at the foot.
  *
  * The name carries real meaning for this product. In Indian mathematics teaching the
  * imaginary unit i = √-1 is called "iota", and ι also denotes the smallest quantity.
@@ -21,7 +21,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
         [attr.height]="size()"
         viewBox="0 0 48 48"
         role="img"
-        [attr.aria-label]="wordmark() ? null : 'Iota'"
+        [attr.aria-label]="wordmark() ? null : 'iota'"
         [attr.aria-hidden]="wordmark() ? 'true' : null"
       >
         <defs>
@@ -59,7 +59,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
       </svg>
 
       @if (wordmark()) {
-        <span class="word" [style.font-size.px]="wordSize()">Iota</span>
+        <span class="word" [style.font-size.px]="wordSize()">iota</span>
       }
     </span>
   `,
