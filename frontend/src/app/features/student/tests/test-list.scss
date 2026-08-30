@@ -13,15 +13,6 @@
   border-bottom: 1px solid var(--ms-border);
 }
 
-.brand {
-  margin: 0;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  font-size: 0.8rem;
-  color: var(--ms-primary);
-}
-
 .who {
   display: flex;
   align-items: center;
@@ -54,102 +45,181 @@ h1 {
   margin-left: 0.75rem;
 }
 
-.grid {
-  list-style: none;
+.empty h2 {
+  margin: 0 0 0.4rem;
+  font-size: 1.05rem;
+}
+
+/* --- Row layout ---------------------------------------------------------------------
+   One row per test reading left to right: chapter, pattern, questions, duration, action.
+   The header and every row share one column template so the columns stay aligned. */
+
+$cols: minmax(0, 1fr) 8.5rem 6rem 6.5rem 8.5rem;
+
+.table {
+  overflow: hidden;
+}
+
+.thead,
+.row {
+  display: grid;
+  grid-template-columns: $cols;
+  align-items: center;
+  gap: 1rem;
+}
+
+.thead {
+  padding: 0.75rem 1.25rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ms-ink-subtle);
+  background: var(--ms-surface-sunken);
+  border-bottom: 1px solid var(--ms-border);
+}
+
+.rows {
   margin: 0;
   padding: 0;
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+  list-style: none;
 }
 
-.test {
+.row {
+  padding: 0.85rem 1.25rem;
+  border-bottom: 1px solid var(--ms-border);
+}
+
+.rows li:last-child {
+  border-bottom: 0;
+}
+
+.row:hover {
+  background: var(--ms-primary-soft);
+}
+
+/* A test that cannot be started is dimmed, but the reason underneath stays fully legible. */
+.row--blocked .chapter,
+.row--blocked .cell.num,
+.row--blocked .pattern {
+  opacity: 0.6;
+}
+
+.cell {
+  min-width: 0;
+}
+
+.chapter {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.15rem;
 }
 
-.test-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
-
-.test-head h2 {
-  margin: 0;
-  font-size: 1.05rem;
-  line-height: 1.35;
-}
-
-.pattern {
-  flex: none;
-  font-size: 0.72rem;
+.chapter-name {
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  padding: 0.2rem 0.5rem;
-  border-radius: var(--ms-radius-sm);
-  background: var(--ms-primary-soft);
-  color: var(--ms-primary-strong);
-  border: 1px solid var(--ms-primary-border);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.desc {
-  margin: 0;
-  font-size: 0.88rem;
-  line-height: 1.5;
-}
-
-.facts {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.5rem 1rem;
-  margin: 0;
-}
-
-.facts div {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.5rem;
-  font-size: 0.85rem;
-  border-bottom: 1px dotted var(--ms-border);
-  padding-bottom: 0.25rem;
-}
-
-.facts dt {
+.chapter-meta {
+  font-size: 0.75rem;
   color: var(--ms-ink-subtle);
-}
-
-.facts dd {
-  margin: 0;
-  font-weight: 600;
 }
 
 .ranked {
-  margin: 0;
-  font-size: 0.8rem;
-  color: var(--ms-ink-subtle);
+  color: var(--ms-primary);
+}
+
+.pattern {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--ms-ink-muted);
+  background: var(--ms-surface-sunken);
+  border: 1px solid var(--ms-border);
+  border-radius: 999px;
+}
+
+/* Advanced papers carry partial marking, so they are worth distinguishing at a glance. */
+.pattern--advanced {
+  color: var(--ms-primary-strong);
+  background: var(--ms-primary-soft);
+  border-color: var(--ms-primary-border);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  color: var(--ms-ink-muted);
+}
+
+.cell-label {
+  display: none;
+}
+
+.action {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.action .ms-btn {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
 }
 
 .reason {
-  margin: 0;
-  font-size: 0.85rem;
+  /* Spans the full row width beneath the cells. */
+  grid-column: 1 / -1;
+  margin: 0.5rem 0 0;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.78rem;
+  color: var(--ms-ink-muted);
+  background: var(--ms-surface-sunken);
+  border-radius: var(--ms-radius-sm);
 }
 
-.empty {
-  text-align: center;
-  padding: 2.5rem 1.5rem;
-}
+/* --- Narrow screens ------------------------------------------------------------------
+   Below this width the columns cannot hold their content, so each row becomes a labelled
+   block. Horizontal scrolling was the alternative and is worse for the primary action on
+   a phone. */
+@media (max-width: 46rem) {
+  .thead {
+    display: none;
+  }
 
-.empty h2 {
-  margin: 0 0 0.5rem;
-  font-size: 1.05rem;
-}
+  /* Chapter on its own line, then pattern / questions / duration across one meta line,
+     then a full-width action. */
+  .row {
+    grid-template-columns: auto auto 1fr;
+    gap: 0.55rem 1rem;
+    padding: 1rem 1.15rem;
+  }
 
-/* The card grid already reflows; below this the facts pair reads better stacked. */
-@media (max-width: 30rem) {
-  .facts {
-    grid-template-columns: 1fr;
+  .chapter {
+    grid-column: 1 / -1;
+  }
+
+  .cell.num {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+  }
+
+  .cell-label {
+    display: inline;
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ms-ink-subtle);
+  }
+
+  .action {
+    grid-column: 1 / -1;
+    margin-top: 0.35rem;
   }
 }
