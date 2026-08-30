@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.mathstrokes.config.AppProperties;
 import com.mathstrokes.security.jwt.JwtAuthenticationFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -82,16 +83,26 @@ public class SecurityConfig {
     }
 
     /**
-     * BCrypt at strength 12. Used for both the login password and the security answer, so a
-     * database leak exposes neither.
+     * BCrypt, used for both the login password and the security answer, so a database leak
+     * exposes neither.
+     *
+     * The cost is configurable because it is a genuine trade-off against the hardware. Each step
+     * doubles the work: strength 12 is a good default on a real CPU, but on a throttled shared
+     * instance it pushed a single login past six seconds and, on a cold start, past the gateway
+     * timeout entirely - which is a worse security outcome than strength 10, because a login
+     * nobody can complete is one people work around.
+     *
+     * Changing this is safe for existing accounts: a BCrypt hash records the cost it was created
+     * with, so old hashes keep verifying and only new ones use the new value.
      *
      * Spring Security builds the authentication provider from this and AppUserDetailsService.
      * Its default behaviour of reporting a missing account and a wrong password identically is
      * exactly what we want: the login endpoint must not reveal which numbers are registered.
      */
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(12);
+    public PasswordEncoder passwordEncoder(
+            @Value("${mathstrokes.security.bcrypt-strength:12}") int strength) {
+        return new BCryptPasswordEncoder(strength);
     }
 
     @Bean
