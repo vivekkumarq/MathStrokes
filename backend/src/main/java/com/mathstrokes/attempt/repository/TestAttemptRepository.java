@@ -14,10 +14,16 @@ import org.springframework.data.repository.query.Param;
 
 public interface TestAttemptRepository extends JpaRepository<TestAttempt, Long> {
 
+    // The chapter fetches below are LEFT joins because a full-syllabus test has no chapter. An
+    // inner join here does not error - it silently returns no row, which surfaces much later as
+    // "attempt not found" on a perfectly valid attempt. The subject joins stay inner: subject is
+    // still mandatory.
+
+
     @Query("""
             select a from TestAttempt a
             join fetch a.test t
-            join fetch t.chapter c
+            left join fetch t.chapter c
             join fetch t.subject s
             where a.id = :id
             """)
@@ -26,7 +32,7 @@ public interface TestAttemptRepository extends JpaRepository<TestAttempt, Long> 
     @Query("""
             select a from TestAttempt a
             join fetch a.test t
-            join fetch t.chapter
+            left join fetch t.chapter
             join fetch t.subject
             where a.student.id = :studentId
               and a.status = com.mathstrokes.common.enums.AttemptStatus.ACTIVE
@@ -45,7 +51,7 @@ public interface TestAttemptRepository extends JpaRepository<TestAttempt, Long> 
     @Query("""
             select a from TestAttempt a
             join fetch a.test t
-            join fetch t.chapter
+            left join fetch t.chapter
             join fetch t.subject
             where a.student.id = :studentId
             """)

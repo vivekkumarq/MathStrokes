@@ -83,8 +83,8 @@ public class SampleTestSeeder {
     private void publish(String title, String description, Chapter chapter, ExamPattern pattern,
                          int questionCount, int durationMinutes) {
         try {
-            TestRequest request = new TestRequest(title, description, chapter.getId(), pattern,
-                    durationMinutes, questionCount, TestGenerationMode.FIXED_SET,
+            TestRequest request = new TestRequest(title, description, chapter.getId(),
+                    null, pattern, durationMinutes, questionCount, TestGenerationMode.FIXED_SET,
                     null, null, null, 1);
             TestResponse created = testService.create(request);
             testService.publish(created.id());
