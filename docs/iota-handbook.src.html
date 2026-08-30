@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Iota — Platform Handbook</title>
+<title>iota — Platform Handbook</title>
 <style>
   @page { size: A4; margin: 18mm 16mm 18mm 16mm; }
 
@@ -96,7 +96,7 @@
 
 <!-- =========================== COVER =========================== -->
 <section class="page cover">
-  <svg class="logo" viewBox="0 0 48 48" width="88" height="88" role="img" aria-label="Iota logo">
+  <svg class="logo" viewBox="0 0 48 48" width="88" height="88" role="img" aria-label="iota logo">
     <defs>
       <linearGradient id="iota-g" x1="0" y1="0" x2="1" y2="1">
         <stop offset="0%" stop-color="#6366f1"/>
@@ -112,7 +112,7 @@
           fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="1.7"
           stroke-linecap="round" stroke-linejoin="round"/>
   </svg>
-  <h1>Iota</h1>
+  <h1>iota</h1>
   <div class="sub">Platform Handbook &amp; Administrator Guide</div>
   <div class="desc">
     An online Mathematics examination platform for JEE aspirants. A teacher writes questions in
@@ -128,8 +128,8 @@
     <span class="chip">Modular monolith</span>
   </div>
   <div class="meta">
-    <div><b>Document</b>Platform Handbook — v1.5</div>
-    <div><b>Applies to</b>Iota 1.0.0</div>
+    <div><b>Document</b>Platform Handbook — v1.6</div>
+    <div><b>Applies to</b>iota 1.0.0</div>
     <div><b>Compiled</b>30 August 2026</div>
     <div><b>Audience</b>Administrators, teachers, developers</div>
     <div><b>Classification</b>Proprietary — internal use</div>
@@ -195,7 +195,7 @@
 <section class="page">
   <h2>1 &nbsp;About the platform</h2>
   <p class="lede">
-    Iota is a single-subject, high-stakes examination platform built around one idea: a
+    iota is a single-subject, high-stakes examination platform built around one idea: a
     result, once produced, must never move.
   </p>
   <p>
@@ -210,10 +210,16 @@
 
   <h3>1.1 &nbsp;The name</h3>
   <p>
-    The platform is called <b>Iota</b>. The name is a double reference, and both halves are apt for
+    The platform is called <b>iota</b>. The name is a double reference, and both halves are apt for
     a JEE Mathematics product. In Indian mathematics teaching the imaginary unit
     <code>i = &radic;&minus;1</code> is routinely read aloud as "iota"; and <b>&iota;</b> is the
     Greek letter iota, proverbially the smallest quantity &mdash; the mark at the margin.
+  </p>
+  <p>
+    <b>The wordmark is lowercase, always</b> &mdash; including at the start of a sentence, as it is
+    throughout this handbook. The constant it is named for is written lower case, so a capitalised
+    "Iota" is simply the wrong word. Treat it as you would any deliberately lowercase name: never
+    sentence-case it, and do not let an editor or a style checker capitalise it for you.
   </p>
   <p>
     The mark on the cover reads at three levels. The <b>dot above a curved stem</b> is the letter
@@ -227,7 +233,7 @@
   <div class="box warn">
     <span class="t">The code still says mathstrokes &mdash; this is correct, not stale</span>
     <p>
-      Iota was previously called MathStrokes, and the <b>product</b> name has been changed
+      iota was previously called MathStrokes, and the <b>product</b> name has been changed
       everywhere it is user-facing. A number of <b>identifiers</b> deliberately have not been
       renamed, because renaming them would be a migration rather than a rebrand, and this handbook
       documents the system as it actually is. Expect to keep seeing the old name in:
@@ -1760,16 +1766,20 @@ CREATE DATABASE mathstrokes OWNER mathstrokes;</code></pre>
     <p>
       The frontend is deployed and public at
       <b><code>https://mathstrokes.netlify.app</code></b> — <b>a provisional address</b>, see
-      below. The <b>backend is not yet deployed</b>:
+      below — and it now serves the lowercase brand, answering with
+      <code>&lt;title&gt;iota - JEE Mathematics Practice&lt;/title&gt;</code>. The
+      <b>backend is not yet deployed</b>:
       the site loads, but it cannot authenticate, because <code>/api/*</code> proxies to a
       placeholder until a backend host exists. Everything behind a sign-in is therefore
       unreachable on the public site today.
     </p>
     <p style="margin-top:.5em">
-      Note that the URL still carries the former product name: the rename to Iota did not move the
-      Netlify site. Whether to rename it is an open question at the time of writing, because
-      changing the site name changes the public address. <b>Do not treat this hostname as final</b>
-      — verify it before printing it anywhere a reader cannot easily correct.
+      Note that the URL still carries the former product name: the rename to iota did not move the
+      Netlify site. The obvious fix is <b>not available</b> — <code>iota.netlify.app</code> is
+      already taken by somebody else and answers <code>HTTP 200</code>. The real options are
+      therefore to keep <code>mathstrokes.netlify.app</code>, to choose a different available
+      subdomain, or to put a custom domain in front. <b>Do not treat this hostname as final, and do
+      not propose the bare <code>iota</code> subdomain</b>: it cannot be had.
     </p>
   </div>
 
@@ -1837,7 +1847,7 @@ Managed PostgreSQL            Flyway migrates on first boot</div>
 
   <h2 style="margin-top:2em">26 &nbsp;Testing</h2>
   <pre><code>cd backend
-./mvnw test                   # 56 unit tests, no database required
+./mvnw test                   # 63 unit tests, no database required
 ./mvnw verify -Pintegration   # PostgreSQL-backed integration tests
 ./e2e/run-all.sh              # 105 assertions against a running instance</code></pre>
   <table>
@@ -1941,8 +1951,8 @@ Managed PostgreSQL            Flyway migrates on first boot</div>
   </table>
 
   <div class="end">
-    Iota Platform Handbook v1.5 &nbsp;·&nbsp; compiled 30 August 2026 &nbsp;·&nbsp;
-    applies to Iota 1.0.0 at migration V5<br>
+    iota Platform Handbook v1.6 &nbsp;·&nbsp; compiled 30 August 2026 &nbsp;·&nbsp;
+    applies to iota 1.0.0 at migration V5<br>
     Compiled from the repository and its documentation set. Proprietary — all rights reserved.
   </div>
 </section>
