@@ -6,9 +6,6 @@ import { Logo } from './logo';
  * Split layout for the signed-out screens: a branded panel on the left, the form on the
  * right. The panel collapses to a slim header below 900px so the form stays the focus on
  * a phone.
- *
- * The decorative formulas are inert SVG text, not rendered LaTeX — they are wallpaper,
- * and running them through KaTeX would cost a render pass for no benefit.
  */
 @Component({
   selector: 'app-auth-layout',
@@ -17,19 +14,6 @@ import { Logo } from './logo';
   template: `
     <div class="split">
       <aside class="panel on-dark">
-        <svg class="wallpaper" viewBox="0 0 400 600" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-          <g fill="#ffffff" font-family="Georgia, serif" font-style="italic">
-            <text x="24" y="70" font-size="34">∫ x² dx</text>
-            <!-- No braces: Angular parses '{' in a template as ICU message syntax. -->
-            <text x="210" y="140" font-size="26">e^iπ + 1 = 0</text>
-            <text x="40" y="215" font-size="30">√(a² + b²)</text>
-            <text x="235" y="290" font-size="32">Σ n²</text>
-            <text x="30" y="360" font-size="27">sin²θ + cos²θ</text>
-            <text x="215" y="430" font-size="30">lim x→0</text>
-            <text x="34" y="505" font-size="28">ax² + bx + c</text>
-            <text x="225" y="570" font-size="26">dy/dx</text>
-          </g>
-        </svg>
 
         <div class="panel-inner">
           <a class="panel-brand" href="/">
@@ -65,25 +49,14 @@ import { Logo } from './logo';
     }
 
     .panel {
-      position: relative;
-      overflow: hidden;
       display: flex;
       align-items: center;
       background: linear-gradient(150deg, #4338ca 0%, #4f46e5 45%, #7c3aed 100%);
       color: #fff;
     }
 
-    .wallpaper {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      opacity: 0.09;
-      pointer-events: none;
-    }
 
     .panel-inner {
-      position: relative;
       display: flex;
       flex-direction: column;
       gap: 34px;
@@ -174,7 +147,7 @@ import { Logo } from './logo';
   `,
 })
 export class AuthLayout {
-  readonly heading = input('Practise JEE Mathematics properly.');
+  readonly heading = input('For JEE Mathematics');
   readonly blurb = input(
     'Full-length timed papers with real exam marking, instant evaluation and your rank against everyone who sat the same paper.',
   );

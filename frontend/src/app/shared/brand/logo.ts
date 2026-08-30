@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 /**
- * The iota mark: the Greek letter ι — a dot above a stem that curves away at the foot.
+ * The iota mark: a plain lowercase i — tittle and stem, nothing else.
  *
  * The name carries real meaning for this product. In Indian mathematics teaching the
  * imaginary unit i = √-1 is called "iota", and ι also denotes the smallest quantity.
@@ -34,27 +34,14 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 
         <rect x="0" y="0" width="48" height="48" rx="12" [attr.fill]="'url(#' + gradientId() + ')'" />
 
-        <!-- The tittle. Sized to read at 16px as well as at 44px. -->
-        <circle cx="20.4" cy="14.2" r="3.5" fill="#ffffff" />
-
-        <!-- Stem falling into the iota's tail. -->
+        <!-- A plain lowercase i: tittle and stem, nothing else. -->
+        <circle cx="24" cy="14.2" r="3.6" fill="#ffffff" />
         <path
-          d="M20.4 21.6 L20.4 28.4 C20.4 33.4 24.2 35.8 29.4 34.6"
+          d="M24 21.8 L24 35"
           fill="none"
           stroke="#ffffff"
-          stroke-width="3.5"
+          stroke-width="3.6"
           stroke-linecap="round"
-        />
-
-        <!-- √-1: the quantity iota names, kept faint so it reads as texture, not clutter. -->
-        <path
-          d="M31.5 15.5 L33.6 15.5 L35.4 20.4 L38.4 12.6"
-          fill="none"
-          stroke="#ffffff"
-          stroke-opacity="0.5"
-          stroke-width="1.7"
-          stroke-linecap="round"
-          stroke-linejoin="round"
         />
       </svg>
 
