@@ -108,9 +108,6 @@ export class AdminShell {
   private readonly auth = inject(AuthService);
 
   protected signOut(): void {
-    this.auth.logout().subscribe({
-      next: () => this.store.clearSession(),
-      error: () => this.store.clearSession(),
-    });
+    this.auth.signOut();
   }
 }
