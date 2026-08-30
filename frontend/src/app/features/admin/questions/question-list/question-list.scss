@@ -61,6 +61,8 @@
 }
 
 .list {
+  /* Table supplies its own cell padding; keep the card edges flush. */
+  padding: 0;
   overflow-x: auto;
 }
 

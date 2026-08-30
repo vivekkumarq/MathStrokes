@@ -14,7 +14,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
   imports: [],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <span class="logo" [class.logo--stacked]="stacked()">
+    <span class="logo" [class.logo--stacked]="stacked()" [style.gap.px]="gapPx()">
       <svg
         class="mark"
         [attr.width]="size()"
@@ -67,11 +67,9 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
     .logo {
       display: inline-flex;
       align-items: center;
-      gap: 10px;
     }
     .logo--stacked {
       flex-direction: column;
-      gap: 12px;
     }
     .mark {
       display: block;
@@ -80,10 +78,20 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
     }
     .word {
       font-weight: 700;
-      letter-spacing: -0.015em;
+      letter-spacing: -0.01em;
       white-space: nowrap;
       line-height: 1;
       color: var(--ms-ink);
+      /*
+       * Optical centring. "iota" has no ascender and no descender — its ink runs from
+       * the baseline to the x-height only. With line-height 1 the baseline sits about
+       * 0.865em down the box, so that ink centres roughly 0.1em BELOW the box centre
+       * and the word reads low against the square mark. The capitalised wordmark did
+       * not need this: cap-height ink centred almost exactly on the box.
+       * Nudged back by slightly less than the full 0.1em, because the t and the dot on
+       * the i carry a little ink above the x-height.
+       */
+      transform: translateY(-0.08em);
     }
     /* On the gradient brand panel the wordmark has to read against it. */
     :host-context(.on-dark) .word {
@@ -96,7 +104,20 @@ export class Logo {
   readonly wordmark = input(true);
   readonly stacked = input(false);
 
-  protected readonly wordSize = computed(() => Math.round(this.size() * 0.56));
+  /**
+   * 0.56 was tuned for the capitalised wordmark, where the ink was cap-height. Lowercase
+   * "iota" is x-height ink — roughly 0.52em against cap-height's 0.727em — so the same
+   * ratio renders visibly lighter and smaller beside the mark. 0.64 brings the tallest
+   * features (the t and the dot on the i) back to about the old cap height without
+   * letting the word start to dominate the square.
+   */
+  protected readonly wordSize = computed(() => Math.round(this.size() * 0.64));
+
+  /**
+   * The gap scales with the mark. A fixed 10px looked right at 36px but crowded the
+   * 26px mark in the exam runner header and looked slack against the 44px auth panel.
+   */
+  protected readonly gapPx = computed(() => Math.round(this.size() * 0.27));
 
   /** Unique per instance so two logos on one page cannot share a gradient id. */
   protected readonly gradientId = computed(
