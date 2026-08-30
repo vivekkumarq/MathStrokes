@@ -100,7 +100,8 @@ export interface MarkingSchemeResponse {
 export interface AdminTestRequest {
   title: string;
   description?: string;
-  chapterId: number;
+  /** Omit for a full-syllabus paper, which draws across every chapter. */
+  chapterId?: number;
   examPattern: ExamPattern;
   durationMinutes: number;
   questionCount: number;
@@ -117,8 +118,9 @@ export interface AdminTestResponse {
   description?: string;
   subjectId: number;
   subjectName: string;
-  chapterId: number;
-  chapterName: string;
+  /** Absent on a full-syllabus paper. */
+  chapterId?: number;
+  chapterName?: string;
   examPattern: ExamPattern;
   status: TestStatus;
   durationMinutes: number;
