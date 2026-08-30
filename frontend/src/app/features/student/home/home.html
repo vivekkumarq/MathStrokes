@@ -76,7 +76,7 @@
             <div class="attempt-main">
               <p class="title">{{ attempt.testTitle }}</p>
               <p class="meta">
-                {{ attempt.chapterName }}
+                {{ attempt.chapterName ?? 'Full syllabus' }}
                 ·
                 {{ attempt.examPattern === 'JEE_MAIN' ? 'JEE Main' : 'JEE Advanced' }}
                 @if (attempt.submittedAt) {
