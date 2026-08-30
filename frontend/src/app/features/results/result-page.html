@@ -17,7 +17,7 @@
         <div>
           <h1>{{ r.testTitle }}</h1>
           <p class="muted">
-            {{ r.chapterName }} · {{ r.subjectName }} ·
+            {{ r.chapterName ?? 'Full syllabus' }} · {{ r.subjectName }} ·
             {{ r.examPattern === 'JEE_MAIN' ? 'JEE Main' : 'JEE Advanced' }}
           </p>
         </div>
