@@ -42,7 +42,7 @@ services:
       # The Netlify site origin. Requests arriving through the Netlify proxy are same-origin and
       # never preflight, so this only matters for a browser calling the API directly.
       - key: CORS_ALLOWED_ORIGINS
-        value: https://mathstrokes.netlify.app
+        value: https://iota-jee.netlify.app
 
       # First boot only. Set these three, deploy, sign in, change the password, then set
       # SEED_ENABLED to false. The seeder refuses to invent a default password, so leaving
