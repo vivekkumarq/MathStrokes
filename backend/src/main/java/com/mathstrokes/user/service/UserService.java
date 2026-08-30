@@ -2,6 +2,7 @@ package com.mathstrokes.user.service;
 
 import com.mathstrokes.auth.dto.UserProfileResponse;
 import com.mathstrokes.common.dto.PageResponse;
+import com.mathstrokes.common.enums.RoleName;
 import com.mathstrokes.common.exception.ResourceNotFoundException;
 import com.mathstrokes.user.dto.StudentSummaryResponse;
 import com.mathstrokes.user.entity.User;
@@ -30,6 +31,20 @@ public class UserService {
     public User requireUser(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+    }
+
+    /**
+     * Loads a user and insists they are a student.
+     *
+     * The admin student routes are about students, so an id belonging to another administrator
+     * should not quietly return that administrator's record through a path that says /students.
+     */
+    public User requireStudent(Long userId) {
+        User user = requireUser(userId);
+        if (!user.hasRole(RoleName.ROLE_STUDENT)) {
+            throw new ResourceNotFoundException("Student", userId);
+        }
+        return user;
     }
 
     public PageResponse<StudentSummaryResponse> listStudents(String search, Pageable pageable) {
