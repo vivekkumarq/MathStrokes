@@ -27,6 +27,7 @@ public class QuestionValidator {
         List<FieldErrorItem> errors = new ArrayList<>();
         validateOptionKeysUnique(request.options(), errors);
         validateContentNotBlank(request, errors);
+        validateNoMarkup(request, errors);
         if (!errors.isEmpty()) {
             throw new ValidationException("The question could not be saved", errors);
         }
@@ -92,6 +93,30 @@ public class QuestionValidator {
                 if (option.content() != null && option.content().isBlank()) {
                     errors.add(FieldErrorItem.of("options[" + i + "].content",
                             "Option content cannot be blank"));
+                }
+            }
+        }
+    }
+
+    /**
+     * Content is LaTeX and plain text, never markup. The browser renders it with HTML trust
+     * disabled and escapes everything outside the maths delimiters, so this is defence in depth
+     * rather than the primary boundary - but it means a compromised admin account cannot plant a
+     * stored payload for every student who later sits the paper.
+     */
+    private void validateNoMarkup(QuestionRequest request, List<FieldErrorItem> errors) {
+        String message = "Questions are written in LaTeX, not HTML. Remove the markup and use "
+                + "$...$ for inline mathematics or $$...$$ for a displayed equation.";
+        if (ContentSafetyGuard.containsMarkup(request.questionContent())) {
+            errors.add(FieldErrorItem.of("questionContent", message));
+        }
+        if (ContentSafetyGuard.containsMarkup(request.solutionContent())) {
+            errors.add(FieldErrorItem.of("solutionContent", message));
+        }
+        if (request.options() != null) {
+            for (int i = 0; i < request.options().size(); i++) {
+                if (ContentSafetyGuard.containsMarkup(request.options().get(i).content())) {
+                    errors.add(FieldErrorItem.of("options[" + i + "].content", message));
                 }
             }
         }
