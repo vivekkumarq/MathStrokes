@@ -9,7 +9,7 @@
 
   <main class="content">
     <h1>Available tests</h1>
-    <p class="sub">Pick a chapter test. Each paper is timed and starts as soon as you open it.</p>
+    <p class="sub">Pick a paper. Each one is timed and starts as soon as you open it.</p>
 
     @if (failure(); as f) {
       <p class="ms-alert ms-alert--error" role="alert">
@@ -26,69 +26,107 @@
         <p class="muted">Your teacher has not published any tests. Check back shortly.</p>
       </div>
     } @else {
-      <div class="ms-card ms-card--flush table">
-        <!-- Hidden from assistive tech: each cell repeats its own label when the row
-             stacks on a narrow screen, so announcing the header too would double up. -->
-        <div class="thead" aria-hidden="true">
-          <span>Chapter</span>
-          <span>Pattern</span>
-          <span class="num">Questions</span>
-          <span class="num">Duration</span>
-          <span></span>
-        </div>
+      <!-- Full-syllabus papers lead: they are the headline, not one row among fifty-six. -->
+      @if (fullSyllabusTests().length > 0) {
+        <section class="group">
+          <h2 class="group-title">Full syllabus</h2>
+          <p class="group-sub">Questions drawn from every chapter, under the real marking scheme.</p>
+          <div class="ms-card ms-card--flush table">
+            <div class="thead" aria-hidden="true">
+              <span>Paper</span>
+              <span>Pattern</span>
+              <span class="num">Questions</span>
+              <span class="num">Duration</span>
+              <span></span>
+            </div>
+            <ng-container
+              [ngTemplateOutlet]="rowList"
+              [ngTemplateOutletContext]="{ $implicit: fullSyllabusTests() }"
+            />
+          </div>
+        </section>
+      }
 
-        <ul class="rows">
-          @for (test of tests(); track test.id) {
-            <li class="row" [class.row--blocked]="!test.canStart">
-              <div class="cell chapter">
-                <span class="chapter-name">{{ test.chapterName }}</span>
-                <span class="chapter-meta">
-                  {{ test.attemptsUsed }} of {{ test.maxAttemptsPerStudent }} attempts used@if (test.rankingEnabled) {<span class="ranked"> · ranked</span>}
-                </span>
-              </div>
-
-              <div class="cell">
-                <span
-                  class="pattern"
-                  [class.pattern--advanced]="test.examPattern === 'JEE_ADVANCED'"
-                >{{ patternLabel(test.examPattern) }}</span>
-              </div>
-
-              <div class="cell num">
-                <span class="cell-label">Questions</span>
-                <span>{{ test.questionCount }}</span>
-              </div>
-
-              <div class="cell num">
-                <span class="cell-label">Duration</span>
-                <span>{{ test.durationMinutes }} min</span>
-              </div>
-
-              <div class="cell action">
-                <button
-                  type="button"
-                  class="ms-btn ms-btn--primary"
-                  [disabled]="!test.canStart || starting() !== null"
-                  (click)="start(test)"
-                >
-                  @if (starting() === test.id) {
-                    Opening…
-                  } @else if (test.activeAttemptId) {
-                    Resume
-                  } @else {
-                    Start test
-                  }
-                </button>
-              </div>
-
-              <!-- unavailableReason is the server's own student-facing wording; rendered as sent. -->
-              @if (!test.canStart && test.unavailableReason) {
-                <p class="reason">{{ test.unavailableReason }}</p>
-              }
-            </li>
-          }
-        </ul>
-      </div>
+      @if (chapterTests().length > 0) {
+        <section class="group">
+          <h2 class="group-title">Chapter tests</h2>
+          <p class="group-sub">One chapter at a time, for focused practice.</p>
+          <div class="ms-card ms-card--flush table">
+            <div class="thead" aria-hidden="true">
+              <span>Chapter</span>
+              <span>Pattern</span>
+              <span class="num">Questions</span>
+              <span class="num">Duration</span>
+              <span></span>
+            </div>
+            <ng-container
+              [ngTemplateOutlet]="rowList"
+              [ngTemplateOutletContext]="{ $implicit: chapterTests() }"
+            />
+          </div>
+        </section>
+      }
     }
   </main>
 </div>
+
+<!-- One row definition, rendered for both groups, so the two cannot drift apart. -->
+<ng-template #rowList let-list>
+  <ul class="rows">
+    @for (test of list; track test.id) {
+      <li class="row" [class.row--blocked]="!test.canStart">
+        <div class="cell chapter">
+          <span class="chapter-name">
+            @if (isFullSyllabus(test)) {
+              Full syllabus
+            } @else {
+              {{ test.chapterName }}
+            }
+          </span>
+          <span class="chapter-meta">
+            {{ test.attemptsUsed }} of {{ test.maxAttemptsPerStudent }} attempts used@if (test.rankingEnabled) {<span class="ranked"> · ranked</span>}
+          </span>
+        </div>
+
+        <div class="cell">
+          <span
+            class="pattern"
+            [class.pattern--advanced]="test.examPattern === 'JEE_ADVANCED'"
+          >{{ patternLabel(test.examPattern) }}</span>
+        </div>
+
+        <div class="cell num">
+          <span class="cell-label">Questions</span>
+          <span>{{ test.questionCount }}</span>
+        </div>
+
+        <div class="cell num">
+          <span class="cell-label">Duration</span>
+          <span>{{ test.durationMinutes }} min</span>
+        </div>
+
+        <div class="cell action">
+          <button
+            type="button"
+            class="ms-btn ms-btn--primary"
+            [disabled]="!test.canStart || starting() !== null"
+            (click)="start(test)"
+          >
+            @if (starting() === test.id) {
+              Opening…
+            } @else if (test.activeAttemptId) {
+              Resume
+            } @else {
+              Start test
+            }
+          </button>
+        </div>
+
+        <!-- unavailableReason is the server's own student-facing wording; rendered as sent. -->
+        @if (!test.canStart && test.unavailableReason) {
+          <p class="reason">{{ test.unavailableReason }}</p>
+        }
+      </li>
+    }
+  </ul>
+</ng-template>
