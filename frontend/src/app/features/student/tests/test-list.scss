@@ -1,0 +1,155 @@
+.page {
+  min-height: 100vh;
+  background: var(--ms-surface-sunken);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: var(--ms-surface);
+  border-bottom: 1px solid var(--ms-border);
+}
+
+.brand {
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  color: var(--ms-primary);
+}
+
+.who {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--ms-ink-muted);
+}
+
+.content {
+  max-width: 68rem;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 3rem;
+}
+
+h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.5rem;
+}
+
+.sub {
+  margin: 0 0 1.5rem;
+  color: var(--ms-ink-muted);
+}
+
+.muted {
+  color: var(--ms-ink-muted);
+}
+
+.retry {
+  margin-left: 0.75rem;
+}
+
+.grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+}
+
+.test {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.test-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.test-head h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.35;
+}
+
+.pattern {
+  flex: none;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--ms-radius-sm);
+  background: var(--ms-primary-soft);
+  color: var(--ms-primary-strong);
+  border: 1px solid var(--ms-primary-border);
+}
+
+.desc {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem 1rem;
+  margin: 0;
+}
+
+.facts div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  border-bottom: 1px dotted var(--ms-border);
+  padding-bottom: 0.25rem;
+}
+
+.facts dt {
+  color: var(--ms-ink-subtle);
+}
+
+.facts dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.ranked {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--ms-ink-subtle);
+}
+
+.reason {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.empty {
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+}
+
+.empty h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+}
+
+/* The card grid already reflows; below this the facts pair reads better stacked. */
+@media (max-width: 30rem) {
+  .facts {
+    grid-template-columns: 1fr;
+  }
+}

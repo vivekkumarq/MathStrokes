@@ -1,0 +1,183 @@
+@if (loading()) {
+  <p class="loading" role="status">Loading your paper…</p>
+} @else if (failure() && !attempt()) {
+  <div class="ms-card fatal">
+    <h1>Could not open the test</h1>
+    <p class="ms-alert ms-alert--error">{{ failure()?.message }}</p>
+    <a class="ms-btn ms-btn--primary" href="/student/tests">Back to tests</a>
+  </div>
+} @else if (attempt(); as att) {
+  <div class="exam" [class.is-submitting]="submitting()">
+    <header class="exam-top">
+      <div class="identity">
+        <p class="brand">MathStrokes</p>
+        <div class="titles">
+          <h1>{{ att.testTitle }}</h1>
+          <p class="chapter">{{ att.chapterName }} · {{ att.subjectName }}</p>
+        </div>
+      </div>
+
+      <!-- The server's remaining time, ticked locally against a measured clock offset. -->
+      <div class="timer" [attr.data-level]="clockLevel()" role="timer" aria-live="off">
+        <span class="timer-label">Time left</span>
+        <span class="timer-value">{{ clock() }}</span>
+      </div>
+
+      <button type="button" class="ms-btn ms-btn--ghost palette-toggle" (click)="togglePalette()">
+        Questions
+      </button>
+    </header>
+
+    @if (failure(); as f) {
+      <p class="ms-alert ms-alert--error banner" role="alert">
+        {{ f.message }}
+        <button type="button" class="ms-btn ms-btn--ghost" (click)="dismissError()">Dismiss</button>
+      </p>
+    }
+
+    <div class="exam-body">
+      <main class="question-pane">
+        @if (current(); as q) {
+          <div class="q-head">
+            <span class="q-number">Question {{ q.questionOrder }} of {{ att.totalQuestions }}</span>
+            <span class="q-meta">
+              <span class="chip">{{ q.difficulty }}</span>
+              <span class="chip">
+                {{ q.questionType === 'SINGLE_CORRECT' ? 'Single correct' : 'Multiple correct' }}
+              </span>
+            </span>
+          </div>
+
+          <div class="q-body">
+            <app-math-content [content]="q.questionContent" />
+          </div>
+
+          @if (q.questionType === 'MULTIPLE_CORRECT') {
+            <p class="q-hint">Select all options that apply.</p>
+          }
+
+          <!-- Control type follows the QUESTION's type, never the paper's exam pattern. -->
+          <ul class="options" role="group">
+            @for (option of q.options; track option.id) {
+              <li>
+                <label
+                  class="option"
+                  [class.is-picked]="isSelected(q.attemptQuestionId, option.id)"
+                >
+                  <input
+                    [type]="q.questionType === 'SINGLE_CORRECT' ? 'radio' : 'checkbox'"
+                    [name]="'q-' + q.attemptQuestionId"
+                    [checked]="isSelected(q.attemptQuestionId, option.id)"
+                    [disabled]="isClosed()"
+                    (change)="select(q, option.id)"
+                  />
+                  <span class="option-key">{{ option.optionKey }}</span>
+                  <span class="option-content">
+                    <app-math-content [content]="option.content" />
+                  </span>
+                </label>
+              </li>
+            }
+          </ul>
+        }
+      </main>
+
+      <aside class="palette-pane" [class.is-open]="paletteOpen()">
+        <h2>Question palette</h2>
+        <ol class="palette">
+          @for (q of questions(); track q.attemptQuestionId; let i = $index) {
+            <li>
+              <button
+                type="button"
+                class="pip"
+                [class]="'pip ' + paletteClass(statusOf(q.attemptQuestionId))"
+                [class.is-current]="i === index()"
+                [attr.aria-current]="i === index() ? 'true' : null"
+                (click)="goTo(i)"
+              >
+                {{ q.questionOrder }}
+              </button>
+            </li>
+          }
+        </ol>
+
+        <ul class="legend">
+          <li><span class="swatch is-answered"></span> Answered ({{ answeredCount() }})</li>
+          <li><span class="swatch is-not-answered"></span> Not answered</li>
+          <li><span class="swatch is-review"></span> Marked for review ({{ markedCount() }})</li>
+          <li><span class="swatch is-answered-review"></span> Answered &amp; marked</li>
+          <li><span class="swatch is-not-visited"></span> Not visited</li>
+        </ul>
+      </aside>
+    </div>
+
+    <footer class="exam-actions">
+      <div class="left">
+        <button
+          type="button"
+          class="ms-btn"
+          [disabled]="index() === 0"
+          (click)="previous()"
+        >
+          Previous
+        </button>
+        <button type="button" class="ms-btn" [disabled]="isClosed()" (click)="clearAnswer()">
+          Clear answer
+        </button>
+        <button type="button" class="ms-btn" [disabled]="isClosed()" (click)="toggleReview()">
+          {{ stateOf(current()!.attemptQuestionId)?.markedForReview ? 'Unmark review' : 'Mark for review' }}
+        </button>
+      </div>
+
+      <div class="right">
+        <span class="save-state" aria-live="polite">{{ saving() ? 'Saving…' : 'Saved' }}</span>
+        <button
+          type="button"
+          class="ms-btn"
+          [disabled]="index() >= questions().length - 1"
+          (click)="next()"
+        >
+          Next
+        </button>
+        <button
+          type="button"
+          class="ms-btn ms-btn--primary"
+          [disabled]="isClosed()"
+          (click)="openConfirm()"
+        >
+          Submit test
+        </button>
+      </div>
+    </footer>
+  </div>
+
+  @if (confirmOpen()) {
+    <div class="scrim" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+      <div class="ms-card confirm">
+        <h2 id="confirm-title">Submit this test?</h2>
+        <p class="muted">You cannot change your answers after submitting.</p>
+        <dl class="tally">
+          <div><dt>Answered</dt><dd>{{ answeredCount() }}</dd></div>
+          <div><dt>Unanswered</dt><dd>{{ unansweredCount() }}</dd></div>
+          <div><dt>Marked for review</dt><dd>{{ markedCount() }}</dd></div>
+          <div><dt>Time left</dt><dd>{{ clock() }}</dd></div>
+        </dl>
+        <div class="confirm-actions">
+          <button type="button" class="ms-btn" (click)="closeConfirm()">Keep working</button>
+          <button type="button" class="ms-btn ms-btn--primary" (click)="submit()">
+            Submit test
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (submitting()) {
+    <div class="scrim">
+      <div class="ms-card confirm">
+        <h2>Submitting…</h2>
+        <p class="muted">Marking your paper. This takes a moment.</p>
+      </div>
+    </div>
+  }
+}

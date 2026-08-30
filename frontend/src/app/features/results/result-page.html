@@ -1,0 +1,103 @@
+<div class="page">
+  <header class="topbar">
+    <p class="brand">MathStrokes</p>
+    <a class="ms-btn ms-btn--ghost" routerLink="/student/tests">Back to tests</a>
+  </header>
+
+  <main class="content">
+    @if (loading()) {
+      <p class="muted" role="status">Loading your result…</p>
+    } @else if (failure(); as f) {
+      <div class="ms-card">
+        <h1>Result unavailable</h1>
+        <p class="ms-alert ms-alert--error">{{ f.message }}</p>
+      </div>
+    } @else if (result(); as r) {
+      <header class="result-head">
+        <div>
+          <h1>{{ r.testTitle }}</h1>
+          <p class="muted">
+            {{ r.chapterName }} · {{ r.subjectName }} ·
+            {{ r.examPattern === 'JEE_MAIN' ? 'JEE Main' : 'JEE Advanced' }}
+          </p>
+        </div>
+        @if (r.status === 'EVALUATED') {
+          <a class="ms-btn ms-btn--primary" [routerLink]="['/results', attemptId, 'review']">
+            Review answers
+          </a>
+        }
+      </header>
+
+      <section class="headline">
+        <div class="ms-card score">
+          <span class="label">Score</span>
+          <p class="value">{{ r.score }} <span class="of">/ {{ r.maxScore }}</span></p>
+          <div class="bar"><span [style.width.%]="scorePercent()"></span></div>
+          <span class="muted small">{{ scorePercent() }}% of the paper</span>
+        </div>
+
+        @if (r.rankingEnabled && r.rankPosition) {
+          <div class="ms-card score">
+            <span class="label">Rank</span>
+            <p class="value">
+              {{ r.rankPosition }} <span class="of">of {{ r.totalCandidates }}</span>
+            </p>
+            <span class="muted small">{{ r.percentile }} percentile</span>
+          </div>
+        } @else if (!r.rankingEnabled) {
+          <div class="ms-card score">
+            <span class="label">Rank</span>
+            <p class="value muted">Not ranked</p>
+            <span class="muted small">
+              This test draws different questions per attempt, so results are not comparable.
+            </span>
+          </div>
+        }
+
+        <div class="ms-card score">
+          <span class="label">Accuracy</span>
+          <p class="value">{{ r.accuracy }}%</p>
+          <span class="muted small">of the {{ r.attemptedCount }} you attempted</span>
+        </div>
+
+        <div class="ms-card score">
+          <span class="label">Attempt rate</span>
+          <p class="value">{{ r.attemptRate }}%</p>
+          <span class="muted small">{{ r.attemptedCount }} of {{ r.totalQuestions }} questions</span>
+        </div>
+      </section>
+
+      <section class="detail">
+        <div class="ms-card chart-card">
+          <h2>Breakdown</h2>
+          <div class="chart"><canvas #breakdown></canvas></div>
+        </div>
+
+        <div class="ms-card">
+          <h2>Detail</h2>
+          <dl class="facts">
+            <div><dt>Correct</dt><dd>{{ r.correctCount }}</dd></div>
+            @if (r.partiallyCorrectCount) {
+              <div><dt>Partially correct</dt><dd>{{ r.partiallyCorrectCount }}</dd></div>
+            }
+            <div><dt>Incorrect</dt><dd>{{ r.incorrectCount }}</dd></div>
+            <div><dt>Unanswered</dt><dd>{{ r.unansweredCount }}</dd></div>
+            <div><dt>Negative marks</dt><dd>-{{ r.negativeMarks }}</dd></div>
+            <div><dt>Time taken</dt><dd>{{ timeTaken() }}</dd></div>
+            <div><dt>Duration allowed</dt><dd>{{ r.durationMinutes }} min</dd></div>
+            <div>
+              <dt>Submitted</dt>
+              <dd>{{ r.status === 'AUTO_SUBMITTED' ? 'Automatically, on expiry' : 'By you' }}</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      @if (r.rankingEnabled) {
+        <p class="muted small note">
+          Your rank moves as other students finish this paper. Your score does not.
+        </p>
+      }
+    }
+  </main>
+</div>

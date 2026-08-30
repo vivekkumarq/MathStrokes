@@ -1,0 +1,107 @@
+<div class="page">
+  <header class="topbar">
+    <p class="brand">MathStrokes</p>
+    <a class="ms-btn ms-btn--ghost" [routerLink]="['/results', attemptId]">Back to result</a>
+  </header>
+
+  <main class="content">
+    <h1>Answer review</h1>
+    <p class="muted">
+      Shown exactly as you sat it. Later edits to a question do not change this page.
+    </p>
+
+    @if (loading()) {
+      <p class="muted" role="status">Loading…</p>
+    } @else if (failure(); as f) {
+      <p class="ms-alert ms-alert--error">{{ f.message }}</p>
+    } @else {
+      <nav class="filters">
+        <button
+          type="button"
+          class="ms-btn"
+          [class.is-active]="filter() === 'ALL'"
+          (click)="setFilter('ALL')"
+        >
+          All ({{ counts().ALL }})
+        </button>
+        <button
+          type="button"
+          class="ms-btn"
+          [class.is-active]="filter() === 'CORRECT'"
+          (click)="setFilter('CORRECT')"
+        >
+          Correct ({{ counts().CORRECT }})
+        </button>
+        @if (counts().PARTIALLY_CORRECT > 0) {
+          <button
+            type="button"
+            class="ms-btn"
+            [class.is-active]="filter() === 'PARTIALLY_CORRECT'"
+            (click)="setFilter('PARTIALLY_CORRECT')"
+          >
+            Partial ({{ counts().PARTIALLY_CORRECT }})
+          </button>
+        }
+        <button
+          type="button"
+          class="ms-btn"
+          [class.is-active]="filter() === 'INCORRECT'"
+          (click)="setFilter('INCORRECT')"
+        >
+          Incorrect ({{ counts().INCORRECT }})
+        </button>
+        <button
+          type="button"
+          class="ms-btn"
+          [class.is-active]="filter() === 'UNANSWERED'"
+          (click)="setFilter('UNANSWERED')"
+        >
+          Skipped ({{ counts().UNANSWERED }})
+        </button>
+      </nav>
+
+      <ol class="questions">
+        @for (q of visible(); track q.attemptQuestionId) {
+          <li class="ms-card question">
+            <div class="q-head">
+              <span class="q-number">Question {{ q.questionOrder }}</span>
+              <span class="marks" [class]="'marks ' + statusClass(q.resultStatus)">
+                {{ statusLabel(q.resultStatus) }} · {{ signed(q.marksAwarded) }} /
+                {{ q.maxMarks }}
+              </span>
+            </div>
+
+            <div class="q-body"><app-math-content [content]="q.questionContent" /></div>
+
+            <ul class="options">
+              @for (option of q.options; track option.id) {
+                <li
+                  class="option"
+                  [class.is-key]="option.isCorrect"
+                  [class.is-picked]="option.selected"
+                  [class.is-wrong]="option.selected && !option.isCorrect"
+                >
+                  <span class="option-key">{{ option.optionKey }}</span>
+                  <span class="option-content"><app-math-content [content]="option.content" /></span>
+                  <span class="tags">
+                    @if (option.isCorrect) { <span class="tag key">Correct answer</span> }
+                    @if (option.selected) { <span class="tag picked">Your choice</span> }
+                  </span>
+                </li>
+              }
+            </ul>
+
+            @if (q.solutionContent) {
+              <details class="solution">
+                <summary>Worked solution</summary>
+                <div class="solution-body">
+                  <app-math-content [content]="q.solutionContent" />
+                </div>
+              </details>
+            }
+          </li>
+        }
+      </ol>
+    }
+  </main>
+</div>

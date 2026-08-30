@@ -1,0 +1,79 @@
+<div class="page">
+  <header class="topbar">
+    <p class="brand">MathStrokes</p>
+    <div class="who">
+      <span>{{ auth.user()?.fullName }}</span>
+      <button type="button" class="ms-btn ms-btn--ghost" (click)="signOut()">Sign out</button>
+    </div>
+  </header>
+
+  <main class="content">
+    <h1>Available tests</h1>
+    <p class="sub">Pick a chapter test. Each paper is timed and starts as soon as you open it.</p>
+
+    @if (failure(); as f) {
+      <p class="ms-alert ms-alert--error" role="alert">
+        {{ f.message }}
+        <button type="button" class="ms-btn ms-btn--ghost retry" (click)="load()">Try again</button>
+      </p>
+    }
+
+    @if (loading()) {
+      <p class="muted" role="status">Loading tests…</p>
+    } @else if (tests().length === 0) {
+      <div class="ms-card empty">
+        <h2>No tests published yet</h2>
+        <p class="muted">Your teacher has not published any tests. Check back shortly.</p>
+      </div>
+    } @else {
+      <ul class="grid">
+        @for (test of tests(); track test.id) {
+          <li class="ms-card test">
+            <div class="test-head">
+              <h2>{{ test.title }}</h2>
+              <span class="pattern">{{ patternLabel(test.examPattern) }}</span>
+            </div>
+
+            @if (test.description) {
+              <p class="muted desc">{{ test.description }}</p>
+            }
+
+            <dl class="facts">
+              <div><dt>Chapter</dt><dd>{{ test.chapterName }}</dd></div>
+              <div><dt>Questions</dt><dd>{{ test.questionCount }}</dd></div>
+              <div><dt>Duration</dt><dd>{{ test.durationMinutes }} min</dd></div>
+              <div>
+                <dt>Attempts</dt>
+                <dd>{{ test.attemptsUsed }} / {{ test.maxAttemptsPerStudent }}</dd>
+              </div>
+            </dl>
+
+            @if (test.rankingEnabled) {
+              <p class="ranked">Ranked against everyone who sits this paper</p>
+            }
+
+            <!-- unavailableReason is the server's own student-facing wording; rendered as sent. -->
+            @if (!test.canStart && test.unavailableReason) {
+              <p class="ms-alert ms-alert--info reason">{{ test.unavailableReason }}</p>
+            }
+
+            <button
+              type="button"
+              class="ms-btn ms-btn--primary ms-btn--block"
+              [disabled]="!test.canStart || starting() !== null"
+              (click)="start(test)"
+            >
+              @if (starting() === test.id) {
+                Opening…
+              } @else if (test.activeAttemptId) {
+                Resume test
+              } @else {
+                Start test
+              }
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  </main>
+</div>

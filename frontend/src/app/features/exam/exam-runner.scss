@@ -1,0 +1,452 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: var(--ms-surface-sunken);
+}
+
+.loading,
+.fatal {
+  max-width: 32rem;
+  margin: 4rem auto;
+  text-align: center;
+}
+
+.fatal h1 {
+  font-size: 1.2rem;
+  margin: 0 0 1rem;
+}
+
+.exam {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ------------------------------------------------------------------ header */
+.exam-top {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--ms-surface);
+  border-bottom: 1px solid var(--ms-border);
+  box-shadow: var(--ms-shadow-sm);
+}
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.brand {
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  color: var(--ms-primary);
+  white-space: nowrap;
+}
+
+.titles {
+  min-width: 0;
+}
+
+.titles h1 {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chapter {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--ms-ink-muted);
+}
+
+/* The timer is the one element that must never be missed, so it is tabular and high contrast. */
+.timer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.3rem 0.9rem;
+  border-radius: var(--ms-radius);
+  border: 1px solid var(--ms-border-strong);
+  background: var(--ms-surface-sunken);
+}
+
+.timer-label {
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ms-ink-subtle);
+}
+
+.timer-value {
+  font-family: var(--ms-font-mono);
+  font-size: 1.3rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.timer[data-level='urgent'] {
+  border-color: var(--ms-warning);
+  color: var(--ms-warning);
+}
+
+.timer[data-level='critical'] {
+  border-color: var(--ms-danger);
+  background: var(--ms-danger-soft);
+  color: var(--ms-danger);
+}
+
+.palette-toggle {
+  display: none;
+}
+
+.banner {
+  margin: 0.75rem 1.25rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+/* -------------------------------------------------------------------- body */
+.exam-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 17rem;
+  gap: 1.25rem;
+  padding: 1.25rem;
+  align-items: start;
+}
+
+.question-pane {
+  background: var(--ms-surface);
+  border: 1px solid var(--ms-border);
+  border-radius: var(--ms-radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--ms-shadow-sm);
+}
+
+.q-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--ms-border);
+}
+
+.q-number {
+  font-weight: 700;
+}
+
+.q-meta {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.chip {
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.18rem 0.45rem;
+  border-radius: var(--ms-radius-sm);
+  background: var(--ms-surface-sunken);
+  border: 1px solid var(--ms-border);
+  color: var(--ms-ink-muted);
+}
+
+.q-body {
+  margin: 1.25rem 0;
+  font-size: 1.02rem;
+  line-height: 1.65;
+}
+
+.q-hint {
+  margin: 0 0 0.75rem;
+  font-size: 0.82rem;
+  color: var(--ms-ink-subtle);
+}
+
+.options {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.option {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: start;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--ms-border);
+  border-radius: var(--ms-radius);
+  background: var(--ms-surface);
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+
+.option:hover {
+  border-color: var(--ms-border-strong);
+}
+
+.option.is-picked {
+  border-color: var(--ms-primary);
+  background: var(--ms-primary-soft);
+}
+
+.option input {
+  margin-top: 0.25rem;
+  accent-color: var(--ms-primary);
+  width: 1rem;
+  height: 1rem;
+}
+
+.option-key {
+  font-weight: 700;
+  color: var(--ms-ink-muted);
+  min-width: 1.1rem;
+}
+
+.option-content {
+  min-width: 0;
+}
+
+/* ----------------------------------------------------------------- palette */
+.palette-pane {
+  position: sticky;
+  top: 5.5rem;
+  background: var(--ms-surface);
+  border: 1px solid var(--ms-border);
+  border-radius: var(--ms-radius-lg);
+  padding: 1rem;
+  box-shadow: var(--ms-shadow-sm);
+}
+
+.palette-pane h2 {
+  margin: 0 0 0.75rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ms-ink-subtle);
+}
+
+.palette {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.4rem;
+}
+
+.pip {
+  width: 100%;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: var(--ms-radius-sm);
+  border: 1px solid var(--ms-border);
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  color: #fff;
+}
+
+/* The five palette states are read at a glance, so each gets its own hue rather than a
+   shade of one. Emitted from one map so a pip and its legend swatch can never drift apart. */
+$palette-states: 'not-visited', 'not-answered', 'answered', 'review', 'answered-review';
+
+@each $state in $palette-states {
+  .pip.is-#{$state},
+  .swatch.is-#{$state} {
+    background: var(--ms-state-#{$state});
+  }
+}
+
+.pip.is-not-visited,
+.swatch.is-not-visited {
+  color: var(--ms-state-not-visited-ink);
+}
+
+.pip.is-current {
+  outline: 2px solid var(--ms-ink);
+  outline-offset: 2px;
+}
+
+.legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--ms-ink-muted);
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.swatch {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 3px;
+  border: 1px solid var(--ms-border);
+  flex: none;
+}
+
+/* ----------------------------------------------------------------- actions */
+.exam-actions {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.85rem 1.25rem;
+  background: var(--ms-surface);
+  border-top: 1px solid var(--ms-border);
+}
+
+.exam-actions .left,
+.exam-actions .right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.save-state {
+  font-size: 0.75rem;
+  color: var(--ms-ink-subtle);
+  min-width: 3.5rem;
+  text-align: right;
+}
+
+/* ------------------------------------------------------------------ dialog */
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: rgb(15 23 42 / 55%);
+}
+
+.confirm {
+  width: min(26rem, 100%);
+}
+
+.confirm h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.1rem;
+}
+
+.muted {
+  color: var(--ms-ink-muted);
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+}
+
+.tally {
+  margin: 0 0 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.tally div {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px dotted var(--ms-border);
+  padding-bottom: 0.3rem;
+  font-size: 0.9rem;
+}
+
+.tally dt {
+  color: var(--ms-ink-muted);
+}
+
+.tally dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+/* ------------------------------------------------------------- responsive */
+@media (max-width: 60rem) {
+  .exam-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .palette-toggle {
+    display: inline-flex;
+  }
+
+  /* On a phone the palette becomes a drawer so the question keeps the full width. */
+  .palette-pane {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 30;
+    border-radius: var(--ms-radius-lg) var(--ms-radius-lg) 0 0;
+    max-height: 60vh;
+    overflow-y: auto;
+    transform: translateY(101%);
+    transition: transform 0.18s ease;
+    box-shadow: var(--ms-shadow-lg);
+  }
+
+  .palette-pane.is-open {
+    transform: translateY(0);
+  }
+
+  .palette {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+@media (max-width: 34rem) {
+  .exam-top {
+    flex-wrap: wrap;
+  }
+
+  .question-pane {
+    padding: 1rem;
+  }
+
+  .exam-actions .left,
+  .exam-actions .right {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
