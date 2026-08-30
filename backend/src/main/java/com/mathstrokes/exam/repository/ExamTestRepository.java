@@ -16,7 +16,7 @@ public interface ExamTestRepository extends JpaRepository<ExamTest, Long> {
 
     @Query("""
             select t from ExamTest t
-            join fetch t.chapter c
+            left join fetch t.chapter c
             join fetch t.subject s
             where t.id = :id
             """)
@@ -25,7 +25,7 @@ public interface ExamTestRepository extends JpaRepository<ExamTest, Long> {
     /** Student-facing browse: published tests only, optionally narrowed by chapter and pattern. */
     @Query("""
             select t from ExamTest t
-            join fetch t.chapter c
+            left join fetch t.chapter c
             join fetch t.subject s
             where t.status = com.mathstrokes.common.enums.TestStatus.PUBLISHED
               and (:chapterId is null or c.id = :chapterId)
@@ -39,7 +39,7 @@ public interface ExamTestRepository extends JpaRepository<ExamTest, Long> {
 
     @Query(value = """
             select t from ExamTest t
-            join fetch t.chapter c
+            left join fetch t.chapter c
             join fetch t.subject s
             where (:status is null or t.status = :status)
               and (:chapterId is null or c.id = :chapterId)

@@ -17,8 +17,18 @@ public record TestRequest(
         @Size(max = 1000, message = "Description must be at most 1000 characters")
         String description,
 
-        @NotNull(message = "Chapter is required")
+        /**
+         * The chapter to draw from. OMIT IT for a full-syllabus paper, which draws from every
+         * chapter of the subject. Absence is the signal - there is no separate scope flag that
+         * could contradict this field.
+         */
         Long chapterId,
+
+        /**
+         * Only consulted when chapterId is absent, since otherwise the subject is derived from
+         * the chapter. May itself be omitted while the platform has a single subject.
+         */
+        Long subjectId,
 
         @NotNull(message = "Exam pattern is required")
         ExamPattern examPattern,
