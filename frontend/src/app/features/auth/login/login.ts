@@ -31,6 +31,14 @@ export class Login {
   private readonly route = inject(ActivatedRoute);
 
   protected readonly submitting = signal(false);
+
+  /**
+   * The backend sleeps when idle and a cold JVM boot takes 30-50 seconds. A silent
+   * spinner for that long reads as a hung page, so after a few seconds we say what is
+   * actually happening instead.
+   */
+  protected readonly waking = signal(false);
+  private wakeTimer: ReturnType<typeof setTimeout> | null = null;
   protected readonly formError = signal<string | null>(null);
 
   /** Set by the interceptor when a refresh failed, so the bounce is explained. */
@@ -68,6 +76,7 @@ export class Login {
 
     const raw = this.form.getRawValue();
     this.submitting.set(true);
+    this.startWakeNotice();
 
     this.auth
       .login({
@@ -77,12 +86,29 @@ export class Login {
         password: raw.password,
       })
       .subscribe({
-        next: () => this.redirect(),
+        next: () => {
+          this.clearWakeNotice();
+          this.redirect();
+        },
         error: (error: unknown) => {
+          this.clearWakeNotice();
           this.submitting.set(false);
           this.handleFailure(toApiFailure(error));
         },
       });
+  }
+
+  private startWakeNotice(): void {
+    this.clearWakeNotice();
+    this.wakeTimer = setTimeout(() => this.waking.set(true), 4000);
+  }
+
+  private clearWakeNotice(): void {
+    if (this.wakeTimer !== null) {
+      clearTimeout(this.wakeTimer);
+      this.wakeTimer = null;
+    }
+    this.waking.set(false);
   }
 
   private handleFailure(failure: ApiFailure): void {

@@ -7,9 +7,7 @@
     </linearGradient>
   </defs>
   <rect width="48" height="48" rx="12" fill="url(#g)"/>
-  <!-- Heavier than the in-app mark and without the faint radical: at 16px only the
-       iota itself survives, so the tab icon is drawn for that size. -->
-  <circle cx="22" cy="13.6" r="4.2" fill="#fff"/>
-  <path d="M22 21.6 L22 28.8 C22 34.4 26.4 37 32 35.6"
-        fill="none" stroke="#fff" stroke-width="4.4" stroke-linecap="round"/>
+  <!-- Heavier than the in-app mark: at 16px a thin stem disappears. -->
+  <circle cx="24" cy="13.8" r="4.3" fill="#fff"/>
+  <path d="M24 21.6 L24 35.6" fill="none" stroke="#fff" stroke-width="4.6" stroke-linecap="round"/>
 </svg>
