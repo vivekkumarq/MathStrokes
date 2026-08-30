@@ -50,9 +50,6 @@ export class StudentHome {
   }
 
   protected signOut(): void {
-    this.auth.logout().subscribe({
-      next: () => this.store.clearSession(),
-      error: () => this.store.clearSession(),
-    });
+    this.auth.signOut();
   }
 }
