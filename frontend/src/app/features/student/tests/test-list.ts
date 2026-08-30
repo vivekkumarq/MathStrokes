@@ -51,6 +51,25 @@ export class TestList {
   protected readonly chapterTests = computed(() =>
     this.tests().filter((t) => !this.isFullSyllabus(t)),
   );
+
+  /**
+   * Chapter+pattern pairs that have more than one paper. Three chapters carry a spare
+   * from an earlier seed, and the row shows only the chapter and pattern — so without
+   * this those rows are indistinguishable from each other. The title is shown for
+   * exactly those, rather than on all 59 rows, which would just be noise.
+   */
+  private readonly ambiguousKeys = computed(() => {
+    const seen = new Map<string, number>();
+    for (const test of this.chapterTests()) {
+      const key = `${test.chapterId}:${test.examPattern}`;
+      seen.set(key, (seen.get(key) ?? 0) + 1);
+    }
+    return new Set([...seen.entries()].filter(([, n]) => n > 1).map(([k]) => k));
+  });
+
+  protected needsTitle(test: TestSummaryResponse): boolean {
+    return this.ambiguousKeys().has(`${test.chapterId}:${test.examPattern}`);
+  }
   protected readonly loading = signal(true);
   protected readonly failure = signal<ApiFailure | null>(null);
   /** The test whose Start button was pressed, so only that card shows a spinner. */
