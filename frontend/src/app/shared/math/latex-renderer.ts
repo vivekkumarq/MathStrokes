@@ -1,7 +1,7 @@
 import katex from 'katex';
 
 /**
- * Renders Iota question content to HTML.
+ * Renders iota question content to HTML.
  *
  * THIS FUNCTION IS A SECURITY BOUNDARY. Its output is injected with
  * bypassSecurityTrustHtml, because Angular's sanitizer strips the inline styles KaTeX
