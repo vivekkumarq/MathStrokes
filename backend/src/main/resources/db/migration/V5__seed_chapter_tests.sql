@@ -2,7 +2,7 @@
 -- One published test per chapter per exam pattern: 28 x 2 = 56 papers.
 --
 -- A question bank is not a test. V4 filled every chapter with questions, but a student can
--- only sit a paper that an admin has published, so without this the app has 1,522 questions
+-- only sit a paper that an admin has published, so without this the app has 1,521 questions
 -- and two things to actually do.
 --
 -- Every test is FIXED_SET: the 25 questions are drawn once, here, and pinned. That is what

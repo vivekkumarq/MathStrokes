@@ -90,14 +90,16 @@ public class QuestionSelectionService {
     private BusinessRuleException shortfall(Blueprint blueprint, Difficulty difficulty,
                                             int wanted, int found) {
         String band = difficulty == null ? "" : " at " + difficulty + " difficulty";
+        String scope = blueprint.chapterId() == null ? " across the syllabus" : " in this chapter";
         return new BusinessRuleException(ErrorCode.NOT_ENOUGH_QUESTIONS,
                 "The question bank holds only " + found + " published "
-                        + blueprint.examPattern() + " question(s)" + band
-                        + " in this chapter, but " + wanted + " are needed. "
+                        + blueprint.examPattern() + " question(s)" + band + scope
+                        + ", but " + wanted + " are needed. "
                         + "Publish more questions before using this test.");
     }
 
     /**
+     * @param chapterId       the chapter to draw from, or null for the whole syllabus
      * @param difficultyBands how many questions to take from each band; bands summing to less
      *                        than the total are topped up from the whole published pool
      */

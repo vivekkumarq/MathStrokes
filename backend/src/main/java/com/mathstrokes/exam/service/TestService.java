@@ -6,7 +6,9 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
+import com.mathstrokes.catalog.dto.SubjectResponse;
 import com.mathstrokes.catalog.entity.Chapter;
+import com.mathstrokes.catalog.entity.Subject;
 import com.mathstrokes.catalog.service.CatalogService;
 import com.mathstrokes.common.dto.PageResponse;
 import com.mathstrokes.common.enums.Difficulty;
@@ -78,10 +80,8 @@ public class TestService {
 
     @Transactional
     public TestResponse create(TestRequest request) {
-        Chapter chapter = catalogService.requireChapter(request.chapterId());
         ExamTest test = new ExamTest();
-        test.setChapter(chapter);
-        test.setSubject(chapter.getSubject());
+        assignScope(test, request);
         applyRequest(test, request);
         test.setStatus(TestStatus.DRAFT);
         SecurityUtils.currentPrincipal()
@@ -98,9 +98,7 @@ public class TestService {
                     "Only a draft test can be edited. This test is " + test.getStatus()
                             + " and students may already have sat it.");
         }
-        Chapter chapter = catalogService.requireChapter(request.chapterId());
-        test.setChapter(chapter);
-        test.setSubject(chapter.getSubject());
+        assignScope(test, request);
         applyRequest(test, request);
         return mapper.toResponse(test, testQuestionRepository.countByTestId(id));
     }
@@ -176,6 +174,36 @@ public class TestService {
         test.replaceQuestions(paper);
     }
 
+    /**
+     * Decides what the test draws from.
+     *
+     * A chapter id means one chapter, and the subject comes from it. No chapter id means the full
+     * syllabus, and the subject has to be supplied - or inferred while the platform has exactly
+     * one, which keeps the admin form simple today without stopping a second subject later.
+     */
+    private void assignScope(ExamTest test, TestRequest request) {
+        if (request.chapterId() != null) {
+            Chapter chapter = catalogService.requireChapter(request.chapterId());
+            test.setChapter(chapter);
+            test.setSubject(chapter.getSubject());
+            return;
+        }
+        test.setChapter(null);
+        test.setSubject(resolveSubjectForFullSyllabus(request.subjectId()));
+    }
+
+    private Subject resolveSubjectForFullSyllabus(Long subjectId) {
+        if (subjectId != null) {
+            return catalogService.requireSubject(subjectId);
+        }
+        List<SubjectResponse> active = catalogService.listSubjects(false);
+        if (active.size() == 1) {
+            return catalogService.requireSubject(active.get(0).id());
+        }
+        throw new BusinessRuleException(
+                "A full-syllabus test needs a subject. Send subjectId, or choose a chapter.");
+    }
+
     private void applyRequest(ExamTest test, TestRequest request) {
         test.setTitle(request.title().trim());
         test.setDescription(request.description());
@@ -212,7 +240,8 @@ public class TestService {
         putIfPositive(bands, Difficulty.EASY, test.getEasyCount());
         putIfPositive(bands, Difficulty.MEDIUM, test.getMediumCount());
         putIfPositive(bands, Difficulty.HARD, test.getHardCount());
-        return new QuestionSelectionService.Blueprint(test.getChapter().getId(),
+        // A null chapter id widens the draw to every chapter of the subject.
+        return new QuestionSelectionService.Blueprint(test.chapterId(),
                 test.getExamPattern(), test.getQuestionCount(), bands);
     }
 
