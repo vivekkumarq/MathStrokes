@@ -1,5 +1,5 @@
 # =====================================================================================
-# Render blueprint for the MathStrokes API.
+# Render blueprint for the iota API.
 #
 # Netlify serves the Angular app; it cannot run a JVM. This deploys the backend container
 # that Netlify's /api/* proxy points at.
@@ -13,7 +13,7 @@
 
 services:
   - type: web
-    name: mathstrokes-api
+    name: iota-api
     runtime: docker
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
@@ -31,18 +31,18 @@ services:
       - key: JWT_SECRET
         generateValue: true
 
-      # Supplied by the managed database below.
+      # Wired automatically from the database declared below. The app accepts Render's
+      # postgresql://user:pass@host/db form directly and derives the JDBC URL and credentials
+      # from it, so there is nothing to copy out of the dashboard by hand.
       - key: DATABASE_URL
-        sync: false
-      - key: DATABASE_USERNAME
-        sync: false
-      - key: DATABASE_PASSWORD
-        sync: false
+        fromDatabase:
+          name: iota-db
+          property: connectionString
 
-      # The Netlify site origin. Only needed for direct browser calls; requests arriving
-      # through the Netlify proxy are same-origin and never preflight.
+      # The Netlify site origin. Requests arriving through the Netlify proxy are same-origin and
+      # never preflight, so this only matters for a browser calling the API directly.
       - key: CORS_ALLOWED_ORIGINS
-        sync: false
+        value: https://mathstrokes.netlify.app
 
       # First boot only. Set these three, deploy, sign in, change the password, then set
       # SEED_ENABLED to false. The seeder refuses to invent a default password, so leaving
@@ -50,13 +50,13 @@ services:
       - key: SEED_ENABLED
         value: "true"
       - key: SEED_ADMIN_NAME
-        sync: false
+        value: Vivek Kumar
       - key: SEED_ADMIN_PHONE
-        sync: false
+        value: "9000000001"
       - key: SEED_ADMIN_PASSWORD
         sync: false
       - key: SEED_ADMIN_SECURITY_QUESTION
-        sync: false
+        value: In which city were you born?
       - key: SEED_ADMIN_SECURITY_ANSWER
         sync: false
 
@@ -68,7 +68,7 @@ services:
         value: "5"
 
 databases:
-  - name: mathstrokes-db
+  - name: iota-db
     plan: free
     databaseName: mathstrokes
     user: mathstrokes
