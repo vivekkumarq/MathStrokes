@@ -14,6 +14,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Chart, ArcElement, DoughnutController, Legend, Tooltip } from 'chart.js';
 
 import { ApiFailure, AttemptResultResponse, toApiFailure } from '../../core';
+import { Logo } from '../../shared/brand/logo';
 import { ExamService } from '../exam/exam.service';
 
 Chart.register(DoughnutController, ArcElement, Legend, Tooltip);
@@ -27,7 +28,7 @@ Chart.register(DoughnutController, ArcElement, Legend, Tooltip);
  */
 @Component({
   selector: 'app-result-page',
-  imports: [RouterLink],
+  imports: [RouterLink, Logo],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './result-page.html',
   styleUrl: './result-page.scss',

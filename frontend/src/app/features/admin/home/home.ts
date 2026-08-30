@@ -1,79 +1,26 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
-import { AuthService } from '../../../core/auth/auth.service';
-import { AuthStore } from '../../../core/auth/auth.store';
+import { AdminDashboardResponse } from '../../../core/models';
+import { AdminAnalyticsService } from '../data/admin-analytics.service';
+import { AdminShell } from '../layout/admin-shell';
 
 @Component({
   selector: 'app-admin-home',
-  imports: [],
-  template: `
-    <main class="page">
-      <header class="bar">
-        <p class="brand">MathStrokes · Admin</p>
-        <div class="who">
-          <span>{{ store.displayName() }}</span>
-          <button class="ms-btn ms-btn--ghost" type="button" (click)="signOut()">Sign out</button>
-        </div>
-      </header>
-      <section class="ms-card panel">
-        <h1>Question bank</h1>
-        <p class="muted">Author LaTeX questions, organise chapters, and publish tests.</p>
-        <p class="ms-alert ms-alert--info">
-          Authoring tools are not wired up yet — the backend catalog and question endpoints are
-          still being built.
-        </p>
-      </section>
-    </main>
-  `,
-  styles: `
-    .page {
-      max-width: 960px;
-      margin: 0 auto;
-      padding: 24px;
-    }
-    .bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 24px;
-    }
-    .brand {
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.09em;
-      text-transform: uppercase;
-      color: var(--ms-primary);
-    }
-    .who {
-      display: flex;
-      gap: 14px;
-      align-items: center;
-      font-size: 14px;
-      color: var(--ms-ink-muted);
-    }
-    .panel {
-      padding: 28px;
-    }
-    .panel h1 {
-      font-size: 22px;
-    }
-    .muted {
-      margin-top: 8px;
-      color: var(--ms-ink-muted);
-    }
-    .ms-alert {
-      margin-top: 20px;
-    }
-  `,
+  imports: [AdminShell, RouterLink],
+  templateUrl: './home.html',
+  styleUrl: './home.scss',
 })
 export class AdminHome {
-  protected readonly store = inject(AuthStore);
-  private readonly auth = inject(AuthService);
+  private readonly analytics = inject(AdminAnalyticsService);
 
-  protected signOut(): void {
-    this.auth.logout().subscribe({
-      next: () => this.store.clearSession(),
-      error: () => this.store.clearSession(),
+  protected readonly stats = signal<AdminDashboardResponse | null>(null);
+
+  constructor() {
+    this.analytics.dashboard().subscribe({
+      next: (stats) => this.stats.set(stats),
+      // The page is still useful without counters — the links are the point.
+      error: () => undefined,
     });
   }
 }

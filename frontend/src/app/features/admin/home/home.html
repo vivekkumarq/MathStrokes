@@ -1,0 +1,56 @@
+<app-admin-shell>
+  <header class="head">
+    <h1>Overview</h1>
+    <p class="muted">Author questions in LaTeX, organise them by chapter, and publish tests.</p>
+  </header>
+
+  @if (stats(); as s) {
+    <section class="stats">
+      <div class="stat ms-card">
+        <span class="stat-label">Questions</span>
+        <span class="stat-value">{{ s.totalQuestions }}</span>
+        <span class="stat-note">
+          {{ s.publishedQuestions }} published · {{ s.draftQuestions }} draft ·
+          {{ s.archivedQuestions }} archived
+        </span>
+      </div>
+      <div class="stat ms-card">
+        <span class="stat-label">Tests</span>
+        <span class="stat-value">{{ s.totalTests }}</span>
+        <span class="stat-note">{{ s.publishedTests }} published</span>
+      </div>
+      <div class="stat ms-card">
+        <span class="stat-label">Students</span>
+        <span class="stat-value">{{ s.totalStudents }}</span>
+        <span class="stat-note">{{ s.activeStudentsLast30Days }} active in 30 days</span>
+      </div>
+      <div class="stat ms-card">
+        <span class="stat-label">Attempts</span>
+        <span class="stat-value">{{ s.totalAttempts }}</span>
+        <span class="stat-note">
+          {{ s.attemptsLast7Days }} in last 7 days · {{ s.attemptsInProgress }} in progress
+        </span>
+      </div>
+    </section>
+  }
+
+  <section class="tiles">
+    <a class="tile ms-card" routerLink="/admin/questions">
+      <h2>Question bank</h2>
+      <p>
+        Browse and filter every question by chapter, exam pattern, difficulty, type and status.
+        Edit any question with a live preview of the rendered maths.
+      </p>
+      <span class="go">Open question bank &rarr;</span>
+    </a>
+
+    <a class="tile ms-card" routerLink="/admin/questions/new">
+      <h2>New question</h2>
+      <p>
+        Write a stem and four options in LaTeX with <code>$...$</code> for inline maths and
+        <code>$$...$$</code> for a display block, then mark the correct answers.
+      </p>
+      <span class="go">Create a question &rarr;</span>
+    </a>
+  </section>
+</app-admin-shell>

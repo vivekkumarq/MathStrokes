@@ -1,6 +1,13 @@
-# MathStrokes
+# Iota
 
-An online Mathematics examination platform for JEE aspirants.
+**An online Mathematics examination platform for JEE aspirants.**
+
+> **Live:** https://mathstrokes.netlify.app
+> The frontend is deployed. The API is not yet hosted, so sign-in does not work on the public
+> site — see [Deployment status](#deployment-status).
+
+*Iota* is the Greek letter iota, the standard name in Indian mathematics teaching for the
+imaginary unit $i = \sqrt{-1}$, and also the word for the smallest quantity.
 
 A teacher writes mathematics questions in LaTeX and publishes timed tests. A student sits a
 25-question, 60-minute paper one question at a time, with a server-authoritative countdown and
@@ -8,11 +15,33 @@ autosaved answers, then gets a scored, ranked result with analytics.
 
 Built as a modular monolith: Angular in front, Spring Boot and PostgreSQL behind.
 
+**Full reference:** [`docs/Iota-Handbook.pdf`](docs/Iota-Handbook.pdf) — 52 pages covering the
+data model, every endpoint, the admin question-authoring flow and deployment.
+
+---
+
+## Deployment status
+
+| Piece | Status | Where |
+|---|---|---|
+| Frontend | **Live** | https://mathstrokes.netlify.app (Netlify) |
+| Backend API | Not yet hosted | Container from `backend/Dockerfile`; `render.yaml` ready |
+| Database | Not yet hosted | Managed PostgreSQL; Flyway migrates on first boot |
+
+Netlify serves static files and **cannot run a JVM**, so the API needs its own host. Until it
+exists, `netlify.toml` proxies `/api/*` to a placeholder and anything behind a sign-in fails.
+Everything works locally — see [Local setup](#local-setup).
+
+The Netlify hostname still reads `mathstrokes` because the site was created before the rename.
+That is cosmetic; renaming it changes the public URL.
+
 ---
 
 ## Contents
 
-1. [Features](#features)
+1. [Deployment status](#deployment-status)
+2. [Repository layout](#repository-layout)
+3. [Features](#features)
 2. [Architecture](#architecture)
 3. [Technology stack](#technology-stack)
 4. [Prerequisites](#prerequisites)
@@ -31,6 +60,47 @@ Built as a modular monolith: Angular in front, Spring Boot and PostgreSQL behind
 17. [Testing](#testing)
 18. [Deployment](#deployment)
 19. [Future work](#future-work)
+
+---
+
+## Repository layout
+
+```
+.
+├── backend/                    Spring Boot API (Java 21)
+│   ├── src/main/java/com/mathstrokes/
+│   │   ├── auth/               registration, login, rotating refresh tokens, recovery
+│   │   ├── user/               accounts, roles, student roster
+│   │   ├── catalog/            subjects and chapters
+│   │   ├── question/           the LaTeX question bank
+│   │   ├── marking/            marking schemes and evaluation strategies
+│   │   ├── exam/               tests, publication, question selection
+│   │   ├── attempt/            sitting a paper: snapshot, autosave, submission, evaluation
+│   │   ├── ranking/            leaderboards and percentiles
+│   │   ├── analytics/          dashboards and question quality
+│   │   ├── security/           JWT, filters, authorisation
+│   │   └── common/             error envelope, enums, shared DTOs
+│   ├── src/main/resources/db/migration/    V1..V5 Flyway migrations
+│   ├── src/test/java/                      63 unit tests
+│   └── Dockerfile
+├── frontend/                   Angular 22 (standalone, zoneless, signals)
+│   └── src/app/
+│       ├── core/               auth store, HTTP layer, guards, models
+│       ├── shared/             KaTeX renderer, logo, form helpers
+│       └── features/           auth, student, exam, results, admin
+├── docs/
+│   ├── Iota-Handbook.pdf       52-page reference
+│   ├── API.md                  endpoint reference and error contract
+│   ├── ARCHITECTURE.md         12 decision records
+│   └── DEPLOYMENT.md           hosting walkthrough
+├── e2e/                        end-to-end checks (105 assertions)
+├── netlify.toml                frontend build, API proxy, SPA fallback, headers
+└── render.yaml                 backend service and database blueprint
+```
+
+The backend package names are `com.mathstrokes.*` and the database is `mathstrokes`. Those are
+internal identifiers and were deliberately left alone at the rename: changing them touches every
+file and is invisible to a user.
 
 ---
 

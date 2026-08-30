@@ -1,0 +1,198 @@
+<app-admin-shell>
+  <header class="head">
+    <div>
+      <button class="link-back" type="button" (click)="back()">&larr; Question bank</button>
+      <h1>
+        {{ heading() }}
+        @if (status()) {
+          <span class="tag tag--{{ status()!.toLowerCase() }}">{{ status() }}</span>
+        }
+      </h1>
+    </div>
+
+    @if (!isNew()) {
+      <div class="actions">
+        @if (status() !== 'PUBLISHED') {
+          <button class="ms-btn ms-btn--ghost" type="button" [disabled]="saving()" (click)="transition('publish')">
+            Publish
+          </button>
+        }
+        @if (status() === 'PUBLISHED') {
+          <button class="ms-btn ms-btn--ghost" type="button" [disabled]="saving()" (click)="transition('draft')">
+            Move to draft
+          </button>
+        }
+        @if (status() !== 'ARCHIVED') {
+          <button class="ms-btn ms-btn--ghost" type="button" [disabled]="saving()" (click)="transition('archive')">
+            Archive
+          </button>
+        }
+      </div>
+    }
+  </header>
+
+  @if (formError()) {
+    <p class="ms-alert ms-alert--error" role="alert">{{ formError() }}</p>
+  }
+  @if (notice()) {
+    <p class="ms-alert ms-alert--info" role="status">{{ notice() }}</p>
+  }
+
+  @if (loading()) {
+    <p class="loading">Loading question...</p>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+      <section class="ms-card block">
+        <h2>Classification</h2>
+        <div class="grid-4">
+          <label class="ms-field">
+            <span>Chapter</span>
+            <select class="ms-input" formControlName="chapterId">
+              @for (chapter of chapters(); track chapter.id) {
+                <option [ngValue]="chapter.id">{{ chapter.name }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="ms-field">
+            <span>Exam pattern</span>
+            <select class="ms-input" formControlName="examPattern">
+              @for (pattern of patterns; track pattern) {
+                <option [ngValue]="pattern">{{ pattern === 'JEE_MAIN' ? 'JEE Main' : 'JEE Advanced' }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="ms-field">
+            <span>Difficulty</span>
+            <select class="ms-input" formControlName="difficulty">
+              @for (level of difficulties; track level) {
+                <option [ngValue]="level">{{ level }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="ms-field">
+            <span>Question type</span>
+            <select class="ms-input" formControlName="questionType" (change)="onTypeChange()">
+              @for (type of types; track type) {
+                <option [ngValue]="type">
+                  {{ type === 'SINGLE_CORRECT' ? 'Single correct' : 'Multiple correct' }}
+                </option>
+              }
+            </select>
+          </label>
+        </div>
+        <p class="ms-hint">
+          Difficulty and exam pattern are independent — a JEE Advanced question can be easy.
+        </p>
+      </section>
+
+      <section class="ms-card block">
+        <h2>Question stem</h2>
+        <div class="split">
+          <div class="pane">
+            <label class="pane-label" for="questionContent">LaTeX source</label>
+            <textarea
+              id="questionContent"
+              class="ms-input mono"
+              formControlName="questionContent"
+              rows="10"
+              spellcheck="false"
+              placeholder="Use $...$ for inline maths and $$...$$ for a display block."
+            ></textarea>
+            <p class="ms-hint">
+              Dollar delimiters only. Blank lines are preserved as paragraph breaks.
+            </p>
+          </div>
+          <div class="pane">
+            <span class="pane-label">Live preview</span>
+            <div class="preview">
+              @if (stemPreview().trim()) {
+                <app-math-content [content]="stemPreview()" />
+              } @else {
+                <span class="placeholder">Preview appears as you type.</span>
+              }
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="ms-card block">
+        <h2>
+          Options
+          <span class="sub">
+            {{ form.controls.questionType.value === 'SINGLE_CORRECT' ? 'Choose one correct answer' : 'Choose one or more correct answers' }}
+          </span>
+        </h2>
+
+        <div formArrayName="options" class="options">
+          @for (option of options.controls; track $index; let i = $index) {
+            <div class="option" [formGroupName]="i" [class.is-correct]="option.get('isCorrect')?.value">
+              <div class="option-head">
+                <span class="key">{{ optionKeys[i] }}</span>
+                <label class="correct">
+                  <input type="checkbox" formControlName="isCorrect" (change)="onCorrectChange(i)" />
+                  <span>Correct</span>
+                </label>
+              </div>
+              <div class="split">
+                <div class="pane">
+                  <textarea
+                    class="ms-input mono"
+                    formControlName="content"
+                    rows="3"
+                    spellcheck="false"
+                    [placeholder]="'Option ' + optionKeys[i] + ' — e.g. $\\frac{2}{3}$'"
+                  ></textarea>
+                </div>
+                <div class="pane">
+                  <div class="preview preview--option">
+                    @if (optionPreview(i).trim()) {
+                      <app-math-content [content]="optionPreview(i)" />
+                    } @else {
+                      <span class="placeholder">Preview</span>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+
+      <section class="ms-card block">
+        <h2>Worked solution <span class="sub">Optional — shown only after submission</span></h2>
+        <div class="split">
+          <div class="pane">
+            <label class="pane-label" for="solutionContent">LaTeX source</label>
+            <textarea
+              id="solutionContent"
+              class="ms-input mono"
+              formControlName="solutionContent"
+              rows="8"
+              spellcheck="false"
+            ></textarea>
+          </div>
+          <div class="pane">
+            <span class="pane-label">Live preview</span>
+            <div class="preview">
+              @if (solutionPreview().trim()) {
+                <app-math-content [content]="solutionPreview()" />
+              } @else {
+                <span class="placeholder">No solution written.</span>
+              }
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="form-foot">
+        <button class="ms-btn ms-btn--ghost" type="button" (click)="back()">Cancel</button>
+        <button class="ms-btn ms-btn--primary" type="submit" [disabled]="saving()">
+          {{ saving() ? 'Saving...' : isNew() ? 'Create question' : 'Save changes' }}
+        </button>
+      </footer>
+    </form>
+  }
+</app-admin-shell>

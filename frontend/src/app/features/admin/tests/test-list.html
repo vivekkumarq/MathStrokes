@@ -1,0 +1,206 @@
+<app-admin-shell>
+  <header class="head">
+    <div>
+      <h1>Tests</h1>
+      <p class="muted">
+        A test draws its questions from the bank for one chapter and pattern. Students only
+        see it once it is published.
+      </p>
+    </div>
+    <button class="ms-btn ms-btn--primary" type="button" (click)="toggleForm()">
+      {{ showForm() ? 'Cancel' : 'New test' }}
+    </button>
+  </header>
+
+  @if (error()) {
+    <p class="ms-alert ms-alert--error" role="alert">{{ error() }}</p>
+  }
+  @if (notice()) {
+    <p class="ms-alert ms-alert--info" role="status">{{ notice() }}</p>
+  }
+
+  @if (showForm()) {
+    <section class="ms-card block">
+      <h2>Create a test</h2>
+      <form [formGroup]="form" (ngSubmit)="create()" novalidate>
+        <div class="ms-field">
+          <label for="title">Title</label>
+          <input
+            id="title"
+            class="ms-input"
+            formControlName="title"
+            type="text"
+            placeholder="e.g. Circles - JEE Main - Practice Test 1"
+          />
+        </div>
+
+        <div class="ms-field">
+          <label for="description">Description <span class="opt">optional</span></label>
+          <input id="description" class="ms-input" formControlName="description" type="text" />
+        </div>
+
+        <div class="grid">
+          <label class="ms-field">
+            <span>Chapter</span>
+            <select class="ms-input" formControlName="chapterId">
+              @for (chapter of chapters(); track chapter.id) {
+                <option [ngValue]="chapter.id">{{ chapter.name }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="ms-field">
+            <span>Exam pattern</span>
+            <select class="ms-input" formControlName="examPattern">
+              @for (pattern of patterns; track pattern) {
+                <option [ngValue]="pattern">
+                  {{ pattern === 'JEE_MAIN' ? 'JEE Main (+4 / -1)' : 'JEE Advanced (partial)' }}
+                </option>
+              }
+            </select>
+          </label>
+
+          <label class="ms-field">
+            <span>Generation</span>
+            <select class="ms-input" formControlName="generationMode">
+              @for (mode of modes; track mode) {
+                <option [ngValue]="mode">
+                  {{ mode === 'FIXED_SET' ? 'Fixed set (ranked)' : 'Random per attempt' }}
+                </option>
+              }
+            </select>
+          </label>
+
+          <label class="ms-field">
+            <span>Duration (minutes)</span>
+            <input class="ms-input" formControlName="durationMinutes" type="number" min="1" />
+          </label>
+
+          <label class="ms-field">
+            <span>Questions</span>
+            <input class="ms-input" formControlName="questionCount" type="number" min="1" />
+          </label>
+
+          <label class="ms-field">
+            <span>Attempts allowed</span>
+            <input class="ms-input" formControlName="maxAttemptsPerStudent" type="number" min="1" />
+          </label>
+        </div>
+
+        <fieldset class="split-fields">
+          <legend>
+            Difficulty split
+            <span
+              class="tally"
+              [class.tally--bad]="blueprintTotal() !== form.controls.questionCount.value"
+            >
+              {{ blueprintTotal() }} / {{ form.controls.questionCount.value }}
+            </span>
+          </legend>
+          <div class="grid grid--3">
+            <label class="ms-field">
+              <span>Easy</span>
+              <input class="ms-input" formControlName="easyCount" type="number" min="0" />
+            </label>
+            <label class="ms-field">
+              <span>Medium</span>
+              <input class="ms-input" formControlName="mediumCount" type="number" min="0" />
+            </label>
+            <label class="ms-field">
+              <span>Hard</span>
+              <input class="ms-input" formControlName="hardCount" type="number" min="0" />
+            </label>
+          </div>
+          <p class="ms-hint">
+            The split must add up to the number of questions, and the bank must hold enough
+            published questions of each difficulty for this chapter and pattern.
+          </p>
+        </fieldset>
+
+        <div class="form-foot">
+          <button class="ms-btn ms-btn--ghost" type="button" (click)="toggleForm()">Cancel</button>
+          <button class="ms-btn ms-btn--primary" type="submit" [disabled]="busy()">
+            {{ busy() ? 'Creating...' : 'Create test' }}
+          </button>
+        </div>
+      </form>
+    </section>
+  }
+
+  <section class="ms-card list">
+    @if (loading()) {
+      <p class="empty">Loading tests...</p>
+    } @else if (rows().length === 0) {
+      <p class="empty">No tests yet. Create one to let students sit a paper.</p>
+    } @else {
+      <table>
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th class="col-meta">Chapter</th>
+            <th class="col-tag">Pattern</th>
+            <th class="col-num">Questions</th>
+            <th class="col-num">Duration</th>
+            <th class="col-num">Attempts</th>
+            <th class="col-tag">Status</th>
+            <th class="col-actions"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (test of rows(); track test.id) {
+            <tr>
+              <td class="title-cell">
+                {{ test.title }}
+                @if (test.rankingEnabled) {
+                  <span class="ranked" title="Ranking enabled">ranked</span>
+                }
+              </td>
+              <td class="col-meta">{{ test.chapterName }}</td>
+              <td class="col-tag">
+                <span class="tag">{{ test.examPattern === 'JEE_MAIN' ? 'Main' : 'Advanced' }}</span>
+              </td>
+              <td class="col-num">{{ test.questionCount }}</td>
+              <td class="col-num">{{ test.durationMinutes }}m</td>
+              <td class="col-num">{{ test.maxAttemptsPerStudent }}</td>
+              <td class="col-tag">
+                <span class="tag tag--{{ test.status.toLowerCase() }}">{{ test.status }}</span>
+              </td>
+              <td class="col-actions">
+                @if (test.status === 'DRAFT') {
+                  <button
+                    class="ms-btn ms-btn--primary"
+                    type="button"
+                    [disabled]="busy()"
+                    (click)="transition(test, 'publish')"
+                  >
+                    Publish
+                  </button>
+                }
+                @if (test.status === 'PUBLISHED') {
+                  <button
+                    class="ms-btn ms-btn--ghost"
+                    type="button"
+                    [disabled]="busy()"
+                    (click)="transition(test, 'close')"
+                  >
+                    Close
+                  </button>
+                }
+                @if (test.status !== 'ARCHIVED') {
+                  <button
+                    class="ms-btn ms-btn--ghost"
+                    type="button"
+                    [disabled]="busy()"
+                    (click)="transition(test, 'archive')"
+                  >
+                    Archive
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </section>
+</app-admin-shell>

@@ -189,11 +189,32 @@ export interface ReviewQuestion {
  */
 export type AttemptReviewResponse = ReviewQuestion[];
 
+/** Verified against GET /me/performance. Note the field is takenAt, not submittedAt. */
 export interface RecentScore {
   attemptId: number;
   testTitle: string;
-  submittedAt: string;
+  takenAt: string;
+  score: number;
+  maxScore: number;
   scorePercentage: number;
+}
+
+/** A row of GET /attempts/history, which is a PageResponse. */
+export interface AttemptHistoryItem {
+  attemptId: number;
+  testId: number;
+  testTitle: string;
+  chapterName: string;
+  examPattern: ExamPattern;
+  status: AttemptStatus;
+  startedAt: string;
+  totalQuestions: number;
+  submittedAt?: string;
+  score?: number;
+  maxScore?: number;
+  rankPosition?: number;
+  totalCandidates?: number;
+  percentile?: number;
 }
 
 export interface ChapterPerformance {

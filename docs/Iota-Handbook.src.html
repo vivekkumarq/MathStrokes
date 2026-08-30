@@ -1,0 +1,1938 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Iota — Platform Handbook</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 18mm 16mm; }
+
+  :root{
+    --ink:#16202e; --muted:#5a6675; --line:#d8dee7; --soft:#f4f6f9;
+    --accent:#4338ca; --accent2:#0f7b6c; --warn:#9a4b12; --code:#233043;
+  }
+  *{ box-sizing:border-box; }
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{
+    margin:0; color:var(--ink); background:#fff;
+    font:11pt/1.55 "Segoe UI","Helvetica Neue",Arial,sans-serif;
+  }
+  h1,h2,h3,h4{ line-height:1.22; margin:0 0 .5em; font-weight:650; }
+  h2{ font-size:17.5pt; color:var(--accent); margin-top:0; padding-bottom:.3em; border-bottom:2.5px solid var(--accent); }
+  h3{ font-size:13pt; margin-top:1.5em; color:#3730a3; }
+  h4{ font-size:11pt; margin-top:1.2em; color:#22303f; }
+  p{ margin:0 0 .8em; }
+  ul,ol{ margin:0 0 .9em; padding-left:1.35em; }
+  li{ margin-bottom:.32em; }
+  code{ font-family:"Cascadia Mono",Consolas,"Courier New",monospace; font-size:9.4pt;
+        background:var(--soft); padding:.1em .35em; border-radius:3px; color:var(--code); }
+  pre{ font-family:"Cascadia Mono",Consolas,"Courier New",monospace; font-size:8.9pt; line-height:1.5;
+       background:#f7f9fc; border:1px solid var(--line); border-left:3px solid var(--accent);
+       border-radius:4px; padding:9px 11px; white-space:pre-wrap; word-break:break-word;
+       margin:0 0 1em; }
+  pre code{ background:none; padding:0; font-size:inherit; }
+
+  table{ border-collapse:collapse; width:100%; font-size:9.4pt; margin:0 0 1.1em; }
+  th,td{ border:1px solid var(--line); padding:5px 8px; text-align:left; vertical-align:top; }
+  th{ background:#eef0fa; font-weight:650; color:#312e81; }
+  tbody tr:nth-child(even){ background:#fbfcfe; }
+  td code{ font-size:8.8pt; background:#eef2f7; }
+
+  .page{ page-break-after:always; }
+  .page:last-child{ page-break-after:auto; }
+  h2,h3,h4{ page-break-after:avoid; }
+  table,pre,.box,.step,.flow{ page-break-inside:avoid; }
+
+  .cover{ height:248mm; display:flex; flex-direction:column; justify-content:center; }
+  .cover .logo{ margin-bottom:22px; }
+  .cover h1{ font-size:40pt; letter-spacing:-.02em; margin:0 0 6px; color:var(--accent); }
+  .cover .sub{ font-size:15pt; color:var(--ink); font-weight:400; margin-bottom:30px; }
+  .cover .desc{ font-size:11.5pt; color:var(--muted); max-width:120mm; line-height:1.7; }
+  .cover .meta{ margin-top:44px; padding-top:16px; border-top:1px solid var(--line);
+                font-size:9.6pt; color:var(--muted); display:flex; flex-wrap:wrap; gap:22px 40px; }
+  .cover .meta b{ display:block; color:var(--ink); font-weight:600; font-size:10pt; margin-bottom:1px; }
+  .chips{ margin-top:26px; display:flex; flex-wrap:wrap; gap:7px; }
+  .chip{ font-size:8.6pt; padding:3px 10px; border-radius:11px; background:var(--soft);
+         border:1px solid var(--line); color:#31435a; }
+
+  .toc{ column-count:2; column-gap:14mm; font-size:10pt; }
+  .toc div{ break-inside:avoid; margin-bottom:.42em; color:var(--muted); }
+  .toc b{ color:var(--ink); display:inline-block; min-width:1.9em; }
+
+  .box{ border:1px solid var(--line); border-left:3px solid var(--accent2);
+        background:#f4faf8; border-radius:4px; padding:9px 12px; margin:0 0 1.1em; font-size:9.8pt; }
+  .box.warn{ border-left-color:var(--warn); background:#fdf6ef; }
+  .box.key{ border-left-color:var(--accent); background:#f3f2fd; }
+  .box p:last-child{ margin-bottom:0; }
+  .box .t{ font-weight:650; display:block; margin-bottom:3px; font-size:9.4pt; letter-spacing:.03em;
+           text-transform:uppercase; color:var(--accent2); }
+  .box.warn .t{ color:var(--warn); } .box.key .t{ color:var(--accent); }
+
+  .step{ display:flex; gap:11px; margin-bottom:1.05em; }
+  .step .n{ flex:0 0 25px; height:25px; border-radius:50%; background:var(--accent); color:#fff;
+            font-size:10.5pt; font-weight:650; display:flex; align-items:center; justify-content:center; }
+  .step .b{ flex:1; min-width:0; }
+  .step .b h4{ margin:2px 0 .35em; font-size:11.4pt; color:var(--accent); }
+  .step .b p, .step .b ul{ margin-bottom:.5em; }
+  .step .b > :last-child{ margin-bottom:0; }
+
+  .lede{ font-size:11.6pt; color:var(--muted); border-left:3px solid var(--line);
+         padding-left:12px; margin:0 0 1.4em; }
+
+  .flow{ background:#f7f9fc; border:1px solid var(--line); border-radius:4px; padding:11px 13px;
+         font-family:"Cascadia Mono",Consolas,monospace; font-size:8.6pt; line-height:1.6;
+         white-space:pre; margin:0 0 1.1em; color:#243448; }
+
+  .kv td:first-child{ width:33%; font-family:"Cascadia Mono",Consolas,monospace; font-size:8.9pt; }
+  .m{ font-family:"Cascadia Mono",Consolas,monospace; font-size:8.9pt; }
+  .tag{ font-size:8pt; padding:1px 6px; border-radius:3px; font-weight:600; white-space:nowrap;
+        font-family:"Segoe UI",Arial,sans-serif; }
+  .get{ background:#e3f0e6; color:#1d5c2e; } .post{ background:#e2ecf8; color:#14416f; }
+  .put{ background:#fbf0dd; color:#7d5310; } .pat{ background:#efe6f7; color:#553076; }
+  .end{ text-align:center; color:var(--muted); font-size:9.5pt; margin-top:2.4em;
+        padding-top:12px; border-top:1px solid var(--line); }
+</style>
+</head>
+<body>
+
+<!-- =========================== COVER =========================== -->
+<section class="page cover">
+  <svg class="logo" viewBox="0 0 48 48" width="88" height="88" role="img" aria-label="Iota logo">
+    <defs>
+      <linearGradient id="iota-g" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#6366f1"/>
+        <stop offset="55%" stop-color="#4338ca"/>
+        <stop offset="100%" stop-color="#7c3aed"/>
+      </linearGradient>
+    </defs>
+    <rect width="48" height="48" rx="12" fill="url(#iota-g)"/>
+    <circle cx="20.4" cy="14.2" r="3.5" fill="#ffffff"/>
+    <path d="M20.4 21.6 L20.4 28.4 C20.4 33.4 24.2 35.8 29.4 34.6"
+          fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M31.5 15.5 L33.6 15.5 L35.4 20.4 L38.4 12.6"
+          fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="1.7"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <h1>Iota</h1>
+  <div class="sub">Platform Handbook &amp; Administrator Guide</div>
+  <div class="desc">
+    An online Mathematics examination platform for JEE aspirants. A teacher writes questions in
+    LaTeX and publishes timed papers; a student sits a 25-question, 60-minute examination with a
+    server-authoritative clock and autosaved answers, then receives a scored, ranked result with
+    question-by-question analytics.
+  </div>
+  <div class="chips">
+    <span class="chip">Angular 22</span><span class="chip">Spring Boot 3.5</span>
+    <span class="chip">Java 21 LTS</span><span class="chip">PostgreSQL 17</span>
+    <span class="chip">KaTeX</span><span class="chip">Chart.js</span>
+    <span class="chip">Flyway</span><span class="chip">JWT</span>
+    <span class="chip">Modular monolith</span>
+  </div>
+  <div class="meta">
+    <div><b>Document</b>Platform Handbook — v1.4</div>
+    <div><b>Applies to</b>Iota 1.0.0</div>
+    <div><b>Compiled</b>30 August 2026</div>
+    <div><b>Audience</b>Administrators, teachers, developers</div>
+    <div><b>Classification</b>Proprietary — internal use</div>
+  </div>
+</section>
+
+<!-- =========================== TOC =========================== -->
+<section class="page">
+  <h2>Contents</h2>
+  <div class="toc">
+    <div><b>1</b> About the platform</div>
+    <div><b>2</b> Roles and what each can do</div>
+    <div><b>3</b> Feature catalogue</div>
+    <div><b>4</b> Technology stack</div>
+    <div><b>5</b> System architecture</div>
+    <div><b>6</b> Project structure</div>
+    <div><b>7</b> Data model</div>
+    <div><b>8</b> Adding a question — walkthrough</div>
+    <div><b>9</b> Question lifecycle</div>
+    <div><b>10</b> Writing questions in LaTeX</div>
+    <div><b>11</b> Subjects and chapters</div>
+    <div><b>12</b> Marking schemes</div>
+    <div><b>13</b> Creating and publishing tests</div>
+    <div><b>14</b> Students and analytics</div>
+    <div><b>15</b> The marking engine</div>
+    <div><b>16</b> Ranking, percentile and metrics</div>
+    <div><b>17</b> The student journey</div>
+    <div><b>18</b> Authentication and security</div>
+    <div><b>19</b> API reference</div>
+    <div><b>20</b> Error handling contract</div>
+    <div><b>21</b> Installation runbook</div>
+    <div><b>22</b> Environment variables</div>
+    <div><b>23</b> Database and migrations</div>
+    <div><b>24</b> Seed data</div>
+    <div><b>25</b> Deployment</div>
+    <div><b>26</b> Testing</div>
+    <div><b>27</b> Architecture decisions</div>
+    <div><b>28</b> Limitations and roadmap</div>
+    <div><b>29</b> Glossary</div>
+  </div>
+
+  <h3 style="margin-top:2em">How to use this handbook</h3>
+  <p>
+    Sections 1–7 describe what the platform is and how it is put together. Sections 8–14 are the
+    administrator operating manual — section 8 in particular is the complete, step-by-step
+    procedure for adding a question, and is the section most administrators will return to.
+    Sections 15–20 cover the engine and the contracts a developer works against. Sections 21–26
+    are the runbook for standing the system up, and 27–29 record the reasoning behind the design.
+  </p>
+  <div class="box key">
+    <span class="t">Source of truth</span>
+    <p>
+      This handbook was compiled from the project repository itself — schema migrations, entity
+      and DTO definitions, validators, controllers, the Angular admin components, and the project
+      documentation set (<code>README.md</code>, <code>docs/API.md</code>,
+      <code>docs/ARCHITECTURE.md</code>, <code>docs/DEPLOYMENT.md</code>). Where behaviour is
+      enforced in code, the enforcing rule is quoted rather than paraphrased.
+    </p>
+  </div>
+</section>
+
+<!-- =========================== 1–2 =========================== -->
+<section class="page">
+  <h2>1 &nbsp;About the platform</h2>
+  <p class="lede">
+    Iota is a single-subject, high-stakes examination platform built around one idea: a
+    result, once produced, must never move.
+  </p>
+  <p>
+    A teacher writes mathematics questions as LaTeX source, classifies them, and publishes them
+    into a question bank. From that bank they compose timed tests. A student registers with a phone
+    number, browses the published papers, and sits one: 25 questions, 60 minutes, one question at a
+    time, with palette navigation, mark-for-review, and answers saved as they go. When the paper is
+    submitted — by the student, or automatically when the clock expires — the server scores it from
+    an immutable snapshot, ranks the student against everyone who sat the same paper, and releases
+    the answer key and worked solutions for review.
+  </p>
+
+  <h3>1.1 &nbsp;The name</h3>
+  <p>
+    The platform is called <b>Iota</b>. The name is a double reference, and both halves are apt for
+    a JEE Mathematics product. In Indian mathematics teaching the imaginary unit
+    <code>i = &radic;&minus;1</code> is routinely read aloud as "iota"; and <b>&iota;</b> is the
+    Greek letter iota, proverbially the smallest quantity &mdash; the mark at the margin.
+  </p>
+  <p>
+    The mark on the cover reads at three levels. The <b>dot above a curved stem</b> is the letter
+    &iota; itself. The <b>faint tick to its right is a radical sign</b> &mdash;
+    &radic;&minus;1, the quantity "iota" names &mdash; carried at 50% opacity on purpose, so it
+    reads as texture at large sizes and disappears cleanly at small ones. Below roughly 24 pixels
+    the radical is dropped entirely and the dot and stem thicken; that reduction is the favicon.
+    The brand gradient runs indigo <code>#6366f1</code> through <code>#4338ca</code> to violet
+    <code>#7c3aed</code>, and this handbook is set in the same indigo family.
+  </p>
+  <div class="box warn">
+    <span class="t">The code still says mathstrokes &mdash; this is correct, not stale</span>
+    <p>
+      Iota was previously called MathStrokes, and the <b>product</b> name has been changed
+      everywhere it is user-facing. A number of <b>identifiers</b> deliberately have not been
+      renamed, because renaming them would be a migration rather than a rebrand, and this handbook
+      documents the system as it actually is. Expect to keep seeing the old name in:
+    </p>
+    <ul style="margin-top:.5em;margin-bottom:0">
+      <li>the Java package <code>com.mathstrokes.*</code> and <code>MathStrokesApplication</code>;</li>
+      <li>the PostgreSQL database, role and JDBC URL &mdash; all <code>mathstrokes</code>;</li>
+      <li>the repository <code>github.com/vivekkumarq/MathStrokes</code> and the working directory <code>MathStrokesTestPlatform</code>;</li>
+      <li>the frontend CSS tokens <code>--ms-*</code> and the utility classes <code>.ms-btn</code> and <code>.ms-card</code>, which are shared across files and are not safe to rename piecemeal.</li>
+    </ul>
+    <p style="margin-top:.5em">
+      Every code sample, path and command in this handbook uses the real identifier, so it can be
+      copied and run exactly as printed.
+    </p>
+  </div>
+
+  <h3>1.2 &nbsp;What makes it different</h3>
+  <table>
+    <thead><tr><th style="width:28%">Property</th><th>How the platform guarantees it</th></tr></thead>
+    <tbody>
+      <tr><td><b>Results are immutable</b></td><td>Every attempt copies the question text, options, answer key and marking configuration onto itself when it starts. Evaluation reads only that copy. A teacher who later rewrites a question, flips its key or archives it cannot move a mark already awarded.</td></tr>
+      <tr><td><b>The server owns the clock</b></td><td><code>expires_at</code> is written once when the attempt starts and is never extended. The browser countdown displays the server arithmetic; it is not a source of truth.</td></tr>
+      <tr><td><b>The answer key cannot leak</b></td><td>The payload a live attempt returns has no correctness field and no solution text — it is a structurally different type from the review payload, so the key cannot escape through a forgotten filter.</td></tr>
+      <tr><td><b>Nothing is lost to a bad connection</b></td><td>Each autosave carries a monotonic sequence number. A write arriving out of order is a late packet: it is discarded rather than allowed to overwrite newer work, and the response returns the state the server actually holds.</td></tr>
+      <tr><td><b>Abandoning still gets marked</b></td><td>A scheduled sweep finalises attempts whose time has run out, scoring the answers already saved. Closing the tab does not void the paper.</td></tr>
+      <tr><td><b>Scoring is exact</b></td><td>All marks are <code>NUMERIC</code> / <code>BigDecimal</code>, never floating point, so partial-marking arithmetic is precise.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 style="margin-top:2.2em">2 &nbsp;Roles and what each can do</h2>
+  <p>There are exactly two roles. There is no role hierarchy and no third tier.</p>
+  <table>
+    <thead><tr><th style="width:22%">Role</th><th style="width:28%">Reaches</th><th>Responsible for</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>ROLE_ADMIN</code><br><span style="color:var(--muted);font-size:9pt">Teacher / administrator</span></td>
+        <td class="m">/api/admin/**<br>/api/catalog/**<br>/api/profile</td>
+        <td>Subjects and chapters, the question bank, marking schemes, test creation and publication, the student roster, and analytics.</td>
+      </tr>
+      <tr>
+        <td><code>ROLE_STUDENT</code><br><span style="color:var(--muted);font-size:9pt">Examination candidate</span></td>
+        <td class="m">/api/tests<br>/api/attempts/**<br>/api/me/performance<br>/api/rankings/**<br>/api/catalog/**</td>
+        <td>Browsing published tests, sitting papers, reviewing their own finished attempts, and tracking their own performance.</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="box">
+    <span class="t">How the boundary is enforced</span>
+    <p>
+      Path level: <code>/api/admin/**</code> requires <code>ROLE_ADMIN</code> in
+      <code>SecurityConfig</code>; student routes carry <code>@PreAuthorize</code>. Object level —
+      and this is the real guard — <b>no endpoint accepts a student id</b>. The caller is always
+      derived from the security context, and every attempt is loaded through a single method that
+      proves ownership. A student requesting another student's attempt receives <code>403</code>.
+    </p>
+  </div>
+  <div class="box warn">
+    <span class="t">Registration cannot escalate</span>
+    <p>
+      <code>POST /api/auth/student/register</code> always creates a student; the role is not a field
+      on the request and cannot be chosen. Additional administrators are created by seeding, not
+      through the public API.
+    </p>
+  </div>
+</section>
+
+<!-- =========================== 3 =========================== -->
+<section class="page">
+  <h2>3 &nbsp;Feature catalogue</h2>
+
+  <h3>3.1 &nbsp;Teacher / administrator</h3>
+  <table>
+    <thead><tr><th style="width:26%">Feature</th><th>Detail</th></tr></thead>
+    <tbody>
+      <tr><td>Catalogue management</td><td>Create and edit subjects and chapters; activate or deactivate a chapter. The student app reads these from the API rather than hardcoding them.</td></tr>
+      <tr><td>LaTeX question authoring</td><td>Write the stem, every option and the worked solution in LaTeX, with a live KaTeX preview of each as you type.</td></tr>
+      <tr><td>Three-axis classification</td><td>Exam pattern (JEE Main / JEE Advanced), difficulty (Easy / Medium / Hard) and question type (single correct / multiple correct) are independent axes.</td></tr>
+      <tr><td>Question lifecycle</td><td>Draft &rarr; Published &rarr; Archived, with revert-to-draft. No hard delete.</td></tr>
+      <tr><td>Bank search</td><td>Paginated grid filterable by subject, chapter, pattern, difficulty, type and status, plus free-text search over stem and solution.</td></tr>
+      <tr><td>Marking schemes</td><td>Configure marks per outcome, including JEE Advanced partial credit, without touching code.</td></tr>
+      <tr><td>Test composition</td><td>Create tests, set duration and question count, choose a difficulty blueprint, publish, close and archive.</td></tr>
+      <tr><td>Student roster</td><td>Search students; enable or disable an account.</td></tr>
+      <tr><td>Analytics</td><td>Headline dashboard counters, hardest questions by measured accuracy, and average score and accuracy by chapter.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.2 &nbsp;Student</h3>
+  <table>
+    <thead><tr><th style="width:26%">Feature</th><th>Detail</th></tr></thead>
+    <tbody>
+      <tr><td>Registration</td><td>Full name, phone number, password and a security question with its answer. No email anywhere in the system.</td></tr>
+      <tr><td>Password recovery</td><td>Three-step security-question flow. Knowing a phone number alone yields nothing but the question.</td></tr>
+      <tr><td>Test browsing</td><td>Published tests filtered by chapter and exam pattern, each showing whether it can be started and whether one is already in flight.</td></tr>
+      <tr><td>The examination</td><td>25 questions over 60 minutes, one at a time, with palette navigation, mark-for-review, and autosave.</td></tr>
+      <tr><td>Crash resilience</td><td>Refresh, crash or close the tab and return to the same paper — same questions, same order, clock still running.</td></tr>
+      <tr><td>Results</td><td>Score, rank, percentile, accuracy, attempt rate and negative marks.</td></tr>
+      <tr><td>Answer review</td><td>Question-by-question review with the answer key and worked solutions, rendered as the paper was sat.</td></tr>
+      <tr><td>Performance tracking</td><td>Attempt history and performance over time and by chapter.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="box warn">
+    <span class="t">Deliberately not present</span>
+    <p>
+      The platform contains <b>no AI, OCR, handwriting recognition or LLM integration</b>; no file
+      or object storage and <b>no image upload on questions</b> (mathematics is LaTeX text, so
+      there are no diagrams to store); no cache, message queue, microservices or Kubernetes; no
+      bulk question import endpoint; no email or SMS; and no OAuth, sessions or cookies — JWT
+      bearer only. Each of these is a recorded decision, not an oversight.
+    </p>
+  </div>
+</section>
+
+<!-- =========================== 4 =========================== -->
+<section class="page">
+  <h2>4 &nbsp;Technology stack</h2>
+
+  <h3>4.1 &nbsp;At a glance</h3>
+  <table>
+    <thead><tr><th style="width:24%">Layer</th><th style="width:34%">Choice</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Frontend framework</td><td>Angular 22</td><td>Standalone components, zoneless change detection, signals, lazy-loaded routes</td></tr>
+      <tr><td>Frontend language</td><td>TypeScript 6</td><td>Strict; enums modelled as string-literal unions mirroring the backend</td></tr>
+      <tr><td>Styling</td><td>SCSS</td><td>Component-scoped, no CSS framework</td></tr>
+      <tr><td>Maths rendering</td><td>KaTeX</td><td>Renders stored LaTeX source at display time, HTML trust disabled</td></tr>
+      <tr><td>Charts</td><td>Chart.js</td><td>Lazy-loaded with the results screen only</td></tr>
+      <tr><td>Frontend build</td><td>Angular CLI + npm</td><td>Dev server on port 4200</td></tr>
+      <tr><td>Frontend tests</td><td>Vitest</td><td></td></tr>
+      <tr><td>Backend language</td><td>Java 21 (LTS)</td><td>Records for DTOs, switch expressions, virtual threads enabled</td></tr>
+      <tr><td>Backend framework</td><td>Spring Boot 3.5.11</td><td>Web, Data JPA, Security, Validation, Actuator</td></tr>
+      <tr><td>Security</td><td>Spring Security + JJWT 0.12.6</td><td>Stateless; access token plus rotating refresh token</td></tr>
+      <tr><td>Persistence</td><td>Spring Data JPA / Hibernate 6</td><td><code>open-in-view: false</code>, <code>ddl-auto: validate</code></td></tr>
+      <tr><td>Database</td><td>PostgreSQL 17</td><td>JSONB for marking configuration; partial and expression indexes</td></tr>
+      <tr><td>Migrations</td><td>Flyway</td><td>Owns the schema; runs automatically on boot</td></tr>
+      <tr><td>API documentation</td><td>springdoc-openapi 2.8.6</td><td>OpenAPI 3; Swagger UI on <code>dev</code> only</td></tr>
+      <tr><td>Boilerplate</td><td>Lombok</td><td>Entities only; DTOs are records</td></tr>
+      <tr><td>Backend build</td><td>Maven (wrapper included)</td><td>Maven itself need not be installed</td></tr>
+      <tr><td>Backend tests</td><td>JUnit 5, Mockito, AssertJ</td><td>Unit tests need no database</td></tr>
+    </tbody>
+  </table>
+
+  <h3>4.2 &nbsp;Prerequisites for a developer machine</h3>
+  <ul>
+    <li><b>JDK 21</b> — <code>java -version</code> should report 21.x</li>
+    <li><b>Node.js 20+</b> and npm</li>
+    <li><b>PostgreSQL 17</b> running locally, or any reachable PostgreSQL 14+</li>
+    <li><b>Git</b></li>
+  </ul>
+  <p>Maven is not required — the repository ships the Maven wrapper (<code>./mvnw</code>, or <code>mvnw.cmd</code> on Windows).</p>
+
+  <h3>4.3 &nbsp;Why these choices</h3>
+  <p>
+    The stack is deliberately conservative. A first release has to be cheap to run and easy to
+    reason about, so the project avoids microservices, Kafka, Redis and Kubernetes entirely. One
+    Spring Boot process and one PostgreSQL database serve the whole platform. PostgreSQL earns its
+    place beyond storage: JSONB holds marking configuration without a migration per rule, partial
+    unique indexes enforce invariants the application would otherwise have to police under
+    concurrency, and a window function computes the entire leaderboard in a single pass.
+  </p>
+</section>
+
+<!-- =========================== 5 =========================== -->
+<section class="page">
+  <h2>5 &nbsp;System architecture</h2>
+
+  <h3>5.1 &nbsp;Shape of the system</h3>
+  <div class="flow">Angular 22  (standalone, zoneless, signals)
+        |
+        |   HTTPS / REST, JWT bearer
+        v
+Spring Boot 3.5   (modular monolith, one deployable)
+        |
+        +-- auth        registration, login, rotating refresh tokens, recovery
+        +-- user        accounts, roles, student roster
+        +-- catalog     subjects and chapters
+        +-- question    the LaTeX question bank
+        +-- marking     marking schemes and evaluation strategies
+        +-- exam        tests, publication, question selection
+        +-- attempt     sitting a paper: snapshot, autosave, submit, evaluate
+        +-- ranking     leaderboards and percentiles
+        +-- analytics   dashboards and question quality
+        |
+        v
+PostgreSQL 17</div>
+
+  <p>
+    Each module owns its own <code>controller / service / repository / entity / dto / mapper</code>
+    layers. Controllers carry no business logic, and <b>no JPA entity is ever serialised to a
+    client</b> — every response is a record DTO. The module boundaries are real seams along which
+    services could be extracted later if that ever becomes necessary; it is not necessary now.
+  </p>
+
+  <h3>5.2 &nbsp;Where decisions live</h3>
+  <p>
+    Every business decision is server-side. The browser is a rendering layer: it displays the
+    server countdown, submits selections, and repaints from the server acknowledgement. Nothing
+    about scoring, timing, eligibility or ranking is computed in the client, and the client is
+    never sent data it should not be able to see.
+  </p>
+
+  <h3>5.3 &nbsp;Request path for an authenticated call</h3>
+  <div class="flow">Browser
+  |  Authorization: Bearer &lt;accessToken&gt;
+  v
+CORS filter                    origins from CORS_ALLOWED_ORIGINS
+  v
+JwtAuthenticationFilter        validates signature, expiry and the token TYPE claim
+  v                            populates SecurityContext with UserPrincipal
+Authorization                  path rules (/admin/** = ROLE_ADMIN) + @PreAuthorize
+  v
+Controller                     @Valid on the request record -> 400 with fieldErrors
+  v
+Service                        business rules, ownership checks, transactions
+  v
+Repository / Hibernate  ->  PostgreSQL
+  v
+Mapper -> record DTO -> JSON   nulls omitted, entities never serialised</div>
+
+  <h3>5.4 &nbsp;Background work</h3>
+  <table>
+    <thead><tr><th style="width:30%">Job</th><th style="width:18%">Cadence</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td>Attempt expiry sweep</td><td>every 30 seconds</td><td>Finalises attempts whose deadline has passed, scoring the answers already saved, so an abandoned paper is still marked.</td></tr>
+      <tr><td>Refresh-token purge</td><td>daily, 03:30</td><td>Deletes refresh tokens that expired more than 30 days ago.</td></tr>
+      <tr><td>Ranking recomputation</td><td>on every evaluation</td><td>Recomputes the whole cohort for the test in one PostgreSQL window-function pass.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- =========================== 6 =========================== -->
+<section class="page">
+  <h2>6 &nbsp;Project structure</h2>
+
+  <h3>6.1 &nbsp;Repository layout</h3>
+  <div class="flow">MathStrokesTestPlatform/
+  backend/                 Spring Boot service
+    pom.xml
+    mvnw, mvnw.cmd         Maven wrapper
+    src/main/java/com/mathstrokes/
+      MathStrokesApplication.java
+      auth/  user/  catalog/  question/  marking/
+      exam/  attempt/  ranking/  analytics/
+      common/              dto, enums, exception, domain, util
+      config/              AppProperties, JwtProperties, Jackson, OpenAPI
+      security/            SecurityConfig, jwt/, service/
+      bootstrap/           runtime seeders (admin account, sample tests)
+    src/main/resources/
+      application.yml, application-dev.yml, application-prod.yml
+      db/migration/        V1__initial_schema.sql, V2__seed_reference_data.sql,
+                           V3__seed_sample_questions.sql
+  frontend/                Angular application
+    src/app/
+      core/                auth/, config/, guards/, http/, models/
+      features/
+        auth/              login, register, forgot-password
+        admin/             layout/, home/, questions/, data/
+        student/           home/, tests/
+        exam/              exam-runner, exam.service
+        results/           result-page, review-page
+      shared/              brand/, forms/, math/
+  docs/                    API.md, ARCHITECTURE.md, DEPLOYMENT.md
+  e2e/                     end-to-end checks against a running instance
+  README.md</div>
+
+  <h3>6.2 &nbsp;Backend module anatomy</h3>
+  <p>Every module follows the same six-layer shape, so any module reads like any other:</p>
+  <table class="kv">
+    <tbody>
+      <tr><td>controller/</td><td>HTTP surface only — routing, <code>@Valid</code>, status codes, OpenAPI annotations. No business logic.</td></tr>
+      <tr><td>service/</td><td>Business rules, transaction boundaries, ownership checks, orchestration.</td></tr>
+      <tr><td>repository/</td><td>Spring Data interfaces plus JPA Specifications for dynamic filtering.</td></tr>
+      <tr><td>entity/</td><td>JPA entities extending <code>BaseEntity</code> (id, createdAt, updatedAt). Never serialised.</td></tr>
+      <tr><td>dto/</td><td>Java records. Request records carry Bean Validation annotations; response records carry the wire shape.</td></tr>
+      <tr><td>mapper/</td><td>Entity to DTO translation. The only place the two representations meet.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>6.3 &nbsp;Frontend anatomy</h3>
+  <table class="kv">
+    <tbody>
+      <tr><td>core/auth/</td><td><code>AuthService</code> (HTTP), <code>AuthStore</code> (signals-based session state), <code>TokenStorage</code>.</td></tr>
+      <tr><td>core/http/</td><td><code>authInterceptor</code> attaches the bearer token; <code>TokenRefreshCoordinator</code> serialises concurrent refreshes so one 401 cannot trigger a stampede.</td></tr>
+      <tr><td>core/guards/</td><td><code>authGuard</code>, <code>roleGuard(...)</code>, <code>guestGuard</code>, <code>landingGuard</code>. Convenience only — the backend enforces authorisation for real.</td></tr>
+      <tr><td>core/models/</td><td>Enums and interfaces mirroring the backend contract, kept in lockstep by hand until the OpenAPI document is used for generation.</td></tr>
+      <tr><td>shared/math/</td><td><code>latex-renderer</code> and the <code>MathContent</code> component — the single place KaTeX is invoked.</td></tr>
+      <tr><td>features/</td><td>One folder per feature, each lazily loaded. The exam runner pulls in KaTeX and the results screen Chart.js; neither belongs in the bundle a student downloads to reach the login screen.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- =========================== 7 =========================== -->
+<section class="page">
+  <h2>7 &nbsp;Data model</h2>
+  <p>
+    Seventeen application tables, created by <code>V1__initial_schema.sql</code>. Every table
+    carries <code>created_at</code> and <code>updated_at</code>.
+  </p>
+
+  <h3>7.1 &nbsp;Identity</h3>
+  <table>
+    <thead><tr><th style="width:24%">Table</th><th>Columns and constraints</th></tr></thead>
+    <tbody>
+      <tr><td class="m">users</td><td><code>id</code>, <code>full_name</code>, <code>phone_number</code> UNIQUE, <code>password_hash</code>, <code>security_question</code>, <code>security_answer_hash</code>, <code>enabled</code>, <code>last_login_at</code>. CHECK <code>phone_number ~ '^[0-9]{10,15}$'</code>. Neither hash is mapped into any DTO.</td></tr>
+      <tr><td class="m">roles</td><td><code>id</code>, <code>name</code> UNIQUE, <code>description</code>. Exactly two rows: <code>ROLE_ADMIN</code>, <code>ROLE_STUDENT</code>.</td></tr>
+      <tr><td class="m">user_roles</td><td>Join table, PK <code>(user_id, role_id)</code>.</td></tr>
+      <tr><td class="m">refresh_tokens</td><td><code>token_id</code> UNIQUE, <code>token_hash</code>, <code>user_id</code>, <code>issued_at</code>, <code>expires_at</code>, <code>revoked_at</code>, <code>replaced_by</code>. Stored hashed so a database leak cannot be replayed.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>7.2 &nbsp;Catalogue</h3>
+  <table>
+    <thead><tr><th style="width:24%">Table</th><th>Columns and constraints</th></tr></thead>
+    <tbody>
+      <tr><td class="m">subjects</td><td><code>name</code> UNIQUE, <code>code</code> UNIQUE, <code>description</code>, <code>active</code>, <code>display_order</code>.</td></tr>
+      <tr><td class="m">chapters</td><td><code>subject_id</code> FK, <code>name</code>, <code>description</code>, <code>active</code>, <code>display_order</code>. UNIQUE <code>(subject_id, name)</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>7.3 &nbsp;The question bank</h3>
+  <table>
+    <thead><tr><th style="width:26%">Column</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td class="m">subject_id, chapter_id</td><td>FK. Subject is derived from the chapter on write, never sent by the client.</td></tr>
+      <tr><td class="m">exam_pattern</td><td>CHECK IN <code>('JEE_MAIN','JEE_ADVANCED')</code></td></tr>
+      <tr><td class="m">difficulty</td><td>CHECK IN <code>('EASY','MEDIUM','HARD')</code></td></tr>
+      <tr><td class="m">question_type</td><td>CHECK IN <code>('SINGLE_CORRECT','MULTIPLE_CORRECT')</code></td></tr>
+      <tr><td class="m">question_content</td><td><code>TEXT NOT NULL</code> — <b>LaTeX source, never rendered HTML</b>. CHECK not blank.</td></tr>
+      <tr><td class="m">solution_content</td><td><code>TEXT</code>, optional — LaTeX source of the worked solution.</td></tr>
+      <tr><td class="m">status</td><td>CHECK IN <code>('DRAFT','PUBLISHED','ARCHIVED')</code>, default <code>DRAFT</code>.</td></tr>
+      <tr><td class="m">marking_scheme_id</td><td>Nullable override. <code>NULL</code> means resolve the active scheme for (pattern, type).</td></tr>
+      <tr><td class="m">created_by, updated_by</td><td>FK <code>users</code>, <code>ON DELETE SET NULL</code>.</td></tr>
+      <tr><td class="m">published_at</td><td>Set when the question is first published.</td></tr>
+      <tr><td class="m">version</td><td><code>@Version</code> — Hibernate optimistic lock <em>and</em> the human-visible revision number recorded on attempt snapshots.</td></tr>
+    </tbody>
+  </table>
+  <p>
+    <code>question_options</code>: <code>question_id</code> FK <code>ON DELETE CASCADE</code>,
+    <code>option_key VARCHAR(5)</code>, <code>content TEXT</code>, <code>display_order</code>,
+    <code>is_correct BOOLEAN</code>, with UNIQUE <code>(question_id, option_key)</code>.
+  </p>
+  <div class="box key">
+    <span class="t">Three independent axes</span>
+    <p>
+      Exam pattern, difficulty and question type are orthogonal. A JEE Advanced question can be
+      <code>EASY</code>, and a JEE Main question can be <code>HARD</code>. The input control a
+      student sees — radio versus checkbox — follows <code>question_type</code>, never
+      <code>exam_pattern</code>, because a JEE Advanced paper may contain single-correct questions.
+    </p>
+  </div>
+</section>
+
+<section class="page">
+  <h3>7.4 &nbsp;Marking schemes</h3>
+  <p>
+    <code>marking_schemes</code>: <code>name</code> UNIQUE, <code>exam_pattern</code>,
+    <code>question_type</code>, <code>configuration JSONB</code>, <code>active</code>. A
+    <b>partial unique index</b> permits at most one active scheme per
+    <code>(exam_pattern, question_type)</code>, so resolution is never ambiguous.
+  </p>
+  <pre><code>configuration = {
+  "fullCorrectMarks":      4.00,
+  "wrongMarks":           -1.00,
+  "unansweredMarks":       0.00,
+  "partialCreditMode":    "NONE" | "PER_CORRECT_OPTION",
+  "marksPerCorrectOption": 0.00,
+  "maxPartialMarks":       0.00,
+  "noPartialCreditMarks":  0.00
+}</code></pre>
+
+  <h3>7.5 &nbsp;Tests</h3>
+  <table>
+    <thead><tr><th style="width:30%">Column</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td class="m">title, description</td><td>Shown to students in the test list.</td></tr>
+      <tr><td class="m">subject_id, chapter_id</td><td>The scope the paper is drawn from.</td></tr>
+      <tr><td class="m">exam_pattern</td><td>Determines which questions are eligible and which schemes apply.</td></tr>
+      <tr><td class="m">duration_minutes</td><td>Default 60. CHECK between 1 and 600.</td></tr>
+      <tr><td class="m">question_count</td><td>Default 25. CHECK between 1 and 200.</td></tr>
+      <tr><td class="m">easy_count / medium_count / hard_count</td><td>Difficulty blueprint. <code>NULL</code> means no constraint on that band.</td></tr>
+      <tr><td class="m">generation_mode</td><td><code>FIXED_SET</code> or <code>RANDOM_PER_ATTEMPT</code>.</td></tr>
+      <tr><td class="m">status</td><td><code>DRAFT</code>, <code>PUBLISHED</code>, <code>CLOSED</code>, <code>ARCHIVED</code>.</td></tr>
+      <tr><td class="m">ranking_enabled</td><td>True only for <code>FIXED_SET</code> — only identical papers form a fair cohort.</td></tr>
+      <tr><td class="m">max_attempts_per_student</td><td>Default 1. CHECK between 1 and 100.</td></tr>
+    </tbody>
+  </table>
+  <p>
+    <code>test_questions</code> materialises the paper for a <code>FIXED_SET</code> test, written
+    once at publication: UNIQUE <code>(test_id, question_id)</code> and UNIQUE
+    <code>(test_id, question_order)</code>.
+  </p>
+
+  <h3>7.6 &nbsp;Attempts and the snapshot</h3>
+  <p>
+    <code>test_attempts</code> holds the lifecycle (<code>started_at</code>,
+    <code>expires_at</code>, <code>submitted_at</code>, <code>evaluated_at</code>) and, once
+    evaluated, the whole result: <code>score</code>, <code>max_score</code>,
+    <code>negative_marks</code>, the four outcome counts, <code>accuracy</code>,
+    <code>attempt_rate</code>, <code>time_taken_seconds</code>, <code>rank_position</code>,
+    <code>total_candidates</code> and <code>percentile</code>. A <b>partial unique index</b> on
+    <code>(student_id, test_id) WHERE status = 'ACTIVE'</code> means the database itself guarantees
+    one live attempt per test, so two concurrent start requests cannot both succeed.
+  </p>
+  <div class="box key">
+    <span class="t">The snapshot — the single most important design element</span>
+    <p>
+      <code>attempt_questions</code> stores <code>question_version</code>, the stem, the solution,
+      the difficulty, the type, <code>marking_scheme_name</code>, <code>marking_config JSONB</code>
+      and <code>max_marks</code>. <code>attempt_question_options</code> stores each option key,
+      content, order and <code>is_correct</code> — the answer key as it stood at snapshot time.
+      Evaluation reads <b>only</b> these tables. The FK back to <code>questions</code> exists for
+      analytics and is never followed for content or correctness.
+    </p>
+  </div>
+
+  <h3>7.7 &nbsp;Answers and results</h3>
+  <table>
+    <thead><tr><th style="width:32%">Table</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td class="m">student_answers</td><td>One row per attempt question. Holds <code>answer_status</code>, <code>visited</code>, <code>marked_for_review</code>, <code>client_sequence</code> and <code>answered_at</code>. UNIQUE on <code>attempt_question_id</code>.</td></tr>
+      <tr><td class="m">student_answer_options</td><td>The selections, normalised — a row per selected option, not a comma-separated string.</td></tr>
+      <tr><td class="m">question_attempt_results</td><td>Per-question outcome: <code>result_status</code>, <code>marks_awarded</code>, <code>max_marks</code>, selected and correct option counts. UNIQUE on <code>attempt_question_id</code> — which is what makes evaluation idempotent at the database level.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>7.8 &nbsp;Status vocabularies</h3>
+  <table>
+    <thead><tr><th style="width:26%">Enum</th><th>Values</th></tr></thead>
+    <tbody>
+      <tr><td class="m">QuestionStatus</td><td>DRAFT, PUBLISHED, ARCHIVED</td></tr>
+      <tr><td class="m">TestStatus</td><td>DRAFT, PUBLISHED, CLOSED, ARCHIVED</td></tr>
+      <tr><td class="m">AttemptStatus</td><td>NOT_STARTED &rarr; ACTIVE &rarr; SUBMITTED | AUTO_SUBMITTED &rarr; EVALUATED (terminal)</td></tr>
+      <tr><td class="m">AnswerStatus</td><td>NOT_VISITED, NOT_ANSWERED, ANSWERED, MARKED_FOR_REVIEW, ANSWERED_AND_MARKED_FOR_REVIEW</td></tr>
+      <tr><td class="m">QuestionResultStatus</td><td>CORRECT, PARTIALLY_CORRECT, INCORRECT, UNANSWERED</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- =========================== 8 =========================== -->
+<section class="page">
+  <h2>8 &nbsp;Adding a question — full walkthrough</h2>
+  <p class="lede">
+    This is the core administrator procedure. It is given twice: first as the screen-by-screen flow
+    an administrator follows, then as the exact API contract behind it.
+  </p>
+
+  <h3>8.1 &nbsp;Before you start</h3>
+  <ul>
+    <li>You must be signed in as <code>ROLE_ADMIN</code>. Signing in lands you on <code>/admin</code>.</li>
+    <li>The chapter you want to file the question under must already exist and be active — see section 11.</li>
+    <li>An <b>active marking scheme</b> must exist for the (exam pattern, question type) pair you intend to use, or publication will fail. The four seeded schemes cover every combination out of the box.</li>
+  </ul>
+
+  <h3>8.2 &nbsp;The screen flow</h3>
+
+  <div class="step"><div class="n">1</div><div class="b">
+    <h4>Open the question bank</h4>
+    <p>From the admin shell, go to <b>Question bank</b> — route <code>/admin/questions</code>.</p>
+    <p>
+      The grid lists questions newest-updated first, 20 to a page, showing chapter, exam pattern,
+      difficulty, type, a preview of the stem, status, option count and revision. Filter by subject,
+      chapter, exam pattern, difficulty, question type and status, or search free text across the
+      stem and solution. <b>Reset</b> clears every filter and returns to page 1.
+    </p>
+  </div></div>
+
+  <div class="step"><div class="n">2</div><div class="b">
+    <h4>Start a new question</h4>
+    <p>Click <b>New question</b> — route <code>/admin/questions/new</code>.</p>
+    <p>
+      The editor opens with four blank options already laid out and labelled <b>A, B, C, D</b>, and
+      with sensible defaults selected: exam pattern <code>JEE_MAIN</code>, difficulty
+      <code>MEDIUM</code>, question type <code>SINGLE_CORRECT</code>.
+    </p>
+  </div></div>
+
+  <div class="step"><div class="n">3</div><div class="b">
+    <h4>Classify the question</h4>
+    <p>Set the four classification fields at the top of the form:</p>
+    <table style="margin-bottom:.4em">
+      <thead><tr><th style="width:22%">Field</th><th style="width:30%">Values</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td><b>Chapter</b></td><td>Any active chapter</td><td>Required. The subject is derived from it automatically — there is no separate subject field.</td></tr>
+        <tr><td><b>Exam pattern</b></td><td><code>JEE_MAIN</code>, <code>JEE_ADVANCED</code></td><td>Required. Selects which marking scheme applies.</td></tr>
+        <tr><td><b>Difficulty</b></td><td><code>EASY</code>, <code>MEDIUM</code>, <code>HARD</code></td><td>Required. Used by the test difficulty blueprint. Independent of exam pattern.</td></tr>
+        <tr><td><b>Question type</b></td><td><code>SINGLE_CORRECT</code>, <code>MULTIPLE_CORRECT</code></td><td>Required. Decides radio versus checkbox for the student, and which evaluation strategy scores it.</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:9.6pt;color:var(--muted)">
+      Switching the type to single-correct collapses any extra correct selections down to the
+      first, so the form cannot sit in a state the server would reject.
+    </p>
+  </div></div>
+
+  <div class="step"><div class="n">4</div><div class="b">
+    <h4>Write the question stem</h4>
+    <p>
+      Type the stem into <b>Question content</b> as LaTeX and plain text. A live KaTeX preview
+      renders beside the textarea as you type. Maximum 20,000 characters; required.
+    </p>
+    <pre><code>Solve for $x$:
+
+$$x^2 - 5x + 6 = 0$$</code></pre>
+    <p style="font-size:9.6pt;color:var(--muted)">
+      Blank lines are meaningful paragraph breaks and are preserved verbatim. See section 10 for
+      the full LaTeX reference.
+    </p>
+  </div></div>
+
+  <div class="step"><div class="n">5</div><div class="b">
+    <h4>Fill in the options</h4>
+    <p>
+      Four option rows are provided, labelled A to D. Each row takes LaTeX content — required, up
+      to 5,000 characters — and has its own live preview. <code>displayOrder</code> is taken from
+      the row position, so the A–D order stays consistent without your having to manage it.
+    </p>
+    <p>
+      Option labels must be a <b>single uppercase letter</b> and must be unique within the
+      question. A question needs between <b>2 and 10</b> options.
+    </p>
+  </div></div>
+
+  <div class="step"><div class="n">6</div><div class="b">
+    <h4>Mark the correct answer</h4>
+    <p>Tick the correctness control on each option that is part of the answer key.</p>
+    <ul>
+      <li><b><code>SINGLE_CORRECT</code></b> — the form behaves as a radio group: selecting one option clears the others.</li>
+      <li><b><code>MULTIPLE_CORRECT</code></b> — any number may be ticked, but not all of them (see step 9).</li>
+    </ul>
+  </div></div>
+
+  <div class="step"><div class="n">7</div><div class="b">
+    <h4>Add the worked solution (optional but recommended)</h4>
+    <p>
+      <b>Solution content</b> takes LaTeX up to 20,000 characters, with its own live preview. It is
+      shown to students only on the answer-review screen, after their attempt is finalised — never
+      during a live paper.
+    </p>
+    <p style="font-size:9.6pt;color:var(--muted)">
+      Left empty, the field is omitted from the request rather than sent as an empty string.
+    </p>
+  </div></div>
+
+  <div class="step"><div class="n">8</div><div class="b">
+    <h4>Save as a draft</h4>
+    <p>
+      Click <b>Save</b>. The question is created with status <code>DRAFT</code> and you are
+      navigated to its edit route, <code>/admin/questions/{id}</code>.
+    </p>
+    <p>
+      Draft rules are deliberately permissive so half-finished work can be saved. Only these are
+      checked on save: content not blank, option labels unique and single uppercase letters, 2–10
+      options, length caps, and a markup guard (see the box below).
+    </p>
+  </div></div>
+
+  <div class="step"><div class="n">9</div><div class="b">
+    <h4>Publish</h4>
+    <p>
+      Click <b>Publish</b>. Publication applies the strict rules, and only a question that passes
+      them can enter the bank that test generation draws from:
+    </p>
+    <ul>
+      <li><b>At least two options.</b></li>
+      <li><b><code>SINGLE_CORRECT</code> must have exactly one correct option</b> — the error names the count it actually found.</li>
+      <li><b><code>MULTIPLE_CORRECT</code> must have at least one correct option, but not all of them</b> — an all-correct question is unanswerable.</li>
+      <li><b>Option labels must be unique.</b></li>
+      <li><b>An active marking scheme must exist</b> for the (exam pattern, question type) pair. This is checked at publish time so it fails here rather than at a student first click.</li>
+    </ul>
+    <p>
+      On success the status becomes <code>PUBLISHED</code> and <code>published_at</code> is
+      stamped. The question is now eligible for test generation.
+    </p>
+  </div></div>
+
+  <div class="box warn">
+    <span class="t">The content safety guard</span>
+    <p>
+      On every save the server rejects content containing <code>&lt;script</code>,
+      <code>&lt;iframe</code>, <code>&lt;object</code>, <code>&lt;embed</code>,
+      <code>javascript:</code> or an inline <code>on…=</code> event handler. The check is
+      deliberately narrow: <code>$a &lt; b$</code> is ordinary mathematics and is accepted. The
+      client is the first line of defence — it escapes everything outside the maths delimiters and
+      runs KaTeX with HTML trust disabled — and this is defence in depth behind it.
+    </p>
+  </div>
+</section>
+
+<section class="page">
+  <h3>8.3 &nbsp;The API contract behind the form</h3>
+  <p><span class="tag post">POST</span> <code>/api/admin/questions</code> &nbsp;·&nbsp; <code>ROLE_ADMIN</code> &nbsp;·&nbsp; <b>201 Created</b></p>
+  <pre><code>{
+  "chapterId": 3,                              // required — subject is derived from it
+  "examPattern": "JEE_MAIN",                   // required — JEE_MAIN | JEE_ADVANCED
+  "difficulty": "MEDIUM",                      // required — EASY | MEDIUM | HARD
+  "questionType": "SINGLE_CORRECT",            // required — SINGLE_CORRECT | MULTIPLE_CORRECT
+  "questionContent": "Solve $x^2-5x+6=0$",     // required, <= 20000 chars, LaTeX source
+  "solutionContent": "...",                    // optional, <= 20000 chars
+  "markingSchemeId": null,                     // optional override; null = resolve active scheme
+  "options": [                                 // required, 2..10 entries
+    { "optionKey": "A", "content": "$x=2$ or $x=3$",   "displayOrder": 0, "isCorrect": true  },
+    { "optionKey": "B", "content": "$x=-2$ or $x=-3$", "displayOrder": 1, "isCorrect": false },
+    { "optionKey": "C", "content": "$x=1$ or $x=6$",   "displayOrder": 2, "isCorrect": false },
+    { "optionKey": "D", "content": "$x=-1$ or $x=-6$", "displayOrder": 3, "isCorrect": false }
+  ]
+}</code></pre>
+
+  <h4>Field-by-field validation</h4>
+  <table>
+    <thead><tr><th style="width:22%">Field</th><th style="width:12%">Required</th><th>Rule and message</th></tr></thead>
+    <tbody>
+      <tr><td class="m">chapterId</td><td>yes</td><td><code>@NotNull</code> — "Chapter is required". Must resolve to an existing chapter.</td></tr>
+      <tr><td class="m">examPattern</td><td>yes</td><td><code>@NotNull</code> — "Exam pattern is required".</td></tr>
+      <tr><td class="m">difficulty</td><td>yes</td><td><code>@NotNull</code> — "Difficulty is required".</td></tr>
+      <tr><td class="m">questionType</td><td>yes</td><td><code>@NotNull</code> — "Question type is required".</td></tr>
+      <tr><td class="m">questionContent</td><td>yes</td><td><code>@NotBlank</code>, <code>@Size(max=20000)</code>. Trimmed on write.</td></tr>
+      <tr><td class="m">solutionContent</td><td>no</td><td><code>@Size(max=20000)</code>.</td></tr>
+      <tr><td class="m">markingSchemeId</td><td>no</td><td>When absent, the active scheme for (pattern, type) is resolved at evaluation time.</td></tr>
+      <tr><td class="m">options</td><td>yes</td><td><code>@NotEmpty</code>, <code>@Size(min=2, max=10)</code> — "A question must have between 2 and 10 options".</td></tr>
+      <tr><td class="m">options[].optionKey</td><td>yes</td><td><code>@Pattern("^[A-Z]$")</code> — "Option label must be a single uppercase letter". Uppercased and de-duplicated on write.</td></tr>
+      <tr><td class="m">options[].content</td><td>yes</td><td><code>@NotBlank</code>, <code>@Size(max=5000)</code>. Trimmed on write.</td></tr>
+      <tr><td class="m">options[].displayOrder</td><td>no</td><td><code>@PositiveOrZero</code>. Defaults to the array index.</td></tr>
+      <tr><td class="m">options[].isCorrect</td><td>—</td><td>Boolean, defaults false. This is the answer key.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="box key">
+    <span class="t">Validation is two-tiered</span>
+    <p>
+      <b>Save-time</b> rules apply to drafts too and are permissive. <b>Publish-time</b> rules are
+      strict, and are enforced both on <code>POST /{id}/publish</code> <em>and</em> on any update to
+      an already-published question — so a published question cannot be edited into an invalid
+      state while remaining published.
+    </p>
+  </div>
+
+  <div class="box">
+    <span class="t">Errors bind straight to the form</span>
+    <p>
+      Every validation failure reports <code>fieldErrors[].field</code> as the JSON property name of
+      the request body — <code>questionContent</code>, <code>solutionContent</code>,
+      <code>options</code>, <code>options[2].content</code> — so the Angular form binds a server
+      message onto the exact input that caused it, with no translation layer.
+    </p>
+  </div>
+
+  <h4>Worked example — a JEE Advanced multiple-correct question</h4>
+  <pre><code>POST /api/admin/questions
+Authorization: Bearer &lt;adminAccessToken&gt;
+Content-Type: application/json
+
+{
+  "chapterId": 12,
+  "examPattern": "JEE_ADVANCED",
+  "difficulty": "HARD",
+  "questionType": "MULTIPLE_CORRECT",
+  "questionContent": "Which of the following are true for $f(x)=x^3-3x$?",
+  "solutionContent": "$f'(x)=3x^2-3=3(x-1)(x+1)$, so ...",
+  "options": [
+    { "optionKey":"A", "content":"$f$ has a local maximum at $x=-1$", "isCorrect": true  },
+    { "optionKey":"B", "content":"$f$ has a local minimum at $x=1$",  "isCorrect": true  },
+    { "optionKey":"C", "content":"$f$ is increasing on $(-1,1)$",     "isCorrect": false },
+    { "optionKey":"D", "content":"$f$ is odd",                        "isCorrect": true  }
+  ]
+}
+
+201 Created  ->  { "id": 87, "status": "DRAFT", "version": 0, ... }
+
+POST /api/admin/questions/87/publish
+200 OK       ->  { "id": 87, "status": "PUBLISHED", "publishedAt": "...", "version": 1, ... }</code></pre>
+  <p style="font-size:9.6pt;color:var(--muted)">
+    Three of four options are correct, which passes: at least one, but not all.
+  </p>
+</section>
+
+<!-- =========================== 9 =========================== -->
+<section class="page">
+  <h2>9 &nbsp;Question lifecycle</h2>
+
+  <div class="flow">                  POST /admin/questions
+                          |
+                          v
+                     [  DRAFT  ] &lt;-------------------+
+                          |                          |
+       POST /{id}/publish |                          | POST /{id}/draft
+        (strict rules)    v                          |
+                     [ PUBLISHED ] ------------------+
+                          |
+                          | POST /{id}/archive
+                          v
+                     [ ARCHIVED ]   read-only, terminal
+                     (also reachable from DRAFT)</div>
+
+  <table>
+    <thead><tr><th style="width:16%">State</th><th style="width:26%">Reached by</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><code>DRAFT</code></td><td>Creation, or revert</td><td>Editable freely under permissive rules. Invisible to test generation.</td></tr>
+      <tr><td><code>PUBLISHED</code></td><td><code>POST /{id}/publish</code></td><td>Eligible for test generation. Still editable, but every edit must continue to satisfy the strict publish rules.</td></tr>
+      <tr><td><code>ARCHIVED</code></td><td><code>POST /{id}/archive</code></td><td>Withdrawn from future tests. <b>Read-only</b> — attempting to update it returns a business-rule error telling you to restore it to draft first. Existing attempts and analytics are unaffected.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>9.1 &nbsp;Editing a published question</h3>
+  <p>
+    Editing a question that has already been used in a live examination is <b>allowed and safe</b>.
+    Each attempt holds its own snapshot of the content, options and answer key, so no historical
+    result can move. What changes is the <code>version</code> number, which increments on every
+    persisted write and is recorded on any future attempt snapshot that uses the question.
+  </p>
+  <p>
+    <code>version</code> also serves as a Hibernate optimistic lock, so two administrators editing
+    the same question cannot silently overwrite each other — the second write fails rather than
+    winning by accident.
+  </p>
+  <div class="box key">
+    <span class="t">Verified end to end</span>
+    <p>
+      An automated check rewrites a question stem, flips its answer key and archives it, then
+      re-reads a student existing attempt: the score, the counts, the per-question marks, the
+      stem and the key all come back byte-identical.
+    </p>
+  </div>
+
+  <h3>9.2 &nbsp;There is no delete</h3>
+  <p>
+    The API exposes no hard delete for questions. <b>Archive is the terminal state</b>, because
+    attempts, per-question results and analytics all reference the row. Removing it would break
+    referential integrity and destroy history; the foreign keys are declared
+    <code>ON DELETE RESTRICT</code> to make that impossible rather than merely discouraged.
+  </p>
+
+  <h3>9.3 &nbsp;Lifecycle endpoints</h3>
+  <table>
+    <thead><tr><th style="width:12%">Method</th><th style="width:36%">Path</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag get">GET</span></td><td class="m">/admin/questions</td><td>Paginated search. Filters: <code>subjectId</code>, <code>chapterId</code>, <code>examPattern</code>, <code>difficulty</code>, <code>questionType</code>, <code>status</code>, <code>search</code>. Default 20 per page, sorted by <code>updatedAt</code> descending; page size capped at 100.</td></tr>
+      <tr><td><span class="tag get">GET</span></td><td class="m">/admin/questions/{id}</td><td>Full question including options and the answer key.</td></tr>
+      <tr><td><span class="tag post">POST</span></td><td class="m">/admin/questions</td><td>Create as a draft. <b>201</b>.</td></tr>
+      <tr><td><span class="tag put">PUT</span></td><td class="m">/admin/questions/{id}</td><td>Update. Options are merged by label so keys stay stable.</td></tr>
+      <tr><td><span class="tag post">POST</span></td><td class="m">/admin/questions/{id}/publish</td><td>Apply strict rules and publish.</td></tr>
+      <tr><td><span class="tag post">POST</span></td><td class="m">/admin/questions/{id}/draft</td><td>Return a published question to draft.</td></tr>
+      <tr><td><span class="tag post">POST</span></td><td class="m">/admin/questions/{id}/archive</td><td>Withdraw from future tests.</td></tr>
+    </tbody>
+  </table>
+  <div class="box warn">
+    <span class="t">Answer keys and route safety</span>
+    <p>
+      Every response under <code>/admin/questions</code> includes <code>isCorrect</code> on each
+      option. That is precisely why the entire path sits behind <code>ROLE_ADMIN</code>, and why
+      the student-facing attempt DTO is a different type with no correctness field at all rather
+      than the same type with a filter applied.
+    </p>
+  </div>
+</section>
+
+<!-- =========================== 10 =========================== -->
+<section class="page">
+  <h2>10 &nbsp;Writing questions in LaTeX</h2>
+  <p class="lede">
+    The teacher types LaTeX; the browser renders it with KaTeX; the source is what gets stored.
+  </p>
+  <div class="flow">Admin types LaTeX  ->  KaTeX live preview  ->  saved as SOURCE in PostgreSQL
+                                                 |
+                     KaTeX renders  &lt;-  student fetches the source</div>
+  <p>
+    Rendered HTML is never persisted. The stored value stays the single source of truth, cannot
+    carry markup into a page, and can be re-rendered by a different renderer later without a
+    migration.
+  </p>
+
+  <h3>10.1 &nbsp;Delimiters</h3>
+  <table>
+    <thead><tr><th style="width:18%">Form</th><th style="width:18%">Use</th><th>Example</th></tr></thead>
+    <tbody>
+      <tr><td class="m">$ … $</td><td>Inline</td><td class="m">If $\alpha$ and $\beta$ are the roots…</td></tr>
+      <tr><td class="m">$$ … $$</td><td>Displayed</td><td class="m">$$x^2 + 5x + 6 = 0$$</td></tr>
+    </tbody>
+  </table>
+  <p>These two forms only. Stems, every option and the solution all support LaTeX.</p>
+
+  <h3>10.2 &nbsp;Layout</h3>
+  <p>
+    Content is multi-line and blank lines are meaningful paragraph breaks — they are preserved
+    verbatim, so a stem can be laid out for readability.
+  </p>
+  <pre><code>Solve for $x$:
+
+$$x^2 - 5x + 6 = 0$$</code></pre>
+
+  <h3>10.3 &nbsp;Common constructs</h3>
+  <table>
+    <thead><tr><th style="width:38%">Source</th><th>Renders as</th></tr></thead>
+    <tbody>
+      <tr><td class="m">$$\frac{-b \pm \sqrt{b^2-4ac}}{2a}$$</td><td>The quadratic formula, displayed</td></tr>
+      <tr><td class="m">$$\int_0^1 x^2 \, dx$$</td><td>A definite integral</td></tr>
+      <tr><td class="m">$\alpha$, $\beta$, $\theta$</td><td>Greek letters, inline</td></tr>
+      <tr><td class="m">$\lim_{x \to 0} \frac{\sin x}{x}$</td><td>A limit, inline</td></tr>
+      <tr><td class="m">$$\sum_{k=1}^{n} k^2$$</td><td>A summation, displayed</td></tr>
+      <tr><td class="m">$-\frac{7}{3}$</td><td>A fraction inside an option</td></tr>
+    </tbody>
+  </table>
+
+  <h3>10.4 &nbsp;What is not allowed</h3>
+  <p>
+    Content is LaTeX and plain text, <b>never HTML</b>. The server refuses to save content
+    containing <code>&lt;script</code>, <code>&lt;iframe</code>, <code>&lt;object</code>,
+    <code>&lt;embed</code>, <code>javascript:</code> or an inline event handler. The check is
+    narrow by design so ordinary mathematics is never caught by it — <code>$a &lt; b$</code> saves
+    without complaint.
+  </p>
+
+  <h3>10.5 &nbsp;Authoring advice</h3>
+  <ul>
+    <li><b>Watch the preview.</b> It is the same renderer the student will see. If it does not render for you, it will not render for them.</li>
+    <li><b>Keep options parallel.</b> Options that differ only in the value being tested read more fairly than options that differ in form.</li>
+    <li><b>Write the solution while the question is fresh.</b> It is the only thing a student has to learn from after the paper, and it costs far more to reconstruct later.</li>
+    <li><b>Derive the key, do not assume it.</b> The seeded sample questions were generated from known integer roots rather than typed by hand, precisely so every answer key agrees with its own worked solution.</li>
+  </ul>
+</section>
+
+<!-- =========================== 11–12 =========================== -->
+<section class="page">
+  <h2>11 &nbsp;Managing subjects and chapters</h2>
+  <p>
+    Subjects and chapters are the spine the whole platform hangs off: questions are filed under a
+    chapter, tests are scoped to one, and analytics report by chapter. The student app reads them
+    from the API rather than hardcoding them, so adding a chapter needs no release.
+  </p>
+
+  <h3>11.1 &nbsp;Endpoints</h3>
+  <table>
+    <thead><tr><th style="width:12%">Method</th><th style="width:40%">Path</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag get">GET</span></td><td class="m">/admin/catalog/subjects</td><td>Every subject, including inactive ones</td></tr>
+      <tr><td><span class="tag post">POST</span></td><td class="m">/admin/catalog/subjects</td><td>Create a subject. <b>201</b>.</td></tr>
+      <tr><td><span class="tag put">PUT</span></td><td class="m">/admin/catalog/subjects/{id}</td><td>Update a subject</td></tr>
+      <tr><td><span class="tag get">GET</span></td><td class="m">/admin/catalog/chapters?subjectId=</td><td>Chapters, optionally filtered by subject</td></tr>
+      <tr><td><span class="tag get">GET</span></td><td class="m">/admin/catalog/chapters/{id}</td><td>One chapter</td></tr>
+      <tr><td><span class="tag post">POST</span></td><td class="m">/admin/catalog/chapters</td><td>Create a chapter. <b>201</b>.</td></tr>
+      <tr><td><span class="tag put">PUT</span></td><td class="m">/admin/catalog/chapters/{id}</td><td>Update a chapter</td></tr>
+      <tr><td><span class="tag pat">PATCH</span></td><td class="m">/admin/catalog/chapters/{id}/active?active=</td><td>Activate or deactivate</td></tr>
+    </tbody>
+  </table>
+
+  <h3>11.2 &nbsp;Field rules</h3>
+  <table>
+    <thead><tr><th style="width:24%">Field</th><th>Rule</th></tr></thead>
+    <tbody>
+      <tr><td class="m">Subject.name</td><td>Required, at most 100 characters, unique</td></tr>
+      <tr><td class="m">Subject.code</td><td>Required, at most 20 characters, unique, <code>^[A-Z0-9_]+$</code> — uppercase letters, digits and underscores only</td></tr>
+      <tr><td class="m">Chapter.subjectId</td><td>Required</td></tr>
+      <tr><td class="m">Chapter.name</td><td>Required, at most 150 characters, unique within its subject</td></tr>
+      <tr><td class="m">description</td><td>Optional, at most 500 characters</td></tr>
+      <tr><td class="m">displayOrder</td><td>Optional, zero or positive — controls ordering in every dropdown and list</td></tr>
+    </tbody>
+  </table>
+  <div class="box">
+    <span class="t">Deactivate rather than delete</span>
+    <p>
+      Chapters carry an <code>active</code> flag and the foreign keys from <code>questions</code>
+      and <code>tests</code> are <code>ON DELETE RESTRICT</code>. Deactivating hides a chapter from
+      new authoring and from the student app while leaving every existing question and result
+      intact.
+    </p>
+  </div>
+
+  <h2 style="margin-top:2.2em">12 &nbsp;Marking schemes</h2>
+  <p>
+    A marking scheme is the configuration that turns an answer into a mark. Schemes are data, not
+    code, so a new marking rule needs no release and no migration.
+  </p>
+
+  <h3>12.1 &nbsp;Endpoints</h3>
+  <table>
+    <thead><tr><th style="width:12%">Method</th><th style="width:40%">Path</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag get">GET</span></td><td class="m">/admin/marking-schemes</td><td>List all schemes</td></tr>
+      <tr><td><span class="tag post">POST</span></td><td class="m">/admin/marking-schemes</td><td>Create. <b>201</b>.</td></tr>
+      <tr><td><span class="tag put">PUT</span></td><td class="m">/admin/marking-schemes/{id}</td><td>Update</td></tr>
+      <tr><td><span class="tag pat">PATCH</span></td><td class="m">/admin/marking-schemes/{id}/active?active=</td><td>Activate or deactivate</td></tr>
+    </tbody>
+  </table>
+
+  <h3>12.2 &nbsp;Configuration fields</h3>
+  <table class="kv">
+    <tbody>
+      <tr><td>fullCorrectMarks</td><td>Awarded for a perfect answer. <b>Must be greater than zero.</b></td></tr>
+      <tr><td>wrongMarks</td><td>Awarded for an incorrect answer. <b>Must be zero or negative.</b></td></tr>
+      <tr><td>unansweredMarks</td><td>Awarded when nothing was selected. Normally 0.</td></tr>
+      <tr><td>partialCreditMode</td><td><code>NONE</code> or <code>PER_CORRECT_OPTION</code>.</td></tr>
+      <tr><td>marksPerCorrectOption</td><td>Per-option award under partial credit. Must be greater than 0 when partial credit is on.</td></tr>
+      <tr><td>maxPartialMarks</td><td>Cap on a partial award. Must be greater than 0 and <b>strictly less than <code>fullCorrectMarks</code></b>.</td></tr>
+      <tr><td>noPartialCreditMarks</td><td>Awarded for a strict subset of the key when partial credit is off.</td></tr>
+    </tbody>
+  </table>
+  <div class="box warn">
+    <span class="t">Configurations are validated on write</span>
+    <p>
+      A partial award that could match or beat a perfect answer is rejected, as is a positive
+      penalty. A broken scheme therefore cannot reach an attempt snapshot. A <b>partial unique
+      index</b> also permits at most one <em>active</em> scheme per (exam pattern, question type),
+      so resolution is never ambiguous.
+    </p>
+  </div>
+
+  <h3>12.3 &nbsp;The four seeded schemes</h3>
+  <table>
+    <thead><tr><th>Pattern / type</th><th style="width:12%">Correct</th><th style="width:28%">Partial</th><th style="width:12%">Wrong</th><th style="width:10%">Blank</th></tr></thead>
+    <tbody>
+      <tr><td>JEE Main — single correct</td><td>+4</td><td>—</td><td>−1</td><td>0</td></tr>
+      <tr><td>JEE Main — multiple correct</td><td>+4 exact</td><td>none</td><td>−1</td><td>0</td></tr>
+      <tr><td>JEE Advanced — single correct</td><td>+3</td><td>—</td><td>−1</td><td>0</td></tr>
+      <tr><td>JEE Advanced — multiple correct</td><td>+4 exact</td><td>+1 per correct option, capped at +3</td><td>−2</td><td>0</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- =========================== 13–14 =========================== -->
+<section class="page">
+  <h2>13 &nbsp;Creating and publishing tests</h2>
+  <p>
+    A test is a blueprint plus a lifecycle. It names a scope (subject, chapter, exam pattern), a
+    shape (duration, question count, difficulty mix) and a generation mode, and it draws from the
+    published question bank.
+  </p>
+
+  <h3>13.1 &nbsp;The blueprint</h3>
+  <table>
+    <thead><tr><th style="width:32%">Field</th><th style="width:16%">Default</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td class="m">title / description</td><td>—</td><td>What the student sees in the test list.</td></tr>
+      <tr><td class="m">subjectId / chapterId</td><td>—</td><td>The scope questions are drawn from.</td></tr>
+      <tr><td class="m">examPattern</td><td>—</td><td>Filters eligible questions and selects the marking schemes.</td></tr>
+      <tr><td class="m">durationMinutes</td><td>60</td><td>1–600.</td></tr>
+      <tr><td class="m">questionCount</td><td>25</td><td>1–200.</td></tr>
+      <tr><td class="m">easyCount / mediumCount / hardCount</td><td>null</td><td>Difficulty blueprint. <code>null</code> means no constraint on that band.</td></tr>
+      <tr><td class="m">generationMode</td><td>FIXED_SET</td><td>See below.</td></tr>
+      <tr><td class="m">maxAttemptsPerStudent</td><td>1</td><td>1–100.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>13.2 &nbsp;Generation mode decides whether ranking is possible</h3>
+  <table>
+    <thead><tr><th style="width:28%">Mode</th><th>Behaviour</th></tr></thead>
+    <tbody>
+      <tr><td><code>FIXED_SET</code></td><td>The question set is materialised once, at publish time, into <code>test_questions</code>. Every student receives exactly the same paper. <b>This is the only mode that yields a fair ranking cohort</b>, so <code>rankingEnabled</code> is true.</td></tr>
+      <tr><td><code>RANDOM_PER_ATTEMPT</code></td><td>Each attempt draws its own set from the blueprint. Useful for practice. <b>Ranking is disabled</b> — two such attempts are different examinations and comparing them would be meaningless.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>13.3 &nbsp;Lifecycle</h3>
+  <div class="flow">[ DRAFT ] --publish--> [ PUBLISHED ] --close--> [ CLOSED ] --archive--> [ ARCHIVED ]
+   editable            paper is pinned         no new attempts
+                       students can start      board settles</div>
+  <table>
+    <thead><tr><th style="width:12%">Method</th><th style="width:34%">Path</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag get">GET</span></td><td class="m">/admin/tests, /admin/tests/{id}</td><td>List and fetch</td></tr>
+      <tr><td><span class="tag post">POST</span></td><td class="m">/admin/tests</td><td>Create a draft</td></tr>
+      <tr><td><span class="tag put">PUT</span></td><td class="m">/admin/tests/{id}</td><td>Update — <b>only drafts are editable</b></td></tr>
+      <tr><td><span class="tag post">POST</span></td><td class="m">/admin/tests/{id}/publish</td><td>Publish; a fixed-set test has its paper pinned here</td></tr>
+      <tr><td><span class="tag post">POST</span></td><td class="m">/admin/tests/{id}/close</td><td>Stop new attempts</td></tr>
+      <tr><td><span class="tag post">POST</span></td><td class="m">/admin/tests/{id}/archive</td><td>Withdraw from the list</td></tr>
+    </tbody>
+  </table>
+  <div class="box warn">
+    <span class="t">Publication can fail — deliberately</span>
+    <p>
+      If the published bank cannot satisfy the blueprint (too few questions of a required
+      difficulty in that chapter and pattern), publication returns
+      <code>NOT_ENOUGH_QUESTIONS</code> with 409. Publish a few more questions, or relax the
+      blueprint, and try again. Failing here is far better than failing at a student first click.
+    </p>
+  </div>
+
+  <h2 style="margin-top:2.2em">14 &nbsp;Students and analytics</h2>
+  <table>
+    <thead><tr><th style="width:12%">Method</th><th style="width:40%">Path</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag get">GET</span></td><td class="m">/admin/students?search=</td><td>The roster, searchable</td></tr>
+      <tr><td><span class="tag pat">PATCH</span></td><td class="m">/admin/students/{id}/enabled?enabled=</td><td>Enable or disable an account</td></tr>
+      <tr><td><span class="tag get">GET</span></td><td class="m">/admin/analytics/dashboard</td><td>Headline counters</td></tr>
+      <tr><td><span class="tag get">GET</span></td><td class="m">/admin/analytics/questions/hardest</td><td>Lowest measured accuracy first</td></tr>
+      <tr><td><span class="tag get">GET</span></td><td class="m">/admin/analytics/chapters</td><td>Average score and accuracy by chapter</td></tr>
+    </tbody>
+  </table>
+  <p>
+    The hardest-questions report is measured, not assumed: it is computed from
+    <code>question_attempt_results</code>, which carries a dedicated index on
+    <code>(question_id, result_status)</code> for exactly this purpose. A question whose difficulty
+    was set to <code>EASY</code> but which nobody answers correctly will surface here, and that is
+    the signal to revisit the question rather than the students.
+  </p>
+</section>
+
+<!-- =========================== 15 =========================== -->
+<section class="page">
+  <h2>15 &nbsp;The marking engine</h2>
+  <p class="lede">
+    Marks are computed on the server, from a configuration stored as JSON, by one strategy per
+    question type. Nothing about scoring is hardcoded in a controller, and nothing is computed in
+    the browser.
+  </p>
+  <pre><code>public interface EvaluationStrategy {
+    QuestionType supportedType();
+    AnswerEvaluation evaluate(Set&lt;Long&gt; correctOptionIds,
+                              Set&lt;Long&gt; selectedOptionIds,
+                              MarkingConfig config);
+}</code></pre>
+  <p>
+    Implementations are discovered as Spring beans and indexed by the type they support, so adding
+    a question type means adding one class and one marking-scheme row — the evaluation pipeline
+    itself does not change.
+  </p>
+
+  <h3>15.1 &nbsp;Single correct</h3>
+  <table>
+    <thead><tr><th style="width:52%">Situation</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>The key is selected</td><td><code>fullCorrectMarks</code>, <code>CORRECT</code></td></tr>
+      <tr><td>Anything else, including more than one selection</td><td><code>wrongMarks</code>, <code>INCORRECT</code></td></tr>
+      <tr><td>Nothing selected</td><td><code>unansweredMarks</code>, <code>UNANSWERED</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>15.2 &nbsp;Multiple correct — the rule ladder, in order</h3>
+  <table>
+    <thead><tr><th style="width:52%">Situation</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Nothing selected</td><td><code>unansweredMarks</code>, <code>UNANSWERED</code></td></tr>
+      <tr><td><b>Any option outside the key selected</b></td><td><code>wrongMarks</code>, <code>INCORRECT</code></td></tr>
+      <tr><td>The key selected exactly</td><td><code>fullCorrectMarks</code>, <code>CORRECT</code></td></tr>
+      <tr><td>A strict subset of the key, nothing wrong</td><td>partial credit, <code>PARTIALLY_CORRECT</code></td></tr>
+    </tbody>
+  </table>
+  <div class="box key">
+    <span class="t">Order matters</span>
+    <p>
+      The wrong-selection check comes <b>before</b> partial credit. That single ordering is what
+      makes the JEE Advanced scheme come out right: a student who picks two correct options and one
+      wrong one scores −2, not +2.
+    </p>
+  </div>
+  <p>
+    Under <code>PER_CORRECT_OPTION</code>, the award is
+    <code>marksPerCorrectOption × matchedCount</code>, capped at <code>maxPartialMarks</code>. With
+    the seeded JEE Advanced configuration this reproduces the official scheme exactly: +4 for the
+    exact key, +1 per correct option capped at +3, −2 for any wrong selection, 0 for no attempt.
+  </p>
+
+  <h3>15.3 &nbsp;Reported metrics</h3>
+  <pre><code>accuracy    = correct / attempted × 100      (0 when nothing was attempted)
+attemptRate = attempted / total     × 100</code></pre>
+  <p>
+    A partially correct answer counts as <b>attempted but not correct</b>, so accuracy reads as the
+    share of attempts that were fully right.
+  </p>
+
+  <h3>15.4 &nbsp;Precision</h3>
+  <p>
+    Marks are <code>NUMERIC(8,2)</code> in the database and <code>BigDecimal</code> in Java,
+    throughout. Floating point is never used for a mark. With partial credit in play, a paper is a
+    long chain of additions of values like 1.00 and −2.00, and binary floating point would
+    accumulate error that eventually shows up as a wrong total on somebody result page.
+  </p>
+
+  <h3>15.5 &nbsp;Adding a new question type</h3>
+  <ol>
+    <li>Add the constant to the <code>QuestionType</code> enum.</li>
+    <li>Implement an <code>EvaluationStrategy</code> bean for it.</li>
+    <li>Insert a <code>MarkingScheme</code> row for each exam pattern it applies to.</li>
+    <li>Extend <code>QuestionValidator</code> with its publish rule.</li>
+  </ol>
+  <p style="font-size:9.6pt;color:var(--muted)">
+    Nothing else changes. Only types that have a registered strategy are declared in the enum, so
+    the API never advertises a type that would fail at runtime.
+  </p>
+</section>
+
+<!-- =========================== 16–17 =========================== -->
+<section class="page">
+  <h2>16 &nbsp;Ranking, percentile and metrics</h2>
+
+  <h3>16.1 &nbsp;The cohort</h3>
+  <p>
+    Students are compared only when they sat the <b>same</b> paper. A test whose questions are
+    drawn per attempt is not ranked at all. Only <code>FIXED_SET</code> tests — whose questions are
+    materialised once at publication — carry <code>rankingEnabled: true</code>.
+  </p>
+
+  <h3>16.2 &nbsp;One position per student</h3>
+  <p>
+    If a test allows several attempts, only a student <b>best</b> attempt is placed, so sitting a
+    paper twice cannot occupy two positions on the board.
+  </p>
+
+  <h3>16.3 &nbsp;Ties</h3>
+  <p>
+    <b>RANK semantics: 1, 2, 2, 4.</b> Genuinely tied students share a position and the next rank
+    skips accordingly. Ties break on, in order:
+  </p>
+  <ol>
+    <li>Total score</li>
+    <li>More correct answers</li>
+    <li>Fewer incorrect answers</li>
+    <li>Faster completion</li>
+    <li>Earlier submission</li>
+  </ol>
+
+  <h3>16.4 &nbsp;Percentile</h3>
+  <pre><code>percentile = 100 × (candidates scoring at or below you) / total candidates</code></pre>
+  <p>
+    This follows the NTA definition and is computed on <b>raw score alone</b>, so a tie-break on
+    time does not move it. The topper is at 100.00.
+  </p>
+
+  <h3>16.5 &nbsp;Recalculation</h3>
+  <p>
+    The whole cohort is recomputed whenever an attempt is evaluated, in one PostgreSQL
+    window-function pass. A student who finishes first therefore sees a real position immediately,
+    and that position can move as later candidates finish — which is what "rank among everyone who
+    sat this paper" has to mean while the paper is still open. Once a test is <code>CLOSED</code>,
+    no new attempts can start and the board settles.
+  </p>
+  <div class="box">
+    <span class="t">Client guidance</span>
+    <p>
+      Because a rank shown at submission is a snapshot, a client should re-fetch the result rather
+      than cache the rank indefinitely.
+    </p>
+  </div>
+
+  <h2 style="margin-top:2.2em">17 &nbsp;The student journey</h2>
+  <div class="flow">1  GET  /api/tests              browse published papers; each says whether it
+                                  can be started and whether one is in flight
+2  POST /api/attempts           start OR resume; the server draws the paper,
+                                  SNAPSHOTS every question, writes started_at
+                                  and expires_at, returns all 25 questions at once
+3  PUT  /api/attempts/{id}/answers      autosave, checked four ways
+4  POST /api/attempts/{id}/submit       manual, or automatic at expiry
+5  GET  /api/attempts/{id}/result       score, rank, percentile, metrics
+6  GET  /api/attempts/{id}/review       answer key and worked solutions</div>
+
+  <h3>17.1 &nbsp;Every autosave is checked four ways</h3>
+  <ol>
+    <li>The attempt belongs to the caller.</li>
+    <li>It is still <code>ACTIVE</code>.</li>
+    <li>The <b>server</b> clock says it has not expired.</li>
+    <li>The question belongs to that attempt.</li>
+  </ol>
+
+  <h3>17.2 &nbsp;Behaviours that matter</h3>
+  <table>
+    <thead><tr><th style="width:30%">Behaviour</th><th>How it works</th></tr></thead>
+    <tbody>
+      <tr><td>Refreshing changes nothing</td><td>Calling <code>POST /attempts</code> while an attempt is live <b>resumes</b> it: same questions, same order, same deadline. It never redraws the paper or restarts the clock.</td></tr>
+      <tr><td>The clock is the server</td><td>Every attempt response carries <code>timing: { serverTime, startedAt, expiresAt, remainingSeconds, expired }</code>. <code>remainingSeconds</code> is the server own arithmetic; <code>serverTime</code> lets the client correct for clock drift instead of trusting the browser.</td></tr>
+      <tr><td>Abandoning still gets marked</td><td>The expiry sweep finalises attempts whose time ran out, scoring the answers already saved.</td></tr>
+      <tr><td>Nothing is lost to a bad connection</td><td>Each save carries a monotonic <code>clientSequence</code>, incremented once per attempt rather than per question. A write with an older sequence is discarded, <code>accepted: false</code> is returned, and the response carries the newer stored state so the client reconciles instead of guessing.</td></tr>
+      <tr><td>Submission is idempotent</td><td>An attempt already submitted, or auto-submitted by the sweep, returns its result with <b>200</b> rather than an error — so the auto-submit race never needs a conflict screen.</td></tr>
+      <tr><td>The key is absent, not hidden</td><td>The live-attempt DTO has no correctness field and no solution text. They exist only on the review type.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>17.3 &nbsp;Palette states</h3>
+  <p>
+    Each question carries one of five states, persisted server-side so the palette survives a
+    refresh: <code>NOT_VISITED</code>, <code>NOT_ANSWERED</code>, <code>ANSWERED</code>,
+    <code>MARKED_FOR_REVIEW</code>, <code>ANSWERED_AND_MARKED_FOR_REVIEW</code>. The refreshed
+    25-entry palette and the server clock come back with <em>every</em> save, so the navigator and
+    the countdown update from the same response — no second call.
+  </p>
+</section>
+
+<!-- =========================== 18 =========================== -->
+<section class="page">
+  <h2>18 &nbsp;Authentication and security</h2>
+  <p class="lede">
+    Phone number and password. There is no email anywhere in the system.
+  </p>
+
+  <h3>18.1 &nbsp;Endpoints</h3>
+  <table>
+    <thead><tr><th style="width:12%">Method</th><th style="width:38%">Path</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag get">GET</span></td><td class="m">/auth/security-questions</td><td>The canonical list, as <code>[{ id, text }]</code>. Submit the <b>text</b> at registration, not the id.</td></tr>
+      <tr><td><span class="tag post">POST</span></td><td class="m">/auth/student/register</td><td>Always creates a student. <b>201</b>.</td></tr>
+      <tr><td><span class="tag post">POST</span></td><td class="m">/auth/login</td><td><code>{ phoneNumber, password }</code></td></tr>
+      <tr><td><span class="tag post">POST</span></td><td class="m">/auth/refresh</td><td>Rotates <b>both</b> tokens</td></tr>
+      <tr><td><span class="tag post">POST</span></td><td class="m">/auth/logout</td><td>Revokes a refresh token. Idempotent.</td></tr>
+      <tr><td><span class="tag post">POST</span></td><td class="m">/auth/forgot-password/initiate</td><td>Returns only the security question</td></tr>
+      <tr><td><span class="tag post">POST</span></td><td class="m">/auth/forgot-password/verify</td><td>Answer it, receive a single-use reset token</td></tr>
+      <tr><td><span class="tag post">POST</span></td><td class="m">/auth/reset-password</td><td>Set the new password</td></tr>
+    </tbody>
+  </table>
+
+  <h3>18.2 &nbsp;Registration rules</h3>
+  <table>
+    <thead><tr><th style="width:24%">Field</th><th>Rule</th></tr></thead>
+    <tbody>
+      <tr><td class="m">fullName</td><td>Required, 2–120 characters</td></tr>
+      <tr><td class="m">phoneNumber</td><td>Required, <code>^[0-9]{10,15}$</code> — 10 to 15 digits, no spaces or symbols. Unique; also enforced by a database CHECK.</td></tr>
+      <tr><td class="m">password</td><td>Required, 8–72 characters, must contain an uppercase letter, a lowercase letter and a digit</td></tr>
+      <tr><td class="m">confirmPassword</td><td>Required, must match</td></tr>
+      <tr><td class="m">securityQuestion</td><td>Required, at most 255 characters</td></tr>
+      <tr><td class="m">securityAnswer</td><td>Required, 2–200 characters. Matched case- and whitespace-insensitively.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>18.3 &nbsp;Tokens</h3>
+  <pre><code>{
+  "accessToken": "eyJ...",
+  "refreshToken": "eyJ...",
+  "tokenType": "Bearer",
+  "expiresInSeconds": 900,
+  "user": { "id": 3, "fullName": "...", "phoneNumber": "...",
+            "roles": ["ROLE_STUDENT"], "enabled": true, "createdAt": "..." }
+}</code></pre>
+  <ul>
+    <li>The <b>access token</b> is a short-lived JWT — 15 minutes by default — sent as <code>Authorization: Bearer</code>.</li>
+    <li>The <b>refresh token</b> is persisted as a SHA-256 digest with constant-time comparison, and is <b>rotated on every use</b>: presenting it revokes it and issues a replacement. Default lifetime 7 days.</li>
+    <li>Presenting an already-rotated refresh token is treated as a stolen credential being replayed and <b>revokes every session for that account</b>.</li>
+    <li>Every token carries a <b>type claim</b>, so an access token cannot be replayed as a refresh token or as a password-reset authorisation.</li>
+    <li>Refresh returns a whole new pair — replace both values wholesale, never merge.</li>
+  </ul>
+
+  <h3>18.4 &nbsp;Password storage</h3>
+  <p>
+    Passwords <b>and security answers</b> are hashed with BCrypt at strength 12, so a database leak
+    exposes neither. Neither hash is mapped into any DTO, so neither can be serialised into a
+    response by accident.
+  </p>
+
+  <h3>18.5 &nbsp;Anti-enumeration</h3>
+  <ul>
+    <li>Login cannot distinguish a wrong password from an unknown account — both return <code>AUTHENTICATION_FAILED</code>. Render one neutral message.</li>
+    <li>Recovery cannot be short-circuited: knowing a phone number returns nothing but the question. Only a correct answer mints a reset token.</li>
+    <li>The reset token authorises exactly <b>one</b> password change, and this is enforced without storing any server-side state: the token carries a fingerprint of the password hash it was minted against. Completing a reset changes the hash, the fingerprint stops matching, and a replayed token is refused even inside its ten-minute lifetime. Applying it also revokes every existing session for the account.</li>
+    <li>Login, the security-answer challenge and recovery initiation are rate limited per identifier; <b>registration is throttled per client address</b>.</li>
+    <li>Paginated endpoints cap page size at 100, so a single request cannot be used to drain a table.</li>
+  </ul>
+
+  <h3>18.6 &nbsp;Transport and hardening</h3>
+  <ul>
+    <li>Stateless sessions; CSRF disabled because there are no cookies to forge against.</li>
+    <li>CORS restricted to <code>CORS_ALLOWED_ORIGINS</code>, with <code>Authorization</code> exposed.</li>
+    <li>Stack traces and framework messages are never included in error responses.</li>
+    <li><code>rejectedValue</code> is withheld for <code>password</code>, <code>confirmPassword</code>, <code>newPassword</code>, <code>currentPassword</code>, <code>securityAnswer</code>, <code>resetToken</code>, <code>refreshToken</code> and <code>accessToken</code> — so a submitted password is never written into a response body or a network log.</li>
+    <li>Swagger and the OpenAPI document are disabled on the <code>prod</code> profile by default.</li>
+  </ul>
+</section>
+
+<!-- =========================== 19–20 =========================== -->
+<section class="page">
+  <h2>19 &nbsp;API reference</h2>
+  <p>
+    Base URL <code>http://localhost:8080/api</code> (context path <code>/api</code>). Generated
+    OpenAPI at <code>/api/v3/api-docs</code>, Swagger UI at <code>/api/swagger-ui.html</code> — both
+    on the <code>dev</code> profile only. Every route except <code>/auth/**</code>,
+    <code>/actuator/health</code> and the docs requires <code>Authorization: Bearer</code>.
+  </p>
+
+  <h3>19.1 &nbsp;Catalogue and profile</h3>
+  <table>
+    <thead><tr><th style="width:12%">Method</th><th style="width:38%">Path</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag get">GET</span></td><td class="m">/catalog/subjects</td><td>Active subjects — any authenticated user</td></tr>
+      <tr><td><span class="tag get">GET</span></td><td class="m">/catalog/subjects/{id}/chapters</td><td>Active chapters. Do not hardcode these.</td></tr>
+      <tr><td><span class="tag get">GET</span></td><td class="m">/profile</td><td>The signed-in account, resolved from the token</td></tr>
+    </tbody>
+  </table>
+
+  <h3>19.2 &nbsp;Student — sitting a test</h3>
+  <table>
+    <thead><tr><th style="width:12%">Method</th><th style="width:38%">Path</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag get">GET</span></td><td class="m">/tests</td><td><code>?subjectId=&amp;chapterId=&amp;examPattern=</code>. No question data.</td></tr>
+      <tr><td><span class="tag post">POST</span></td><td class="m">/attempts</td><td><code>{ testId }</code> — starts <b>or resumes</b>. Returns the whole paper.</td></tr>
+      <tr><td><span class="tag get">GET</span></td><td class="m">/attempts/active</td><td>The attempt in flight, or <b>204</b> if there is none</td></tr>
+      <tr><td><span class="tag get">GET</span></td><td class="m">/attempts/{id}</td><td>Reload an attempt in progress</td></tr>
+      <tr><td><span class="tag put">PUT</span></td><td class="m">/attempts/{id}/answers</td><td>Autosave. Send the <b>complete</b> selection, never a delta.</td></tr>
+      <tr><td><span class="tag put">PUT</span></td><td class="m">/attempts/{id}/questions/{qid}/visited</td><td>Record that a question was seen</td></tr>
+      <tr><td><span class="tag post">POST</span></td><td class="m">/attempts/{id}/submit</td><td>Idempotent</td></tr>
+      <tr><td><span class="tag get">GET</span></td><td class="m">/attempts/{id}/result</td><td><b>409</b> while the attempt is live</td></tr>
+      <tr><td><span class="tag get">GET</span></td><td class="m">/attempts/{id}/review</td><td><b>A bare array</b>, not an envelope. 409 while live.</td></tr>
+      <tr><td><span class="tag get">GET</span></td><td class="m">/attempts/history</td><td>Paginated</td></tr>
+      <tr><td><span class="tag get">GET</span></td><td class="m">/me/performance</td><td>Dashboard summary</td></tr>
+      <tr><td><span class="tag get">GET</span></td><td class="m">/rankings/tests/{testId}</td><td>Leaderboard</td></tr>
+    </tbody>
+  </table>
+
+  <h3>19.3 &nbsp;Admin</h3>
+  <p>All under <code>/admin/**</code>, all requiring <code>ROLE_ADMIN</code>.</p>
+  <table>
+    <thead><tr><th style="width:34%">Path</th><th>Operations</th></tr></thead>
+    <tbody>
+      <tr><td class="m">/admin/catalog/subjects</td><td>GET, POST, PUT /{id}</td></tr>
+      <tr><td class="m">/admin/catalog/chapters</td><td>GET, GET /{id}, POST, PUT /{id}, PATCH /{id}/active</td></tr>
+      <tr><td class="m">/admin/questions</td><td>GET (paginated, filtered), POST, GET /{id}, PUT /{id}, POST /{id}/publish · /draft · /archive</td></tr>
+      <tr><td class="m">/admin/marking-schemes</td><td>GET, POST, PUT /{id}, PATCH /{id}/active</td></tr>
+      <tr><td class="m">/admin/tests</td><td>GET, POST, GET /{id}, PUT /{id} (drafts only), POST /{id}/publish · /close · /archive</td></tr>
+      <tr><td class="m">/admin/students</td><td>GET <code>?search=</code>, PATCH /{id}/enabled</td></tr>
+      <tr><td class="m">/admin/analytics</td><td>GET /dashboard, /questions/hardest, /chapters</td></tr>
+    </tbody>
+  </table>
+
+  <h3>19.4 &nbsp;Paging envelope</h3>
+  <pre><code>{ "content": [], "page": 0, "size": 20, "totalElements": 0,
+  "totalPages": 0, "first": true, "last": true }</code></pre>
+  <p>Paginated endpoints accept <code>page</code>, <code>size</code> and <code>sort</code>.</p>
+
+  <h2 style="margin-top:2em">20 &nbsp;Error handling contract</h2>
+  <p>Every failure returns the same envelope:</p>
+  <pre><code>{
+  "timestamp": "2026-08-30T00:30:43.285Z",
+  "status": 400,
+  "error": "VALIDATION_ERROR",
+  "message": "Validation failed",
+  "path": "/api/auth/student/register",
+  "fieldErrors": [
+    { "field": "phoneNumber",
+      "message": "Phone number must be 10 to 15 digits, with no spaces or symbols" }
+  ]
+}</code></pre>
+  <table>
+    <thead><tr><th style="width:30%"><code>error</code></th><th style="width:12%">Status</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td class="m">VALIDATION_ERROR</td><td>400</td><td>Bad request data; see <code>fieldErrors</code></td></tr>
+      <tr><td class="m">AUTHENTICATION_FAILED</td><td>401</td><td>Missing or bad credentials</td></tr>
+      <tr><td class="m">TOKEN_EXPIRED</td><td>401</td><td>Access token expired — refresh and retry</td></tr>
+      <tr><td class="m">TOKEN_INVALID</td><td>401</td><td>Token unusable — sign in again</td></tr>
+      <tr><td class="m">ACCESS_DENIED</td><td>403</td><td>Authenticated, but not allowed</td></tr>
+      <tr><td class="m">RESOURCE_NOT_FOUND</td><td>404</td><td>No such resource</td></tr>
+      <tr><td class="m">DUPLICATE_RESOURCE</td><td>409</td><td>Conflicts with existing data</td></tr>
+      <tr><td class="m">BUSINESS_RULE_VIOLATION</td><td>409</td><td>A rule refused the operation</td></tr>
+      <tr><td class="m">ATTEMPT_EXPIRED</td><td>409</td><td>Answer write after the deadline</td></tr>
+      <tr><td class="m">ATTEMPT_ALREADY_FINALISED</td><td>409</td><td>Answer write to a submitted attempt</td></tr>
+      <tr><td class="m">NOT_ENOUGH_QUESTIONS</td><td>409</td><td>The bank cannot satisfy the blueprint</td></tr>
+      <tr><td class="m">RATE_LIMITED</td><td>429</td><td>Too many attempts; wait and retry</td></tr>
+      <tr><td class="m">INTERNAL_ERROR</td><td>500</td><td>Unexpected; nothing leaks</td></tr>
+    </tbody>
+  </table>
+  <div class="box warn">
+    <span class="t">Two rules for every client</span>
+    <p>
+      <b>Branch on <code>error</code>, never on <code>message</code></b> — <code>error</code> is a
+      stable enum name, <code>message</code> is human copy that may be reworded.
+      <b>Nulls are omitted, not sent as <code>null</code></b> — the application serialises with
+      non-null inclusion, so model optional fields as <code>field?: T</code>. Commonly absent:
+      <code>activeAttemptId</code>, <code>unavailableReason</code>, <code>markingSchemeId</code>,
+      <code>fieldErrors</code>, and every result field before evaluation.
+    </p>
+  </div>
+</section>
+
+<!-- =========================== 21–22 =========================== -->
+<section class="page">
+  <h2>21 &nbsp;Installation runbook</h2>
+
+  <div class="step"><div class="n">1</div><div class="b">
+    <h4>Clone</h4>
+    <pre><code>git clone https://github.com/vivekkumarq/MathStrokes.git
+cd MathStrokes</code></pre>
+  </div></div>
+
+  <div class="step"><div class="n">2</div><div class="b">
+    <h4>Create the database</h4>
+    <p>As the <code>postgres</code> superuser:</p>
+    <pre><code>CREATE ROLE mathstrokes LOGIN PASSWORD 'choose-a-password';
+CREATE DATABASE mathstrokes OWNER mathstrokes;</code></pre>
+    <p style="font-size:9.6pt;color:var(--muted)">On Windows, <code>psql</code> lives at <code>C:\Program Files\PostgreSQL\17\bin\psql.exe</code>.</p>
+  </div></div>
+
+  <div class="step"><div class="n">3</div><div class="b">
+    <h4>Configure the environment</h4>
+    <pre><code>cp .env.example .env</code></pre>
+    <p>
+      Set at minimum <code>DATABASE_PASSWORD</code>, a strong <code>JWT_SECRET</code>, and the three
+      <code>SEED_ADMIN_*</code> values. <code>.env</code> is gitignored and must never be committed.
+    </p>
+    <pre><code>openssl rand -base64 48        # generate a secret</code></pre>
+    <p>The backend reads configuration from the environment, not from <code>.env</code> directly — export it first:</p>
+    <pre><code># bash / git-bash
+set -a; . ../.env; set +a
+
+# PowerShell
+Get-Content ..\.env | Where-Object { $_ -match '^[A-Z]' } | ForEach-Object {
+  $k,$v = $_ -split '=',2; [Environment]::SetEnvironmentVariable($k, $v.Trim('"'))
+}</code></pre>
+  </div></div>
+
+  <div class="step"><div class="n">4</div><div class="b">
+    <h4>Run the backend</h4>
+    <pre><code>cd backend
+./mvnw spring-boot:run          # Windows: mvnw.cmd spring-boot:run</code></pre>
+    <p>
+      Flyway creates the schema and loads the reference data and sample questions on first start.
+      The API comes up on <code>http://localhost:8080/api</code>. There is no separate migrate
+      command.
+    </p>
+  </div></div>
+
+  <div class="step"><div class="n">5</div><div class="b">
+    <h4>Run the frontend</h4>
+    <pre><code>cd frontend
+npm ci
+npm start</code></pre>
+    <p>Open <code>http://localhost:4200</code>.</p>
+  </div></div>
+
+  <div class="step"><div class="n">6</div><div class="b">
+    <h4>Sign in and verify</h4>
+    <p>
+      Sign in with the seeded admin phone number and password. You should land on
+      <code>/admin</code>. Open <b>Question bank</b> — the seeded questions should be listed, 20 to
+      a page, with <code>totalElements</code> in the region of 1,522. Add one of your own by
+      following section 8.
+    </p>
+  </div></div>
+
+  <h2 style="margin-top:2em">22 &nbsp;Environment variables</h2>
+  <table>
+    <thead><tr><th style="width:32%">Variable</th><th style="width:12%">Required</th><th style="width:22%">Default</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td class="m">DATABASE_URL</td><td>yes</td><td class="m">jdbc:postgresql://<br>localhost:5432/mathstrokes</td><td>JDBC URL</td></tr>
+      <tr><td class="m">DATABASE_USERNAME</td><td>yes</td><td class="m">mathstrokes</td><td></td></tr>
+      <tr><td class="m">DATABASE_PASSWORD</td><td>yes</td><td>—</td><td></td></tr>
+      <tr><td class="m">JWT_SECRET</td><td><b>yes</b></td><td>—</td><td>At least 32 characters. <b>The app refuses to start without it.</b></td></tr>
+      <tr><td class="m">JWT_ACCESS_TOKEN_EXPIRATION</td><td>no</td><td class="m">PT15M</td><td>ISO-8601 duration</td></tr>
+      <tr><td class="m">JWT_REFRESH_TOKEN_EXPIRATION</td><td>no</td><td class="m">P7D</td><td></td></tr>
+      <tr><td class="m">JWT_PASSWORD_RESET_TOKEN_EXPIRATION</td><td>no</td><td class="m">PT10M</td><td></td></tr>
+      <tr><td class="m">CORS_ALLOWED_ORIGINS</td><td>yes in prod</td><td class="m">http://localhost:4200</td><td>Comma separated</td></tr>
+      <tr><td class="m">SPRING_PROFILES_ACTIVE</td><td>no</td><td class="m">dev</td><td><code>dev</code> or <code>prod</code></td></tr>
+      <tr><td class="m">PORT</td><td>no</td><td class="m">8080</td><td>Context path is always <code>/api</code></td></tr>
+      <tr><td class="m">SEED_ENABLED</td><td>no</td><td class="m">true</td><td>Set <code>false</code> in production once seeded</td></tr>
+      <tr><td class="m">SEED_ADMIN_PHONE<br>SEED_ADMIN_PASSWORD<br>SEED_ADMIN_SECURITY_ANSWER</td><td>first run</td><td>—</td><td><b>All three</b> are needed to create the first admin</td></tr>
+      <tr><td class="m">SEED_ADMIN_NAME<br>SEED_ADMIN_SECURITY_QUESTION</td><td>no</td><td>sensible defaults</td><td></td></tr>
+      <tr><td class="m">RATE_LIMIT_ENABLED<br>RATE_LIMIT_MAX_ATTEMPTS<br>RATE_LIMIT_WINDOW_SECONDS</td><td>no</td><td class="m">true / 10 / 300</td><td>Per-identifier throttle</td></tr>
+      <tr><td class="m">SWAGGER_ENABLED</td><td>no</td><td class="m">false in prod</td><td>Enable only for a deliberate, temporary investigation</td></tr>
+      <tr><td class="m">EXPIRY_SWEEP_INTERVAL_MS</td><td>no</td><td class="m">30000</td><td>Attempt expiry sweep cadence</td></tr>
+      <tr><td class="m">LOG_LEVEL_APP</td><td>no</td><td class="m">INFO</td><td><code>DEBUG</code> on the dev profile</td></tr>
+    </tbody>
+  </table>
+  <div class="box warn">
+    <span class="t">No credentials in the repository</span>
+    <p>
+      The seeder refuses to invent a default admin password. If the three <code>SEED_ADMIN_*</code>
+      values are missing it logs a warning and creates nothing, because a known default password on
+      a deployed instance is an open door.
+    </p>
+  </div>
+</section>
+
+<!-- =========================== 23–26 =========================== -->
+<section class="page">
+  <h2>23 &nbsp;Database and migrations</h2>
+  <p>
+    Flyway owns the schema. Hibernate is set to <code>validate</code> and will refuse to start if
+    the mapping and the schema disagree — so a drift between the two is caught at boot rather than
+    at the first query that touches the changed column.
+  </p>
+  <table>
+    <thead><tr><th style="width:38%">Migration</th><th>Contents</th></tr></thead>
+    <tbody>
+      <tr><td class="m">V1__initial_schema.sql</td><td>17 tables, constraints and indexes</td></tr>
+      <tr><td class="m">V2__seed_reference_data.sql</td><td>Roles, Mathematics, the first 17 chapters, 4 marking schemes. Idempotent.</td></tr>
+      <tr><td class="m">V3__seed_sample_questions.sql</td><td>66 published LaTeX questions</td></tr>
+      <tr><td class="m">V4__seed_full_question_bank.sql</td><td>The remaining 11 chapters and 1,456 further questions</td></tr>
+      <tr><td class="m">V5__seed_chapter_tests.sql</td><td>56 published chapter papers — 28 chapters × 2 exam patterns</td></tr>
+    </tbody>
+  </table>
+  <div class="box">
+    <span class="t">Why the bank is a migration, not a script</span>
+    <p>
+      A deployed instance builds its database from migrations alone. Content created by POSTing to
+      a running server exists only on the machine that received the POSTs, so seeding through
+      Flyway is the only way a deployed site has a question bank at all. The payload in
+      <code>V4</code> is dollar-quoted JSON rather than ordinary SQL string literals: the content is
+      LaTeX, dense with backslashes and <code>$$</code> display-maths delimiters, and escaping that
+      into normal literals is a reliable way to corrupt a macro or terminate a string early.
+    </p>
+  </div>
+  <p>
+    Migrations are <b>never edited once applied</b> — add a new <code>V4__…</code> instead. To start
+    over locally:
+  </p>
+  <pre><code>DROP DATABASE mathstrokes;
+CREATE DATABASE mathstrokes OWNER mathstrokes;</code></pre>
+
+  <h2 style="margin-top:2em">24 &nbsp;Seed data</h2>
+  <p>On a fresh database the application creates:</p>
+  <ul>
+    <li><b>One admin</b>, from the <code>SEED_ADMIN_*</code> environment variables.</li>
+    <li><b>Mathematics</b> and its <b>28 chapters</b> — 17 from <code>V2</code> (Relations and Functions, Complex Numbers, Quadratic Equations, Sequences and Series, Permutations and Combinations, Binomial Theorem, Matrices, Determinants, Limits, Continuity and Differentiability, Applications of Derivatives, Integrals, Differential Equations, Vectors, Three Dimensional Geometry, Probability, Statistics) and 11 more from <code>V4</code>.</li>
+    <li><b>Four marking schemes</b>, one per (exam pattern, question type) pair.</li>
+    <li><b>1,522 published questions</b> with LaTeX stems, options and worked solutions — 66 from <code>V3</code> and 1,456 from <code>V4</code> — spanning all 28 chapters. That is the figure for a <em>freshly seeded</em> database; a working instance will differ once an administrator has drafted or archived anything.</li>
+    <li><b>59 published tests</b>, each 25 questions over 60 minutes: the 56 chapter papers from <code>V5</code> (one per chapter per exam pattern) plus the demonstration tests written by the runtime bootstrap seeder.</li>
+  </ul>
+  <p>
+    The sample questions were generated from known integer roots rather than typed by hand, so every
+    answer key agrees with its own worked solution. Both runtime seeders skip silently if an admin or
+    any test already exists, so restarting the application never overwrites real data.
+  </p>
+  <div class="box warn">
+    <span class="t">The seeded papers allow five attempts, not one</span>
+    <p>
+      Every <code>V5</code> paper is <code>FIXED_SET</code> — the 25 questions are drawn once and
+      pinned, which is what makes the cohort comparable and is the only mode under which ranking is
+      enabled. But <code>max_attempts_per_student</code> is <b>5</b> rather than 1, because these
+      are demonstration papers meant to be re-sat while exploring the marking schemes. <b>A real
+      examination should use 1.</b>
+    </p>
+  </div>
+
+  <h2 style="margin-top:2em">25 &nbsp;Deployment</h2>
+
+  <h3>25.1 &nbsp;Current status</h3>
+  <div class="box key">
+    <span class="t">Live, with the API pending</span>
+    <p>
+      The frontend is deployed and public at
+      <b><code>https://mathstrokes.netlify.app</code></b>. The <b>backend is not yet deployed</b>:
+      the site loads, but it cannot authenticate, because <code>/api/*</code> proxies to a
+      placeholder until a backend host exists. Everything behind a sign-in is therefore
+      unreachable on the public site today.
+    </p>
+    <p style="margin-top:.5em">
+      Note that the URL still carries the former product name. The rename to Iota did not move the
+      Netlify site, so the hostname is expected to read <code>mathstrokes</code> until somebody
+      deliberately migrates it.
+    </p>
+  </div>
+
+  <h3>25.2 &nbsp;It is three pieces, not one</h3>
+  <p>
+    This is the part a reader is most likely to get wrong. <b>Netlify cannot run a JVM</b>, so the
+    Angular bundle and the Spring Boot service are hosted separately and stitched together by a
+    proxy rather than deployed as one unit.
+  </p>
+  <div class="flow">Browser
+  |
+  v
+Netlify                       serves the built Angular bundle (static files)
+  |   /api/*  -- proxied by netlify.toml
+  v
+Backend container             Spring Boot, on a host that runs containers
+  |
+  v
+Managed PostgreSQL            Flyway migrates on first boot</div>
+  <table>
+    <thead><tr><th style="width:22%">Component</th><th>Approach</th></tr></thead>
+    <tbody>
+      <tr><td>Frontend</td><td><code>npm run build</code> produces static files. Served by Netlify (any static host or CDN would do).</td></tr>
+      <tr><td>The proxy</td><td><code>netlify.toml</code> forwards <code>/api/*</code> to the backend. Because the browser only ever calls its own origin, <b>there is no CORS in production at all</b> — the <code>CORS_ALLOWED_ORIGINS</code> setting matters for local development and for any client that bypasses the proxy.</td></tr>
+      <tr><td>Backend</td><td>A container built from <code>backend/Dockerfile</code>, deployable to any host that runs containers, including free tiers. Configured entirely through environment variables.</td></tr>
+      <tr><td>Database</td><td>Any managed PostgreSQL. Flyway migrates on first boot.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="box warn">
+    <span class="t">Gotcha: every URL returns 401 behind a "Login Redirect" page</span>
+    <p>
+      If a healthy Netlify deploy answers <b>401</b> on every URL, including the site root, the
+      cause is almost certainly <b>SSO site protection enabled on the Netlify account</b> — not
+      anything in the build. Nothing in the deploy log hints at it and the build itself reports
+      success. Fix it by setting <code>sso_login</code> and <code>account_sso_login</code> to
+      <code>false</code>. This cost twenty minutes once; it is written down so it costs nobody
+      twenty minutes again.
+    </p>
+  </div>
+
+  <h3>25.3 &nbsp;Production checklist</h3>
+  <ul>
+    <li><code>SPRING_PROFILES_ACTIVE=prod</code></li>
+    <li>A strong <code>JWT_SECRET</code> from a secret store, never from source control</li>
+    <li><code>CORS_ALLOWED_ORIGINS</code> set to the real frontend origin</li>
+    <li><code>SEED_ENABLED=false</code> once the first admin exists</li>
+    <li><code>SWAGGER_ENABLED</code> left off</li>
+    <li>The seeded admin password changed</li>
+  </ul>
+  <div class="box warn">
+    <span class="t">Expect one forced sign-out at the rebrand deploy</span>
+    <p>
+      The browser storage keys moved from <code>mathstrokes.auth.*</code> to
+      <code>iota.auth.*</code>. Existing sessions cannot be read under the new keys, so <b>every
+      signed-in user is signed out exactly once</b> when that build goes live. It happens a single
+      time, not on subsequent deploys, and no server-side data is affected &mdash; but it is worth
+      announcing rather than letting students discover it mid-revision.
+    </p>
+  </div>
+  <p style="font-size:9.6pt;color:var(--muted)">
+    On the <code>prod</code> profile, Flyway clean is disabled, stack traces and binding errors are
+    excluded from responses, and root logging drops to <code>WARN</code>.
+  </p>
+
+  <h2 style="margin-top:2em">26 &nbsp;Testing</h2>
+  <pre><code>cd backend
+./mvnw test                   # 56 unit tests, no database required
+./mvnw verify -Pintegration   # PostgreSQL-backed integration tests
+./e2e/run-all.sh              # 105 assertions against a running instance</code></pre>
+  <table>
+    <thead><tr><th style="width:32%">Area</th><th>What is asserted</th></tr></thead>
+    <tbody>
+      <tr><td>Single-correct scoring</td><td>Correct, wrong, unanswered, and a multi-selection scored as wrong rather than correct</td></tr>
+      <tr><td>Multiple-correct scoring</td><td>Exact match, partial credit, the cap, a wrong selection overriding partial credit, a superset of the key</td></tr>
+      <tr><td>Marking configuration</td><td>A partial award that could match a perfect answer is rejected; a positive penalty is rejected</td></tr>
+      <tr><td>Score aggregation</td><td>Totals, counts, negative marks, accuracy with nothing attempted, a negative total, time capped at the duration</td></tr>
+      <tr><td>Idempotent evaluation</td><td>An evaluated attempt is never rescored; existing results are never rewritten</td></tr>
+      <tr><td>Attempt lifecycle</td><td>An evaluated attempt is terminal and cannot be reopened</td></tr>
+      <tr><td>Palette state</td><td>All five states, including answered-and-marked-for-review</td></tr>
+      <tr><td>Publish rules</td><td>Exactly one key for single correct; at least one but not all for multiple correct; no duplicate labels</td></tr>
+      <tr><td>Content safety</td><td><code>$a &lt; b$</code> accepted; <code>&lt;script&gt;</code>, event handlers and <code>javascript:</code> refused</td></tr>
+      <tr><td>Security answers</td><td>Case- and whitespace-insensitive matching</td></tr>
+    </tbody>
+  </table>
+  <p>Verified end to end against a running instance and PostgreSQL:</p>
+  <ul style="font-size:10pt">
+    <li>A 25-question paper scored 55/100 for 15 correct, 5 wrong and 5 blank, with accuracy 75.00 and attempt rate 80.00 — matching an independently computed expectation.</li>
+    <li>JEE Advanced partial marking scored 35 for 10 exact, 5 partial and 5 wrong.</li>
+    <li>Refreshing resumed the same attempt, same questions, same order, clock not reset.</li>
+    <li>A live attempt payload contained no correctness field and no solution text anywhere.</li>
+    <li>A stale autosave carrying an older sequence was rejected and did not overwrite newer work.</li>
+    <li>Another student was refused read, write and submit with 403.</li>
+    <li>Submitting three times returned the same score every time.</li>
+    <li>Expiry rejected further answers, the sweep auto-submitted and scored the saved work, and a late manual submit returned the result rather than a conflict.</li>
+    <li>A teacher rewrote a stem, flipped its key and archived the question; the existing score, counts, per-question marks, stem and key were byte-identical afterwards.</li>
+    <li>Four students on one test produced ranks 1, 2, 3, 4 with percentiles 100.00, 75.00, 75.00, 25.00, and a student who was rank 1 of 1 correctly became rank 2 of 4 as others finished.</li>
+  </ul>
+</section>
+
+<!-- =========================== 27–29 =========================== -->
+<section class="page">
+  <h2>27 &nbsp;Architecture decisions</h2>
+  <p>
+    Twelve decisions are recorded in full, with rationale and cost, in
+    <code>docs/ARCHITECTURE.md</code>. In summary:
+  </p>
+  <table>
+    <thead><tr><th style="width:6%">#</th><th style="width:34%">Decision</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>A modular monolith, not microservices</td><td>One deployable is cheap to run and easy to reason about; the module seams remain available if extraction is ever needed.</td></tr>
+      <tr><td>2</td><td>Attempts carry an immutable snapshot</td><td>The only way to guarantee a historical result cannot move when a question is edited.</td></tr>
+      <tr><td>3</td><td>The server owns the clock</td><td>A client clock is attacker-controlled; the countdown is a display, not a source of truth.</td></tr>
+      <tr><td>4</td><td>Ranking compares only identical papers</td><td>Two randomly drawn papers are different examinations; comparing them is meaningless.</td></tr>
+      <tr><td>5</td><td>Marking is configuration plus a strategy</td><td>A new rule needs a row, not a release; a new type needs one class.</td></tr>
+      <tr><td>6</td><td>Money-like arithmetic uses BigDecimal</td><td>Partial marking accumulates error under floating point and eventually shows a wrong total.</td></tr>
+      <tr><td>7</td><td>Refresh tokens rotated and stored hashed</td><td>A leak cannot be replayed; a replayed token is detected and revokes the account sessions.</td></tr>
+      <tr><td>8</td><td>Ownership is derived, never accepted</td><td>No endpoint takes a student id, so no endpoint can be talked into acting as someone else.</td></tr>
+      <tr><td>9</td><td>The answer key is structurally absent</td><td>A different type cannot leak a field it does not have; a filter can be forgotten.</td></tr>
+      <tr><td>10</td><td>Idempotent submission</td><td>The auto-submit race needs no conflict screen. The first implementation deadlocked; the fix is documented.</td></tr>
+      <tr><td>11</td><td>Flyway owns the schema</td><td>Hibernate validates against it and refuses to start on drift.</td></tr>
+      <tr><td>12</td><td>Known limitations recorded honestly</td><td>See section 28.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 style="margin-top:2em">28 &nbsp;Limitations and roadmap</h2>
+
+  <h3>28.1 &nbsp;Known limitations</h3>
+  <table>
+    <thead><tr><th style="width:34%">Limitation</th><th>Impact and workaround</th></tr></thead>
+    <tbody>
+      <tr><td>The OpenAPI document marks nothing as required</td><td>Java records carry no nullability metadata. <b>Do not infer optionality from the generated spec</b> — use the omit-null rule and the documented field tables instead.</td></tr>
+      <tr><td>Nulls are omitted, not sent</td><td>Optional fields are <b>absent</b> from responses. Any generated client must model them as optional or it will misread a valid payload.</td></tr>
+      <tr><td>Rate limiting is in-process and per-instance</td><td>Honest for a single-node deployment; behind a load balancer it would need a shared store.</td></tr>
+      <tr><td>No bulk question import</td><td>Questions are created one at a time via the API, or seeded through a Flyway migration.</td></tr>
+      <tr><td>No image upload on questions</td><td>Mathematics is expressed as LaTeX, so there is nothing to store. A question needing a diagram cannot currently be authored.</td></tr>
+      <tr><td>Only two question types</td><td><code>SINGLE_CORRECT</code> and <code>MULTIPLE_CORRECT</code>. Only implemented types are declared, so the enum never advertises something that would fail at runtime.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>28.2 &nbsp;Roadmap, in rough priority order</h3>
+  <ul>
+    <li><b>More question types</b> — <code>NUMERICAL</code>, <code>INTEGER</code>, <code>MATCHING</code>, <code>ASSERTION_REASON</code>, <code>COMPREHENSION</code>. The extension point is real: enum constant, one strategy bean, one marking-scheme row.</li>
+    <li><b>More subjects</b> — Physics and Chemistry need no schema change; <code>subjects</code> and <code>chapters</code> are already generic and the client reads them from the API.</li>
+    <li><b>OTP recovery</b> — the recovery flow is three separate steps precisely so an OTP challenge can replace the security answer without touching the reset step.</li>
+    <li><b>Required-field metadata in the OpenAPI document</b> — <code>@Schema(requiredMode = REQUIRED)</code> across the response DTOs.</li>
+    <li><b>Distributed rate limiting</b> — a shared store behind a load balancer.</li>
+    <li><b>Question versioning as first-class history</b> — attempts already snapshot everything they need, so a teacher-facing revision history would be purely additive.</li>
+    <li><b>Sub-chapters, bulk question import, and scheduled test windows.</b></li>
+  </ul>
+
+  <h2 style="margin-top:2em">29 &nbsp;Glossary</h2>
+  <table>
+    <thead><tr><th style="width:26%">Term</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><b>Attempt</b></td><td>One student sitting of one test. Owns its own snapshot, clock and result.</td></tr>
+      <tr><td><b>Snapshot</b></td><td>The copy of question content, options, answer key and marking configuration taken onto an attempt when it starts. Evaluation reads only this.</td></tr>
+      <tr><td><b>Exam pattern</b></td><td><code>JEE_MAIN</code> or <code>JEE_ADVANCED</code>. Selects the marking scheme. Independent of difficulty.</td></tr>
+      <tr><td><b>Question type</b></td><td><code>SINGLE_CORRECT</code> or <code>MULTIPLE_CORRECT</code>. Decides radio versus checkbox and which evaluation strategy scores the answer.</td></tr>
+      <tr><td><b>Marking scheme</b></td><td>The JSONB configuration mapping outcomes to marks. At most one active per (pattern, type).</td></tr>
+      <tr><td><b>Partial credit</b></td><td>Marks for a strict subset of a multiple-correct key with no wrong selections. JEE Advanced only, in the seeded data.</td></tr>
+      <tr><td><b>Blueprint</b></td><td>A test difficulty mix — <code>easyCount</code>, <code>mediumCount</code>, <code>hardCount</code>.</td></tr>
+      <tr><td><b>Fixed set</b></td><td>A test whose questions are materialised once at publication so every student sits the same paper. The only rankable mode.</td></tr>
+      <tr><td><b>Palette</b></td><td>The 25-square navigator showing each question answer state.</td></tr>
+      <tr><td><b>Client sequence</b></td><td>A monotonic counter incremented once per attempt, used to discard out-of-order autosaves.</td></tr>
+      <tr><td><b>Sweep</b></td><td>The scheduled job that finalises attempts whose deadline has passed.</td></tr>
+      <tr><td><b>Percentile</b></td><td>NTA definition — the share of candidates scoring at or below you, computed on raw score alone.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="end">
+    Iota Platform Handbook v1.4 &nbsp;·&nbsp; compiled 30 August 2026 &nbsp;·&nbsp;
+    applies to Iota 1.0.0 at migration V5<br>
+    Compiled from the repository and its documentation set. Proprietary — all rights reserved.
+  </div>
+</section>
+
+</body>
+</html>

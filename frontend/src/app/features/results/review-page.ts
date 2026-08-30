@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { ApiFailure, QuestionResultStatus, ReviewQuestion, toApiFailure } from '../../core';
+import { Logo } from '../../shared/brand/logo';
 import { MathContent } from '../../shared/math/math-content';
 import { ExamService } from '../exam/exam.service';
 
@@ -17,7 +18,7 @@ import { ExamService } from '../exam/exam.service';
  */
 @Component({
   selector: 'app-review-page',
-  imports: [RouterLink, MathContent],
+  imports: [RouterLink, MathContent, Logo],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './review-page.html',
   styleUrl: './review-page.scss',
