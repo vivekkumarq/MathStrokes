@@ -42,24 +42,23 @@ That is cosmetic; renaming it changes the public URL.
 1. [Deployment status](#deployment-status)
 2. [Repository layout](#repository-layout)
 3. [Features](#features)
-2. [Architecture](#architecture)
-3. [Technology stack](#technology-stack)
-4. [Prerequisites](#prerequisites)
-5. [Local setup](#local-setup)
-6. [Environment variables](#environment-variables)
-7. [Database and migrations](#database-and-migrations)
-8. [Running the backend](#running-the-backend)
-9. [Running the frontend](#running-the-frontend)
-10. [Seed data](#seed-data)
-11. [API documentation](#api-documentation)
-12. [Authentication](#authentication)
-13. [Taking a test](#taking-a-test)
-14. [Writing questions in LaTeX](#writing-questions-in-latex)
-15. [The marking engine](#the-marking-engine)
-16. [Ranking](#ranking)
-17. [Testing](#testing)
-18. [Deployment](#deployment)
-19. [Future work](#future-work)
+4. [Architecture](#architecture)
+5. [Technology stack](#technology-stack)
+6. [Prerequisites](#prerequisites)
+7. [Local setup](#local-setup)
+8. [Environment variables](#environment-variables)
+9. [Database and migrations](#database-and-migrations)
+10. [The data layer](#the-data-layer)
+11. [Seed data](#seed-data)
+12. [API documentation](#api-documentation)
+13. [Authentication](#authentication)
+14. [Taking a test](#taking-a-test)
+15. [Writing questions in LaTeX](#writing-questions-in-latex)
+16. [The marking engine](#the-marking-engine)
+17. [Ranking](#ranking)
+18. [Testing](#testing)
+19. [Deployment](#deployment)
+20. [Future work](#future-work)
 
 ---
 
@@ -300,8 +299,20 @@ the schema disagree. Migrations live in `backend/src/main/resources/db/migration
 | `V1__initial_schema.sql` | 17 tables, constraints and indexes |
 | `V2__seed_reference_data.sql` | Roles, Mathematics, 17 chapters, 4 marking schemes |
 | `V3__seed_sample_questions.sql` | 66 published LaTeX questions |
+| `V4__seed_question_bank.sql` | 11 further chapters and 1,456 questions |
+| `V5__seed_chapter_tests.sql` | A chapter test per chapter and exam pattern |
+| `V6__full_syllabus_tests.sql` | Makes `chapter_id` nullable; 2 full-syllabus papers |
 
-Migrations are never edited once applied — add a new `V4__...` instead.
+Migrations are never edited once applied — add a new `V7__...` instead. This is not a style
+preference. Flyway records a checksum for every migration it has run, and editing an applied file
+makes that checksum disagree on the next boot, which stops the whole application rather than just
+the migration. A comment in `V5` is inaccurate for exactly this reason: it was cheaper to carry the
+correction forward in `V6` than to touch a file that had already run.
+
+`V4` embeds LaTeX-heavy JSON, so it uses dollar-quoted PL/pgSQL (`$seedjson$`) rather than string
+literals — otherwise every backslash in the LaTeX has to be escaped twice. Flyway's placeholder
+replacement is switched off in configuration for the same reason: without that, a JSON object
+opening `${` is read as a Flyway placeholder and the migration fails to parse.
 
 To start over locally:
 
@@ -312,20 +323,237 @@ CREATE DATABASE mathstrokes OWNER mathstrokes;
 
 ---
 
+## The data layer
+
+Everything about where the data sits, how it is shaped, what it weighs and what will run out
+first. The figures below were measured with `pg_column_size`, `pg_total_relation_size` and
+`pg_stat_user_tables` against a **local database carrying the full seeded bank plus 15 real
+attempts** — they are not read from the deployed instance, which has no public endpoint. A
+production database that has been running longer will show more attempt rows and a larger total;
+the per-row costs and the ratios are what carry over.
+
+### Where it lives
+
+| Layer | Host | Address | Notes |
+|---|---|---|---|
+| Frontend | Netlify CDN | `iota-jee.netlify.app` | Static Angular bundle. No data at rest. |
+| API | Render, Docker, Singapore | `iota-api-jjai.onrender.com/api` | Free plan |
+| Database | Render PostgreSQL 17 | `iota-db`, private network only | No public ingress |
+
+The browser calls the API directly rather than through the Netlify proxy. The proxy is still
+configured, but its gateway gives up after about 29 seconds and a cold JVM takes 30–50 to boot, so
+routing through it turned the first request of the day into a 504. CORS is configured for the
+Netlify origin instead.
+
+The database has no public endpoint, which is the right default but has a practical consequence:
+it cannot be opened from a laptop with pgAdmin or `psql`. Everything about production has to be
+reached through the API.
+
+### How the connection is wired
+
+Render injects `DATABASE_URL` through `fromDatabase` in `render.yaml`, so the password is generated
+by the platform and never written into the repository. It arrives in libpq form, which JDBC cannot
+parse:
+
+```
+Render provides   postgresql://user:pass@host/db
+JDBC needs        jdbc:postgresql://host/db  + user and password supplied separately
+```
+
+`DatabaseUrlEnvironmentPostProcessor` rewrites it. It is registered in `META-INF/spring.factories`
+as an `EnvironmentPostProcessor` rather than declared as a bean, because by the time beans are
+constructed the datasource has already tried to start and failed.
+
+### Seventeen tables in four layers
+
+The schema divides by how often each layer changes. Reference data is written once by a migration,
+the question bank is written by the teacher, papers are assembled from the bank, and attempts are
+written by students and then frozen. Nothing in a lower layer is ever mutated by a higher one.
+
+| Table | Rows | Holds |
+|---|---:|---|
+| **Reference** — seeded once, effectively constant | | |
+| `roles` | 2 | `ROLE_ADMIN`, `ROLE_STUDENT` |
+| `subjects` | 1 | Mathematics |
+| `chapters` | 28 | Syllabus units the bank and papers hang off |
+| `marking_schemes` | 4 | JEE Main and Advanced rules, stored as JSONB |
+| **Question bank** — authored, versioned, archivable | | |
+| `questions` | 1,522 | LaTeX stem, explanation, difficulty, status, pattern |
+| `question_options` | 6,088 | Four per question; holds the answer key |
+| **Papers** — which questions form which test | | |
+| `tests` | 61 | 59 chapter tests and 2 full-syllabus papers |
+| `test_questions` | 1,525 | Ordered membership, one row per question per paper |
+| **Attempts** — append-mostly, frozen on submission | | |
+| `test_attempts` | 15 | One per sitting; owns `expires_at` and the final score |
+| `attempt_questions` | 375 | Snapshot of each question as it was at start |
+| `attempt_question_options` | 1,500 | Snapshot of the options and the key |
+| `student_answers` | 169 | What was selected, plus mark-for-review state |
+| `student_answer_options` | 269 | Selected labels; several rows for multiple-correct |
+| `question_attempt_results` | 250 | Marks awarded per question, written at evaluation |
+| **Identity** | | |
+| `users` | 36 | Phone, BCrypt hash, security question and answer hash |
+| `user_roles` | 36 | Join table |
+| `refresh_tokens` | 99 | SHA-256 digests, family, revocation state |
+
+### The snapshot, and what it costs
+
+This is the decision the whole data model is built around, and it is why four of the seventeen
+tables exist.
+
+When a student starts a test, the platform does not store references to questions. It **copies**
+the stem, every option, the answer key and the marking configuration onto the attempt. From that
+point the attempt is self-contained and never reads the question bank again.
+
+The requirement is that later admin edits must not alter old results, and it is far easier to
+satisfy up front than to retrofit. Without the copy, fixing a typo in a stem months later silently
+rewrites what a student saw, and correcting a wrong answer key retroactively changes scores that
+have already been published. With the copy, both are impossible by construction rather than by
+remembering to be careful.
+
+This was checked rather than assumed: a question was rewritten, its answer key flipped and the
+question archived, then the old attempt's stored result was re-read. It came back byte-identical.
+
+The cost is paid in one burst when the attempt starts:
+
+| Table | Rows written |
+|---|---:|
+| `test_attempts` | 1 |
+| `attempt_questions` | 25 |
+| `attempt_question_options` | 100 |
+| **Total before the first question renders** | **126** |
+
+126 inserts in a single transaction is the heaviest thing the application does. It is a fixed cost
+per sitting rather than one that grows, but it lands on a click the student is watching, which is
+why starting a test feels slower than answering one.
+
+### What it weighs
+
+| Table | Total | Heap | Indexes |
+|---|---:|---:|---:|
+| `question_options` | 1160 kB | 552 kB | 568 kB |
+| `questions` | 712 kB | 464 kB | 208 kB |
+| `test_questions` | 448 kB | 120 kB | 296 kB |
+| `attempt_questions` | 432 kB | 272 kB | 128 kB |
+| `attempt_question_options` | 400 kB | 160 kB | 200 kB |
+| `question_attempt_results` | 120 kB | 32 kB | 64 kB |
+| `refresh_tokens` | 112 kB | 24 kB | 64 kB |
+| `tests` | 104 kB | 24 kB | 48 kB |
+| Everything else | under 100 kB each | | |
+
+Whole database: **12 MB**.
+
+Two things are worth noticing. The question bank dominates — `questions` and `question_options`
+together are about 1.9 MB — and that is with 1,522 questions of LaTeX. And the attempt tables are
+already comparable in size to the bank after only 15 attempts. That crossover is the entire
+capacity story.
+
+### Are the indexes earning their place
+
+The busiest, by scan count:
+
+| Index | Scans | Serving |
+|---|---:|---|
+| `chapters_pkey` | 6,470 | Chapter lookup on nearly every screen |
+| `idx_attempt_options_question` | 4,831 | Rendering options during a live attempt |
+| `questions_pkey` | 2,397 | Bank reads and snapshot copying |
+| `idx_chapters_subject_active` | 1,468 | The chapter list students browse |
+| `idx_question_options_question` | 595 | The admin question editor |
+
+Fifteen indexes report zero scans, the largest being `uq_question_options_key` at 208 kB. They
+should not be dropped. Every one is a **unique constraint**, and a unique constraint does its work
+on write rather than on read — `idx_scan` counts query planning, so a constraint that has silently
+rejected every duplicate ever inserted still reports zero. They are the reason the data is
+consistent, not dead weight.
+
+The one real finding is `questions`: 6,352 sequential scans reading 4.67 million tuples between
+them. Almost all of that is migration seeding and the random selection that assembles a
+full-syllabus paper, both of which are inherently full-table operations. Not a problem now; the
+first thing to revisit if the bank grows ten-fold.
+
+### How much fits
+
+Measured against real rows rather than estimated from column types. One completed 25-question
+attempt costs:
+
+| Table | Rows × size | Bytes |
+|---|---|---:|
+| `attempt_questions` | 25 × 620 B | 15,500 |
+| `attempt_question_options` | 100 × 101 B | 10,100 |
+| `question_attempt_results` | 25 × 105 B | 2,625 |
+| `student_answers` | 25 × 96 B | 2,400 |
+| `student_answer_options` | ~40 × 90 B | ~3,600 |
+| `test_attempts` | 1 × 168 B | 168 |
+| **Row payload** | | **~34 kB** |
+| Index entries, ~45% observed | | ~16 kB |
+| **All-in, per attempt** | | **~50 kB** |
+
+Against a 1 GB allowance that is roughly **20,000 attempts**, or about 800 students sitting 25
+tests each. Storage is not the constraint: the deployment is using about 1.2% of it, and the bank —
+the part that feels large because it was authored by hand — is a rounding error against what
+attempts will eventually occupy. Adding a tenth chapter of questions costs less than two students
+sitting one test.
+
+The 1 GB figure is the documented free-tier allowance and should be confirmed on the `iota-db`
+dashboard page, along with whether the free instance carries an expiry date. If it does, that
+matters more than anything below, because it ends with the data gone rather than merely slow.
+
+### What runs out first
+
+Ranked by what a student would actually notice. The database is not near the top.
+
+| Limit | Severity | Detail |
+|---|---|---|
+| Cold start | Worst | The free web service sleeps after about 15 minutes idle and the JVM needs 30–50 seconds to boot. The first student of the morning waits through all of it. The keep-warm GitHub Action helps but is not dependable — the scheduler drops runs under load, which is documented behaviour rather than a bug in the workflow. |
+| 126 inserts on start | By design | The price of historical integrity, paid where the student is watching. Fixed per attempt, but thirty students starting together is 3,780 inserts arriving at once, and that shape has not been load-tested. |
+| Connection pool | Watch | Local PostgreSQL allows 100 connections; free hosted tiers usually allow considerably fewer, and the pool is sized for the generous case. The failure mode is connection exhaustion surfacing as timeouts rather than as a clear error. Worth pinning the pool size once the real limit is known. |
+| Sequential scans on `questions` | Latent | Fine at 1,522 questions. The first thing to revisit at ten times that. |
+| Storage | Not a concern | 12 MB of roughly 1 GB. Every other limit here arrives first. |
+
+### Four things the schema will not let you do wrong
+
+Correctness is enforced by the schema rather than by application code remembering to check — the
+distinction that matters when the code is later changed by someone who has forgotten why.
+
+- **Answer keys cannot leak before submission.** The key lives on the snapshot rows, and
+  serialisation omits nulls rather than sending them, so an unsubmitted attempt does not send a
+  null key whose shape a client could notice. Absence is the signal.
+- **The clock belongs to the server.** `expires_at` is written once at start and never
+  recalculated. Every attempt response carries `serverTime` and `remainingSeconds`, so changing the
+  clock on the student's machine changes nothing. A sweep finalises attempts whose time ran out
+  while they were disconnected.
+- **Refresh tokens are single-use and detect replay.** Stored as SHA-256 digests and rotated on
+  every use. Presenting an already-used token revokes the whole family, which is the right response
+  to a stolen token because there is no way to tell the thief from the victim.
+- **Migrations are validated, not trusted.** `ddl-auto: validate` makes Hibernate refuse to start
+  if the entities and the schema disagree, so a mapping change without a migration fails at boot
+  rather than at runtime.
+
+---
+
 ## Seed data
 
 On a fresh database the application creates:
 
 - **One admin**, from the `SEED_ADMIN_*` environment variables.
-- **Mathematics** and its 17 chapters.
+- **Mathematics** and its 28 chapters.
 - **Four marking schemes**, one per (exam pattern, question type) pair.
-- **66 published questions** with LaTeX stems, options and worked solutions — covering quadratic
-  equations, complex numbers, integrals, limits, matrices and determinants.
-- **Two published tests**, each 25 questions over 60 minutes: one JEE Main (single correct) and
-  one JEE Advanced (multiple correct with partial marking).
+- **1,522 published questions** with LaTeX stems, options and worked solutions, across the whole
+  syllabus — quadratic equations, complex numbers, integrals, limits, matrices, determinants,
+  vectors, conic sections, probability and the rest.
+- **61 published tests**, each 25 questions over 60 minutes: 59 chapter tests and 2 full-syllabus
+  papers that draw one question per chapter.
 
-The sample questions were generated from known integer roots rather than typed by hand, so every
-answer key agrees with its own worked solution.
+`V5` seeds one chapter test per chapter per exam pattern, which is 28 × 2 = 56. The count is 59
+because *Circles* and *Quadratic Equations* still carry the three sample tests seeded earlier by
+`V3`. Every chapter is covered in both patterns; three of them simply have a spare. They are
+harmless and were left in place rather than removed by editing an applied migration.
+
+Each chapter test exists in a JEE Main form (single correct, +4 / −1) and a JEE Advanced form
+(multiple correct with partial marking), so both marking engines are exercised by real data on a
+fresh database.
+
+The questions were generated from known integer roots rather than typed by hand, so every answer
+key agrees with its own worked solution.
 
 Both seeders skip silently if an admin or any test already exists, so restarting the application
 never overwrites real data.
