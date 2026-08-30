@@ -67,6 +67,12 @@ services:
       - key: DB_POOL_MAX
         value: "5"
 
+      # The free instance is CPU-throttled. At strength 12 a single login took over six seconds
+      # and timed out entirely on a cold start. 10 is Spring Security's own default and brings
+      # it under a second. Raise this on a paid instance.
+      - key: BCRYPT_STRENGTH
+        value: "10"
+
 databases:
   - name: iota-db
     plan: free
