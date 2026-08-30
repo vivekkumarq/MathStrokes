@@ -188,8 +188,91 @@ tbody td {
   font-size: 14px;
 }
 
-.pending {
-  margin: 12px 0 0;
+/* Nested detail: lighter than the outer table so the hierarchy stays readable. */
+.perf {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px 18px;
+  padding: 14px 16px;
+  margin-top: 12px;
+  background: var(--ms-surface);
+  border: 1px solid var(--ms-border);
+  border-radius: var(--ms-radius);
+}
+
+.perf-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.perf-v {
+  font-size: 18px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.perf-v small {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ms-ink-muted);
+}
+
+.perf-v .none {
+  font-size: 18px;
+  color: var(--ms-ink-subtle);
+}
+
+.attempts-title {
+  margin: 16px 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ms-ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.detail-empty {
+  padding: 16px;
+  font-size: 13.5px;
+  color: var(--ms-ink-subtle);
+  text-align: center;
+  background: var(--ms-surface);
+  border: 1px solid var(--ms-border);
+  border-radius: var(--ms-radius);
+}
+
+table.attempts {
+  overflow: hidden;
+  font-size: 13px;
+  background: var(--ms-surface);
+  border: 1px solid var(--ms-border);
+  border-radius: var(--ms-radius);
+}
+
+table.attempts thead th {
+  padding: 9px 12px;
+  font-size: 11px;
+}
+
+table.attempts tbody tr {
+  border-bottom: 1px solid var(--ms-border);
+}
+
+table.attempts tbody tr:last-child {
+  border-bottom: 0;
+}
+
+table.attempts tbody td {
+  padding: 9px 12px;
+}
+
+.t-title {
+  font-weight: 500;
+}
+
+table.attempts .col-num small {
+  color: var(--ms-ink-subtle);
 }
 
 .pager {

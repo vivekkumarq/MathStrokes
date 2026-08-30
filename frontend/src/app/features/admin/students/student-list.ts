@@ -1,9 +1,13 @@
-import { DatePipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { toApiFailure } from '../../../core/http/api-failure';
-import { StudentSummaryResponse } from '../../../core/models';
+import {
+  AttemptHistoryItem,
+  StudentPerformanceResponse,
+  StudentSummaryResponse,
+} from '../../../core/models';
 import { StudentAdminService } from '../data/student-admin.service';
 import { AdminShell } from '../layout/admin-shell';
 
@@ -11,7 +15,7 @@ const PAGE_SIZE = 20;
 
 @Component({
   selector: 'app-admin-student-list',
-  imports: [AdminShell, DatePipe, FormsModule],
+  imports: [AdminShell, DatePipe, DecimalPipe, FormsModule],
   templateUrl: './student-list.html',
   styleUrl: './student-list.scss',
 })
@@ -28,6 +32,13 @@ export class AdminStudentList {
 
   /** Which student's detail panel is open, if any. */
   protected readonly expandedId = signal<number | null>(null);
+
+  // Detail for the open student. Fetched on expand rather than up front: loading
+  // performance and attempts for every row would be dozens of calls to show one panel.
+  protected readonly detailLoading = signal(false);
+  protected readonly detailError = signal<string | null>(null);
+  protected readonly performance = signal<StudentPerformanceResponse | null>(null);
+  protected readonly attempts = signal<AttemptHistoryItem[]>([]);
 
   protected search = '';
 
@@ -69,7 +80,43 @@ export class AdminStudentList {
   }
 
   protected toggle(student: StudentSummaryResponse): void {
-    this.expandedId.update((open) => (open === student.id ? null : student.id));
+    const alreadyOpen = this.expandedId() === student.id;
+    this.expandedId.set(alreadyOpen ? null : student.id);
+    if (!alreadyOpen) {
+      this.loadDetail(student.id);
+    }
+  }
+
+  /** True once an attempt has a result worth showing. */
+  protected isEvaluated(attempt: AttemptHistoryItem): boolean {
+    return attempt.status === 'EVALUATED';
+  }
+
+  private loadDetail(id: number): void {
+    this.detailLoading.set(true);
+    this.detailError.set(null);
+    this.performance.set(null);
+    this.attempts.set([]);
+
+    this.students.performance(id).subscribe({
+      next: (p) => this.performance.set(p),
+      // The attempts list is the more useful half, so a failed summary must not hide it.
+      error: () => undefined,
+    });
+
+    this.students.attempts(id).subscribe({
+      next: (page) => {
+        // Discard a response for a student the admin has since collapsed or moved past.
+        if (this.expandedId() === id) {
+          this.attempts.set(page.content);
+        }
+        this.detailLoading.set(false);
+      },
+      error: (err: unknown) => {
+        this.detailLoading.set(false);
+        this.detailError.set(toApiFailure(err).message);
+      },
+    });
   }
 
   protected setEnabled(student: StudentSummaryResponse, enabled: boolean): void {

@@ -121,10 +121,101 @@
                       </div>
                     </div>
 
-                    <p class="ms-alert ms-alert--info pending">
-                      Per-test results and performance for this student are not available yet — the
-                      admin endpoints for them are still being built.
-                    </p>
+                    @if (detailError()) {
+                      <p class="ms-alert ms-alert--error" role="alert">{{ detailError() }}</p>
+                    }
+
+                    @if (performance(); as perf) {
+                      <div class="perf">
+                        <div class="perf-stat">
+                          <span class="k">Tests taken</span>
+                          <span class="perf-v">{{ perf.testsTaken }}</span>
+                        </div>
+                        <div class="perf-stat">
+                          <span class="k">In progress</span>
+                          <span class="perf-v">{{ perf.testsInProgress }}</span>
+                        </div>
+                        <div class="perf-stat">
+                          <span class="k">Average score</span>
+                          <span class="perf-v">
+                            @if (perf.averageScorePercentage !== undefined) {
+                              {{ perf.averageScorePercentage | number: '1.0-1' }}<small>%</small>
+                            } @else { <small class="none">&mdash;</small> }
+                          </span>
+                        </div>
+                        <div class="perf-stat">
+                          <span class="k">Best score</span>
+                          <span class="perf-v">
+                            @if (perf.bestScorePercentage !== undefined) {
+                              {{ perf.bestScorePercentage | number: '1.0-1' }}<small>%</small>
+                            } @else { <small class="none">&mdash;</small> }
+                          </span>
+                        </div>
+                        <div class="perf-stat">
+                          <span class="k">Average accuracy</span>
+                          <span class="perf-v">
+                            @if (perf.averageAccuracy !== undefined) {
+                              {{ perf.averageAccuracy | number: '1.0-1' }}<small>%</small>
+                            } @else { <small class="none">&mdash;</small> }
+                          </span>
+                        </div>
+                        <div class="perf-stat">
+                          <span class="k">Best rank</span>
+                          <span class="perf-v">
+                            @if (perf.bestRank !== undefined) { #{{ perf.bestRank }} }
+                            @else { <small class="none">&mdash;</small> }
+                          </span>
+                        </div>
+                      </div>
+                    }
+
+                    <h3 class="attempts-title">Tests taken</h3>
+                    @if (detailLoading()) {
+                      <p class="detail-empty">Loading&hellip;</p>
+                    } @else if (attempts().length === 0) {
+                      <p class="detail-empty">This student has not started a test yet.</p>
+                    } @else {
+                      <table class="attempts">
+                        <thead>
+                          <tr>
+                            <th>Test</th>
+                            <th>Chapter</th>
+                            <th>Pattern</th>
+                            <th>Status</th>
+                            <th>Submitted</th>
+                            <th class="col-num">Score</th>
+                            <th class="col-num">Rank</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (a of attempts(); track a.attemptId) {
+                            <tr>
+                              <td class="t-title">{{ a.testTitle }}</td>
+                              <td class="col-meta">{{ a.chapterName ?? 'Full syllabus' }}</td>
+                              <td class="col-meta">
+                                {{ a.examPattern === 'JEE_MAIN' ? 'Main' : 'Advanced' }}
+                              </td>
+                              <td class="col-meta">{{ a.status }}</td>
+                              <td class="col-meta">
+                                @if (a.submittedAt) {
+                                  {{ a.submittedAt | date: 'd MMM, h:mm a' }}
+                                } @else { &mdash; }
+                              </td>
+                              <td class="col-num">
+                                @if (isEvaluated(a) && a.score !== undefined) {
+                                  {{ a.score }}<small>/{{ a.maxScore }}</small>
+                                } @else { &mdash; }
+                              </td>
+                              <td class="col-num">
+                                @if (a.rankPosition !== undefined) {
+                                  {{ a.rankPosition }} of {{ a.totalCandidates }}
+                                } @else { &mdash; }
+                              </td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    }
                   </div>
                 </td>
               </tr>
