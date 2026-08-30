@@ -54,8 +54,12 @@ public class ExamTest extends BaseEntity {
     @JoinColumn(name = "subject_id", nullable = false)
     private Subject subject;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "chapter_id", nullable = false)
+    /**
+     * The chapter this test draws from, or null for a full-syllabus paper. Absence is the signal;
+     * there is deliberately no separate scope flag that could disagree with this field.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "chapter_id")
     private Chapter chapter;
 
     @Enumerated(EnumType.STRING)
@@ -117,6 +121,19 @@ public class ExamTest extends BaseEntity {
 
     public boolean isOpenForAttempts() {
         return status == TestStatus.PUBLISHED;
+    }
+
+    /** A paper with no chapter draws from every chapter of its subject. */
+    public boolean isFullSyllabus() {
+        return chapter == null;
+    }
+
+    public Long chapterId() {
+        return chapter == null ? null : chapter.getId();
+    }
+
+    public String chapterName() {
+        return chapter == null ? null : chapter.getName();
     }
 
     public boolean hasFixedQuestionSet() {

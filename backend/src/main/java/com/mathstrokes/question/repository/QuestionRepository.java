@@ -40,12 +40,15 @@ public interface QuestionRepository
      * one exam pattern and the supporting index keeps the scan small. Revisit only if a single
      * chapter grows past tens of thousands of published questions.
      *
+     * A null {@code chapterId} draws from every chapter of the subject, which is what a
+     * full-syllabus paper needs.
+     *
      * {@code excludedIds} must never be empty - pass a sentinel such as List.of(-1L) - because
      * PostgreSQL rejects an empty IN list.
      */
     @Query(value = """
             SELECT q.id FROM questions q
-            WHERE q.chapter_id = :chapterId
+            WHERE (CAST(:chapterId AS bigint) IS NULL OR q.chapter_id = CAST(:chapterId AS bigint))
               AND q.exam_pattern = :examPattern
               AND q.status = 'PUBLISHED'
               AND (CAST(:difficulty AS text) IS NULL OR q.difficulty = CAST(:difficulty AS text))
@@ -61,7 +64,8 @@ public interface QuestionRepository
 
     @Query("""
             select count(q) from Question q
-            where q.chapter.id = :chapterId and q.examPattern = :examPattern
+            where (:chapterId is null or q.chapter.id = :chapterId)
+              and q.examPattern = :examPattern
               and q.status = com.mathstrokes.common.enums.QuestionStatus.PUBLISHED
               and (:difficulty is null or q.difficulty = :difficulty)
             """)

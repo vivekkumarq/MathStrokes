@@ -20,6 +20,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class AttemptMapper {
 
+    // chapterName comes from ExamTest.chapterName(), which is null for a full-syllabus paper.
+    // Null is omitted from the response, and the client labels its absence - the same contract
+    // as activeAttemptId and unavailableReason.
+
+
     public AttemptTimingResponse toTiming(TestAttempt attempt) {
         Instant now = Instant.now();
         return new AttemptTimingResponse(now, attempt.getStartedAt(), attempt.getExpiresAt(),
@@ -38,7 +43,7 @@ public class AttemptMapper {
                 attempt.getTest().getId(),
                 attempt.getTest().getTitle(),
                 attempt.getTest().getSubject().getName(),
-                attempt.getTest().getChapter().getName(),
+                attempt.getTest().chapterName(),
                 attempt.getTest().getExamPattern(),
                 attempt.getStatus(),
                 attempt.getTotalQuestions(),
@@ -86,7 +91,7 @@ public class AttemptMapper {
                 attempt.getId(),
                 attempt.getTest().getId(),
                 attempt.getTest().getTitle(),
-                attempt.getTest().getChapter().getName(),
+                attempt.getTest().chapterName(),
                 attempt.getTest().getExamPattern(),
                 attempt.getStatus(),
                 attempt.getStartedAt(),
