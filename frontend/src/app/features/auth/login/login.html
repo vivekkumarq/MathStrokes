@@ -52,6 +52,12 @@
         }
       </div>
 
+      @if (waking()) {
+        <p class="ms-hint waking" role="status">
+          Waking the server — the first sign-in after a quiet spell can take up to a minute.
+        </p>
+      }
+
       <button class="ms-btn ms-btn--primary ms-btn--block" type="submit" [disabled]="submitting()">
         {{ submitting() ? 'Signing in...' : 'Sign in' }}
       </button>
