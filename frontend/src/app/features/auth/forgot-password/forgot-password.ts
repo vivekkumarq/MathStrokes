@@ -15,7 +15,8 @@ import { toApiFailure } from '../../../core/http/api-failure';
 import { ApiFailure } from '../../../core/models';
 import { firstErrorMessage, shouldShowError } from '../../../shared/forms/server-errors';
 
-const PHONE_PATTERN = /^\d{10,15}$/;
+/** Exactly ten digits. The backend accepts 10-15; the product wants 10. */
+const PHONE_PATTERN = /^\d{10}$/;
 
 function passwordsMatch(group: AbstractControl): ValidationErrors | null {
   const password = group.get('newPassword')?.value;
@@ -76,7 +77,7 @@ export class ForgotPassword {
     return firstErrorMessage(this.formOf(form).get(name), {
       required: 'This field is required.',
       minlength: 'Use at least 8 characters.',
-      pattern: 'Enter a valid phone number (10-15 digits).',
+      pattern: 'Enter a 10-digit phone number.',
     });
   }
 
