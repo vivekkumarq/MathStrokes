@@ -1,7 +1,16 @@
 import json, os, urllib.request, urllib.error
 
-API = 'http://localhost:8080/api'
-state = json.load(open(os.path.join(os.path.dirname(__file__), 'state.json')))
+import os
+
+API = os.environ.get('MATHSTROKES_API', 'http://localhost:8080/api')
+DB_NAME = os.environ.get('MATHSTROKES_DB', 'mathstrokes')
+DB_USER = os.environ.get('MATHSTROKES_DB_USER', 'mathstrokes')
+DB_PASSWORD = os.environ.get('MATHSTROKES_DB_PASSWORD', 'mathstrokes')
+PSQL = os.environ.get('PSQL_PATH', r'C:\Program Files\PostgreSQLin\psql.exe')
+STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.state.json')
+
+
+state = json.load(open(STATE_FILE))
 aid, TOK = state['attemptId'], state['token']
 
 def call(method, path, token=None, body=None):

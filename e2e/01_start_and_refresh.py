@@ -1,6 +1,15 @@
 import json, urllib.request, urllib.error, sys
 
-API = 'http://localhost:8080/api'
+import os
+
+API = os.environ.get('MATHSTROKES_API', 'http://localhost:8080/api')
+DB_NAME = os.environ.get('MATHSTROKES_DB', 'mathstrokes')
+DB_USER = os.environ.get('MATHSTROKES_DB_USER', 'mathstrokes')
+DB_PASSWORD = os.environ.get('MATHSTROKES_DB_PASSWORD', 'mathstrokes')
+PSQL = os.environ.get('PSQL_PATH', r'C:\Program Files\PostgreSQLin\psql.exe')
+STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.state.json')
+
+
 
 def call(method, path, token=None, body=None):
     data = json.dumps(body).encode() if body is not None else None
@@ -25,8 +34,16 @@ def check(label, cond, detail=''):
     if not ok(label, cond, detail):
         failures.append(label)
 
-# ---- sign in as the student registered earlier
-_, auth = call('POST', '/auth/login', body={'phoneNumber': '9812345670', 'password': 'Student@2026'})
+# ---- the demo student. Registering is idempotent for our purposes: on a database where the
+# ---- account already exists the call fails harmlessly and we simply sign in.
+call('POST', '/auth/student/register', body={
+    'fullName': 'Ananya Sharma', 'phoneNumber': '9812345670', 'password': 'Student@2026',
+    'confirmPassword': 'Student@2026',
+    'securityQuestion': 'In which city were you born?', 'securityAnswer': 'Delhi'})
+status, auth = call('POST', '/auth/login',
+                    body={'phoneNumber': '9812345670', 'password': 'Student@2026'})
+if status != 200:
+    raise SystemExit('could not sign in as the demo student: %s %s' % (status, auth))
 TOK = auth['accessToken']
 print('signed in as', auth['user']['fullName'])
 
@@ -72,3 +89,6 @@ again_ids = [q['attemptQuestionId'] for q in again['questions']]
 check('identical questions in identical order', first_ids == again_ids)
 check('timer did not reset', again['timing']['remainingSeconds'] <= t['remainingSeconds'],
       again['timing']['remainingSeconds'])
+
+print()
+print('ALL PASSED' if not failures else 'FAILURES: ' + str(failures))

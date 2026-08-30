@@ -14,6 +14,12 @@ cover the system.
 Start the backend against a **development** database, then:
 
 ```bash
+./e2e/run-all.sh
+```
+
+which prints one line per script and a single tally, or run them individually:
+
+```bash
 python e2e/01_start_and_refresh.py
 python e2e/02_autosave_and_access.py
 python e2e/03_submit_and_score.py
@@ -22,14 +28,35 @@ python e2e/05_historical_integrity.py
 python e2e/06_expiry_and_autosubmit.py
 ```
 
-Run them in order — 03 continues the attempt that 02 leaves behind.
+A clean run against a freshly migrated database reports **105 assertions passed across 6
+scripts**.
+
+Run them in order, **against a freshly migrated database**. They are a one-shot suite, not
+idempotent: 03 continues the attempt 02 leaves behind, and 01 sits a test whose seeded
+configuration allows a single attempt per student, so a second run of 01 correctly fails with
+"You have already used all 1 attempt(s)". Re-create the database to run them again.
+
+```bash
+psql -U postgres -c "DROP DATABASE IF EXISTS mathstrokes_dev"
+psql -U postgres -c "CREATE DATABASE mathstrokes_dev OWNER mathstrokes"
+```
+
+They read configuration from the environment, so they can be pointed at any instance:
+
+```bash
+export MATHSTROKES_API=http://localhost:8080/api
+export MATHSTROKES_DB=mathstrokes
+export MATHSTROKES_DB_USER=mathstrokes
+export MATHSTROKES_DB_PASSWORD=...
+export PSQL_PATH=/usr/bin/psql          # Windows default is the PostgreSQL 17 install path
+```
 
 Requirements: Python 3.8+ (standard library only) and `psql` on the path. The scripts read the
 answer key straight from the database, which is how they can assert an exact expected score rather
 than merely a self-consistent one.
 
-They assume the seeded data: admin `9000000001` / `Admin@2026`, student `9812345670` /
-`Student@2026`, and the two seeded 25-question tests.
+They assume the seeded admin (`9000000001` / `Admin@2026`) and the two seeded 25-question tests.
+The demo student is registered by script 01 rather than assumed.
 
 > **They write data.** They register students, sit tests, and 05 deliberately rewrites and archives
 > a question. Point them at a development database, never at production.

@@ -1,6 +1,15 @@
 import json, os, subprocess, time, urllib.request, urllib.error
 
-API = 'http://localhost:8080/api'
+import os
+
+API = os.environ.get('MATHSTROKES_API', 'http://localhost:8080/api')
+DB_NAME = os.environ.get('MATHSTROKES_DB', 'mathstrokes')
+DB_USER = os.environ.get('MATHSTROKES_DB_USER', 'mathstrokes')
+DB_PASSWORD = os.environ.get('MATHSTROKES_DB_PASSWORD', 'mathstrokes')
+PSQL = os.environ.get('PSQL_PATH', r'C:\Program Files\PostgreSQLin\psql.exe')
+STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.state.json')
+
+
 PSQL = r'C:\Program Files\PostgreSQL\17\bin\psql.exe'
 
 def call(method, path, token=None, body=None):
@@ -18,8 +27,8 @@ def call(method, path, token=None, body=None):
         return e.code, (json.loads(raw) if raw else None)
 
 def sql(query):
-    env = dict(os.environ, PGPASSWORD='mathstrokes')
-    out = subprocess.run([PSQL, '-U', 'mathstrokes', '-h', 'localhost', '-d', 'mathstrokes',
+    env = dict(os.environ, PGPASSWORD=DB_PASSWORD)
+    out = subprocess.run([PSQL, '-U', DB_USER, '-h', 'localhost', '-d', DB_NAME,
                           '-t', '-A', '-F', '|', '-c', query], capture_output=True, text=True, env=env)
     return [l for l in out.stdout.strip().split('\n') if l]
 

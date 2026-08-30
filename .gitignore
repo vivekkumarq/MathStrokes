@@ -47,3 +47,6 @@ desktop.ini
 coverage/
 .nyc_output/
 /backend/src/test/resources/application-local.yml
+
+# Scratch state written by the end-to-end scripts as they hand off to each other
+e2e/.state.json
