@@ -68,6 +68,13 @@ export const routes: Routes = [
     loadComponent: () => import('./features/results/review-page').then((m) => m.ReviewPage),
   },
   {
+    path: 'admin/students',
+    canActivate: [roleGuard('ROLE_ADMIN')],
+    title: 'Students · iota',
+    loadComponent: () =>
+      import('./features/admin/students/student-list').then((m) => m.AdminStudentList),
+  },
+  {
     path: 'admin/tests',
     canActivate: [roleGuard('ROLE_ADMIN')],
     title: 'Tests · iota',
