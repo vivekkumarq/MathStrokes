@@ -223,3 +223,21 @@ $cols: minmax(0, 1fr) 8.5rem 6rem 6.5rem 8.5rem;
     margin-top: 0.35rem;
   }
 }
+
+/* --- Grouping ------------------------------------------------------------------------
+   Full-syllabus papers are a different kind of thing from chapter tests, so they get
+   their own heading rather than being sorted in among them. */
+.group + .group {
+  margin-top: 2rem;
+}
+
+.group-title {
+  margin: 0 0 0.2rem;
+  font-size: 1.05rem;
+}
+
+.group-sub {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  color: var(--ms-ink-muted);
+}
