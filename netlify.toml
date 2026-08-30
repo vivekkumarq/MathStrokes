@@ -3,7 +3,8 @@
 # static files and edge functions only - so the API lives on a container host and Netlify
 # proxies through to it.
 #
-# BEFORE THE FIRST DEPLOY: replace BACKEND_ORIGIN below with the real backend URL.
+# The backend runs on Render as the `iota-api` service. If it ever moves, the hostname in the
+# /api/* rule below is the only place that needs changing - it is not compiled into the bundle.
 # =====================================================================================
 
 [build]
@@ -30,7 +31,7 @@
 # -------------------------------------------------------------------------------------
 [[redirects]]
   from   = "/api/*"
-  to     = "https://BACKEND_ORIGIN/api/:splat"
+  to     = "https://iota-api-jjai.onrender.com/api/:splat"
   status = 200
   force  = true
 
