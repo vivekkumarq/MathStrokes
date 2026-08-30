@@ -241,3 +241,9 @@ $cols: minmax(0, 1fr) 8.5rem 6rem 6.5rem 8.5rem;
   font-size: 0.85rem;
   color: var(--ms-ink-muted);
 }
+
+/* Only rendered where two papers share a chapter and pattern, so the rows can be told
+   apart without adding noise to the other fifty-odd. */
+.title-hint {
+  color: var(--ms-ink-muted);
+}
