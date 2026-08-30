@@ -1,4 +1,4 @@
-# Iota
+# iota
 
 **An online Mathematics examination platform for JEE aspirants.**
 
@@ -6,7 +6,7 @@
 > The frontend is deployed. The API is not yet hosted, so sign-in does not work on the public
 > site — see [Deployment status](#deployment-status).
 
-*Iota* is the Greek letter iota, the standard name in Indian mathematics teaching for the
+*iota* is the Greek letter iota, the standard name in Indian mathematics teaching for the
 imaginary unit $i = \sqrt{-1}$, and also the word for the smallest quantity.
 
 A teacher writes mathematics questions in LaTeX and publishes timed tests. A student sits a
@@ -15,7 +15,7 @@ autosaved answers, then gets a scored, ranked result with analytics.
 
 Built as a modular monolith: Angular in front, Spring Boot and PostgreSQL behind.
 
-**Full reference:** [`docs/Iota-Handbook.pdf`](docs/Iota-Handbook.pdf) — 52 pages covering the
+**Full reference:** [`docs/iota-handbook.pdf`](docs/iota-handbook.pdf) — 52 pages covering the
 data model, every endpoint, the admin question-authoring flow and deployment.
 
 ---
@@ -89,7 +89,7 @@ That is cosmetic; renaming it changes the public URL.
 │       ├── shared/             KaTeX renderer, logo, form helpers
 │       └── features/           auth, student, exam, results, admin
 ├── docs/
-│   ├── Iota-Handbook.pdf       52-page reference
+│   ├── iota-handbook.pdf       52-page reference
 │   ├── API.md                  endpoint reference and error contract
 │   ├── ARCHITECTURE.md         12 decision records
 │   └── DEPLOYMENT.md           hosting walkthrough
