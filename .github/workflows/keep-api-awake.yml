@@ -1,0 +1,41 @@
+# Keeps the API from cold-starting.
+#
+# The free Render tier suspends a container after roughly 15 minutes without traffic, and the next
+# request then pays for a JVM boot and a fresh database connection - 30 to 50 seconds, which reads
+# as "the site is broken" to anyone waiting on it. A request every ten minutes keeps the instance
+# resident so nobody ever meets that.
+#
+# This is a workaround for a hosting tier, not a fix for slow code. A paid instance removes the
+# need for it entirely, and this workflow can be deleted the day that happens.
+#
+# Render's free allowance is 750 instance-hours a month against a ~730-hour month, so one
+# permanently-awake service fits inside it.
+name: Keep API awake
+
+on:
+  schedule:
+    # Every ten minutes. GitHub queues scheduled runs and can be late under load, so this is
+    # deliberately well inside the ~15 minute idle window rather than close to it.
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: keep-api-awake
+  cancel-in-progress: true
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Ping the health endpoint
+        run: |
+          URL="https://iota-api-jjai.onrender.com/api/actuator/health"
+          # A generous timeout on purpose: if the instance HAS gone to sleep this request is the
+          # one that wakes it, and that is the slow path we are trying to spare a real user.
+          code=$(curl -s -o /tmp/body -w '%{http_code}' --max-time 120 "$URL" || echo "000")
+          echo "HTTP $code"
+          cat /tmp/body || true
+          if [ "$code" != "200" ]; then
+            echo "::warning::Health check returned $code rather than 200"
+          fi

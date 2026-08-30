@@ -13,12 +13,14 @@ import com.mathstrokes.common.exception.ApiException;
 import com.mathstrokes.common.exception.ErrorCode;
 import com.mathstrokes.common.exception.ValidationException;
 import com.mathstrokes.security.jwt.JwtService;
+import com.mathstrokes.security.service.UserPrincipal;
 import com.mathstrokes.user.entity.Role;
 import com.mathstrokes.user.entity.User;
 import com.mathstrokes.user.repository.RoleRepository;
 import com.mathstrokes.user.repository.UserRepository;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -100,8 +102,9 @@ public class AuthService {
         String phoneNumber = request.phoneNumber().trim();
         rateLimiter.checkAllowed(phoneNumber);
 
+        Authentication authentication;
         try {
-            authenticationManager.authenticate(
+            authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(phoneNumber, request.password()));
         } catch (AuthenticationException ex) {
             rateLimiter.recordFailure(phoneNumber);
@@ -111,7 +114,11 @@ public class AuthService {
                     "Incorrect phone number or password");
         }
 
-        User user = userRepository.findByPhoneNumber(phoneNumber)
+        // Authentication already loaded the account and its roles to check the password. Looking
+        // it up again by phone number repeats that query and its join; the principal carries the
+        // id, so this is a primary-key fetch of a row the session has usually already cached.
+        Long userId = ((UserPrincipal) authentication.getPrincipal()).id();
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ApiException(ErrorCode.AUTHENTICATION_FAILED,
                         "Incorrect phone number or password"));
         rateLimiter.reset(phoneNumber);
