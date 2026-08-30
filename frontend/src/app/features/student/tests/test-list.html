@@ -84,7 +84,7 @@
             }
           </span>
           <span class="chapter-meta">
-            {{ test.attemptsUsed }} of {{ test.maxAttemptsPerStudent }} attempts used@if (test.rankingEnabled) {<span class="ranked"> · ranked</span>}
+            @if (needsTitle(test)) {<span class="title-hint">{{ test.title }} · </span>}{{ test.attemptsUsed }} of {{ test.maxAttemptsPerStudent }} attempts used@if (test.rankingEnabled) {<span class="ranked"> · ranked</span>}
           </span>
         </div>
 
