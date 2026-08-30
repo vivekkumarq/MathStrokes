@@ -338,7 +338,12 @@ the per-row costs and the ratios are what carry over.
 |---|---|---|---|
 | Frontend | Netlify CDN | `iota-jee.netlify.app` | Static Angular bundle. No data at rest. |
 | API | Render, Docker, Singapore | `iota-api-jjai.onrender.com/api` | Free plan |
-| Database | Render PostgreSQL 17 | `iota-db`, private network only | No public ingress |
+| Database | Render PostgreSQL 18.6 | `iota-db`, private network only | No public ingress |
+
+Development runs PostgreSQL 17 and production is on 18.6, which is worth knowing because Flyway
+11.7.2 logs a warning on every production boot: its latest tested version is 17. Nothing has
+misbehaved, and the migrations use no version-specific syntax, but the combination is untested
+upstream rather than blessed.
 
 The browser calls the API directly rather than through the Netlify proxy. The proxy is still
 configured, but its gateway gives up after about 29 seconds and a cold JVM takes 30–50 to boot, so
