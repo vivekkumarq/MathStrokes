@@ -1,5 +1,6 @@
 import { HttpClient, HttpContext, HttpContextToken } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 
 import { API_CONFIG } from '../config/api.config';
@@ -32,6 +33,7 @@ export function skipAuth(): HttpContext {
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly store = inject(AuthStore);
+  private readonly router = inject(Router);
   private readonly baseUrl = inject(API_CONFIG).baseUrl;
 
   /**
@@ -75,8 +77,33 @@ export class AuthService {
       .pipe(tap((response) => this.adopt(response)));
   }
 
-  logout(): Observable<MessageResponse> {
+  /**
+   * Signs the user out.
+   *
+   * Tears the local session down and navigates FIRST, then fires the revocation without
+   * waiting for it. Every caller already discarded the result — they cleared the session
+   * on both success and failure — so blocking only made the user wait to learn an outcome
+   * nobody acts on. On a sleeping backend that wait is 30-50 seconds spent on a page they
+   * asked to leave.
+   *
+   * Nothing is lost by not waiting: the refresh token is gone from storage the moment the
+   * session clears, the access token expires on its own, and if the request does land the
+   * server revokes exactly as before.
+   */
+  signOut(): void {
+    // Read the token before clearing, or there is nothing left to revoke.
     const refreshToken = this.store.refreshToken();
+
+    this.store.clearSession();
+    void this.router.navigate(['/login']);
+
+    if (refreshToken) {
+      this.revoke(refreshToken).subscribe({ next: () => undefined, error: () => undefined });
+    }
+  }
+
+  /** Best-effort server-side revocation. Callers should prefer signOut(). */
+  revoke(refreshToken: string): Observable<MessageResponse> {
     return this.http.post<MessageResponse>(`${this.baseUrl}/auth/logout`, { refreshToken });
   }
 
