@@ -1,0 +1,73 @@
+# =====================================================================================
+# Netlify hosts the Angular app. Netlify cannot run the Spring Boot backend - it serves
+# static files and edge functions only - so the API lives on a container host and Netlify
+# proxies through to it.
+#
+# BEFORE THE FIRST DEPLOY: replace BACKEND_ORIGIN below with the real backend URL.
+# =====================================================================================
+
+[build]
+  base    = "frontend"
+  command = "npm ci && npm run build"
+  publish = "dist/frontend/browser"
+
+[build.environment]
+  NODE_VERSION = "22"
+  # Angular's CLI analytics prompt would otherwise stall a non-interactive build.
+  NG_CLI_ANALYTICS = "false"
+
+# -------------------------------------------------------------------------------------
+# API proxy.
+#
+# The browser calls /api/... on the Netlify origin and Netlify forwards it to the backend.
+# This is worth doing rather than calling the backend directly: it makes the API
+# same-origin, so there is no CORS preflight on every request and no cross-origin
+# configuration to keep in step between two hosts. The backend still needs
+# CORS_ALLOWED_ORIGINS set for local development, where there is no proxy.
+#
+# Placed BEFORE the SPA fallback: Netlify applies rules in order, and the catch-all below
+# would otherwise swallow API calls and return index.html.
+# -------------------------------------------------------------------------------------
+[[redirects]]
+  from   = "/api/*"
+  to     = "https://BACKEND_ORIGIN/api/:splat"
+  status = 200
+  force  = true
+
+# -------------------------------------------------------------------------------------
+# SPA fallback. The router uses real paths, so a refresh on /exam/12 or a shared link to
+# /results/7 must serve index.html rather than 404.
+# -------------------------------------------------------------------------------------
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200
+
+# -------------------------------------------------------------------------------------
+# Headers. The API sets its own; these cover the documents and assets Netlify serves.
+# -------------------------------------------------------------------------------------
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options   = "nosniff"
+    X-Frame-Options          = "DENY"
+    Referrer-Policy          = "strict-origin-when-cross-origin"
+    Permissions-Policy       = "camera=(), microphone=(), geolocation=(), payment=()"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+
+# Hashed build artefacts are immutable, so they can be cached hard.
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# index.html must never be cached, or a deploy leaves browsers on the old bundle.
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"

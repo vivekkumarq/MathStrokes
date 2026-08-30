@@ -30,14 +30,27 @@ spring:
     enabled: true
     baseline-on-migrate: true
     locations: classpath:db/migration
+    # Off because the seed migrations embed JSON, and Flyway would read every '${' in that
+    # payload as one of its own placeholders and refuse to run. We use no Flyway placeholders.
+    placeholder-replacement: false
   jackson:
     default-property-inclusion: non_null
+  data:
+    web:
+      pageable:
+        # Spring's own ceiling is 2000. A client asking for a page that large is either a bug or
+        # an attempt to pull the whole bank in one request; neither needs serving.
+        max-page-size: 100
+        default-page-size: 20
   threads:
     virtual:
       enabled: true
 
 server:
   port: ${PORT:8080}
+  # Deployed behind a TLS-terminating proxy, so honour X-Forwarded-Proto and X-Forwarded-For.
+  # Without this Spring believes every request arrived over plain HTTP and omits HSTS.
+  forward-headers-strategy: framework
   servlet:
     context-path: /api
   compression:

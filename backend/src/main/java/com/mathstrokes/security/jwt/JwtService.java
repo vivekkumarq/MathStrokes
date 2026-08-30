@@ -32,6 +32,8 @@ public class JwtService {
     public static final String CLAIM_TOKEN_TYPE = "typ";
     public static final String CLAIM_ROLES = "roles";
     public static final String CLAIM_USER_ID = "uid";
+    /** Fingerprint of the password the reset token was minted against. */
+    public static final String CLAIM_PASSWORD_FINGERPRINT = "pwf";
 
     private final JwtProperties properties;
     private final SecretKey signingKey;
@@ -61,9 +63,26 @@ public class JwtService {
                 properties.getRefreshTokenExpiration(), tokenId);
     }
 
-    public String generatePasswordResetToken(Long userId, String phoneNumber) {
-        return buildToken(TokenType.PASSWORD_RESET, userId, phoneNumber, List.of(),
-                properties.getPasswordResetTokenExpiration(), UUID.randomUUID().toString());
+    /**
+     * @param passwordFingerprint digest of the password hash in force right now. Checking it at
+     *                            redemption is what makes the token single-use: applying a new
+     *                            password changes the hash, so the fingerprint stops matching and
+     *                            the token is dead even though it has not expired.
+     */
+    public String generatePasswordResetToken(Long userId, String phoneNumber,
+                                             String passwordFingerprint) {
+        Instant now = Instant.now();
+        return Jwts.builder()
+                .issuer(properties.getIssuer())
+                .subject(phoneNumber)
+                .claim(CLAIM_TOKEN_TYPE, TokenType.PASSWORD_RESET.name())
+                .claim(CLAIM_USER_ID, userId)
+                .claim(CLAIM_PASSWORD_FINGERPRINT, passwordFingerprint)
+                .id(UUID.randomUUID().toString())
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plus(properties.getPasswordResetTokenExpiration())))
+                .signWith(signingKey)
+                .compact();
     }
 
     private String buildToken(TokenType type, Long userId, String subject, List<String> roles,

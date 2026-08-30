@@ -16,9 +16,11 @@ import com.mathstrokes.auth.service.AuthService;
 import com.mathstrokes.auth.service.PasswordResetService;
 import com.mathstrokes.auth.service.SecurityQuestionCatalog;
 import com.mathstrokes.common.dto.MessageResponse;
+import com.mathstrokes.common.util.ClientIpResolver;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -57,9 +59,11 @@ public class AuthController {
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Register a student account",
             description = "Always creates a ROLE_STUDENT account; the role cannot be chosen. "
-                    + "Returns a signed-in session so the student does not have to log in again.")
-    public AuthResponse register(@Valid @RequestBody StudentRegistrationRequest request) {
-        return authService.registerStudent(request);
+                    + "Returns a signed-in session so the student does not have to log in again. "
+                    + "Throttled per client address to stop bulk account creation.")
+    public AuthResponse register(@Valid @RequestBody StudentRegistrationRequest request,
+                                 HttpServletRequest httpRequest) {
+        return authService.registerStudent(request, ClientIpResolver.resolve(httpRequest));
     }
 
     @PostMapping("/login")

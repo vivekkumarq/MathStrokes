@@ -1,0 +1,75 @@
+# =====================================================================================
+# Render blueprint for the MathStrokes API.
+#
+# Netlify serves the Angular app; it cannot run a JVM. This deploys the backend container
+# that Netlify's /api/* proxy points at.
+#
+# Render is one option among several - Railway, Fly.io and Koyeb all take the same
+# Dockerfile. Nothing in the application is tied to a provider: it is a plain container
+# configured entirely through environment variables.
+#
+# FIRST DEPLOY: Render > New > Blueprint > point at this repository.
+# =====================================================================================
+
+services:
+  - type: web
+    name: mathstrokes-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    region: singapore          # closest to the intended users; change if yours differ
+    healthCheckPath: /api/actuator/health
+    autoDeploy: true
+
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+
+      # Generated once by Render and then held. Rotating it signs everybody out, which is
+      # the correct behaviour if it ever leaks.
+      - key: JWT_SECRET
+        generateValue: true
+
+      # Supplied by the managed database below.
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_USERNAME
+        sync: false
+      - key: DATABASE_PASSWORD
+        sync: false
+
+      # The Netlify site origin. Only needed for direct browser calls; requests arriving
+      # through the Netlify proxy are same-origin and never preflight.
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+
+      # First boot only. Set these three, deploy, sign in, change the password, then set
+      # SEED_ENABLED to false. The seeder refuses to invent a default password, so leaving
+      # them unset simply means no admin is created.
+      - key: SEED_ENABLED
+        value: "true"
+      - key: SEED_ADMIN_NAME
+        sync: false
+      - key: SEED_ADMIN_PHONE
+        sync: false
+      - key: SEED_ADMIN_PASSWORD
+        sync: false
+      - key: SEED_ADMIN_SECURITY_QUESTION
+        sync: false
+      - key: SEED_ADMIN_SECURITY_ANSWER
+        sync: false
+
+      - key: SWAGGER_ENABLED
+        value: "false"
+
+      # Free tiers cap connections tightly; 5 leaves room for the platform's own probes.
+      - key: DB_POOL_MAX
+        value: "5"
+
+databases:
+  - name: mathstrokes-db
+    plan: free
+    databaseName: mathstrokes
+    user: mathstrokes
+    region: singapore

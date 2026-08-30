@@ -12,6 +12,7 @@ import com.mathstrokes.common.exception.ResourceNotFoundException;
 import com.mathstrokes.common.exception.ValidationException;
 import com.mathstrokes.config.JwtProperties;
 import com.mathstrokes.security.jwt.JwtService;
+import com.mathstrokes.security.jwt.TokenHasher;
 import com.mathstrokes.security.jwt.TokenType;
 import com.mathstrokes.user.entity.User;
 import com.mathstrokes.user.repository.UserRepository;
@@ -40,17 +41,19 @@ public class PasswordResetService {
     private final JwtProperties jwtProperties;
     private final RefreshTokenService refreshTokenService;
     private final LoginRateLimiter rateLimiter;
+    private final TokenHasher tokenHasher;
 
     public PasswordResetService(UserRepository userRepository, PasswordEncoder passwordEncoder,
                                 JwtService jwtService, JwtProperties jwtProperties,
                                 RefreshTokenService refreshTokenService,
-                                LoginRateLimiter rateLimiter) {
+                                LoginRateLimiter rateLimiter, TokenHasher tokenHasher) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.jwtProperties = jwtProperties;
         this.refreshTokenService = refreshTokenService;
         this.rateLimiter = rateLimiter;
+        this.tokenHasher = tokenHasher;
     }
 
     /**
@@ -97,7 +100,8 @@ public class PasswordResetService {
         }
 
         rateLimiter.reset(key);
-        String token = jwtService.generatePasswordResetToken(user.getId(), user.getPhoneNumber());
+        String token = jwtService.generatePasswordResetToken(user.getId(), user.getPhoneNumber(),
+                fingerprint(user.getPasswordHash()));
         return new PasswordResetTokenResponse(token,
                 jwtProperties.getPasswordResetTokenExpiration().toSeconds());
     }
@@ -116,6 +120,15 @@ public class PasswordResetService {
                 .orElseThrow(() -> new ApiException(ErrorCode.TOKEN_INVALID,
                         "This reset link is no longer valid"));
 
+        // Single use, enforced without storing anything: the token carries a fingerprint of the
+        // password it was minted against. Completing a reset changes the password hash, so the
+        // fingerprint stops matching and a replayed token is refused even inside its lifetime.
+        String presented = claims.get(JwtService.CLAIM_PASSWORD_FINGERPRINT, String.class);
+        if (presented == null || !presented.equals(fingerprint(user.getPasswordHash()))) {
+            throw new ApiException(ErrorCode.TOKEN_INVALID,
+                    "This reset link has already been used. Start the recovery process again.");
+        }
+
         if (passwordEncoder.matches(request.newPassword(), user.getPasswordHash())) {
             throw new ValidationException("Password reset failed", List.of(
                     FieldErrorItem.of("newPassword",
@@ -125,5 +138,10 @@ public class PasswordResetService {
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
         // Anyone holding a session for this account loses it, which is the point of a reset.
         refreshTokenService.revokeAllForUser(user.getId());
+    }
+
+    /** Digest of the stored password hash. Never the password, and never reversible to it. */
+    private String fingerprint(String passwordHash) {
+        return tokenHasher.hash(passwordHash);
     }
 }

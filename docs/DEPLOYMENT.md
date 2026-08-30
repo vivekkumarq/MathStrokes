@@ -29,6 +29,80 @@ Two things to know about free tiers before you pick one:
 
 ---
 
+## The shape of a Netlify deployment
+
+Netlify serves static files. It **cannot run the Spring Boot backend** — there is no JVM on a
+Netlify build, and an Angular bundle is not a server. So a deployment is three pieces:
+
+```
+  Netlify            netlify.toml           Render / Railway / Fly
+  Angular app  ──────  /api/*  proxy  ─────▶  Spring Boot container
+                                                      │
+                                                      ▼
+                                              managed PostgreSQL
+```
+
+Two config files in this repository do most of the work:
+
+| File | What it does |
+|---|---|
+| `netlify.toml` | Build command, publish directory, the `/api/*` proxy, SPA fallback, cache and security headers |
+| `render.yaml` | The backend service and database as a Render blueprint |
+
+**Why proxy `/api/*` through Netlify rather than calling the backend directly.** It makes the API
+same-origin from the browser's point of view, so there is no CORS preflight on every request and
+no cross-origin configuration to keep in step between two hosts. It also means the backend's URL
+appears in exactly one place — `netlify.toml` — instead of being baked into the JavaScript bundle.
+
+Order matters in `netlify.toml`: the `/api/*` rule is declared **before** the SPA catch-all,
+because Netlify applies rules in order and `/*  →  /index.html` would otherwise swallow every
+API call and hand the browser an HTML page where it expected JSON.
+
+### Step by step
+
+**1. Database.** Create a PostgreSQL instance — Neon and Supabase both have a free tier that does
+not expire; Render's own free database currently expires after 90 days, which matters if this is
+meant to stay up. Convert the connection string to JDBC form as shown below.
+
+**2. Backend.** Render → New → Blueprint → point it at this repository. It reads `render.yaml`,
+builds `backend/Dockerfile` and starts the service. Set the variables marked `sync: false`:
+`DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`, `CORS_ALLOWED_ORIGINS`, and the five
+`SEED_ADMIN_*` values for the first boot. `JWT_SECRET` is generated for you.
+
+Flyway builds the schema and seeds the full question bank on first start. Wait for
+`/api/actuator/health` to return `{"status":"UP"}` before continuing, and note the service URL.
+
+**3. Frontend.** Edit `netlify.toml` and replace `BACKEND_ORIGIN` with that hostname — no scheme,
+no trailing slash:
+
+```toml
+to = "https://mathstrokes-api.onrender.com/api/:splat"
+```
+
+Then Netlify → Add new site → Import an existing project → pick this repository. It reads
+`netlify.toml`, so the build command, publish directory and redirects need no configuration in the
+dashboard.
+
+**4. Point the app at the proxy.** The Angular client currently targets
+`http://localhost:8080/api`. For production it must call `/api` on its own origin so the proxy
+picks it up. That is a one-line change in the frontend's API configuration and must be done before
+the production build, or the deployed site will try to reach localhost from the visitor's machine.
+
+**5. Afterwards.** Sign in as the seeded admin, change the password, then set `SEED_ENABLED=false`
+and redeploy the backend.
+
+### Free-tier realities worth knowing before you rely on this
+
+- **The backend sleeps.** A free Render service is suspended after about 15 minutes idle and takes
+  30–60 seconds to wake. A student clicking "Start test" should not wait a minute, so this is fine
+  for a demo and not for a real examination.
+- **The expiry sweep only runs while the service is awake.** Attempts whose time ran out are
+  finalised when it next wakes. No marks are lost — submission is idempotent and scores come from
+  answers already saved — but a result can be delayed.
+- **Netlify's free build minutes are limited.** Not an issue at this rate of change.
+
+---
+
 ## 1. Database
 
 Create the database and copy the connection details. If the provider hands you a URL like

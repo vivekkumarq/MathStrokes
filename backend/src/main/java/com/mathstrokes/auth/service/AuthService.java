@@ -52,15 +52,25 @@ public class AuthService {
      * Self-service student registration. Admin accounts are never created through this path;
      * the role is fixed to ROLE_STUDENT here rather than taken from the request.
      */
+    /**
+     * @param clientKey caller address, used only to throttle. Registration is unauthenticated and
+     *                  creates persistent rows, so without a limit it is a free bulk-insert
+     *                  endpoint for anyone who finds it.
+     */
     @Transactional
-    public AuthResponse registerStudent(StudentRegistrationRequest request) {
+    public AuthResponse registerStudent(StudentRegistrationRequest request, String clientKey) {
         String phoneNumber = request.phoneNumber().trim();
+        String throttleKey = "register:" + clientKey;
+        rateLimiter.checkAllowed(throttleKey);
 
         if (!request.password().equals(request.confirmPassword())) {
             throw new ValidationException("Registration failed", List.of(
                     FieldErrorItem.of("confirmPassword", "Passwords do not match")));
         }
         if (userRepository.existsByPhoneNumber(phoneNumber)) {
+            // Counted against the limit: repeatedly probing this is how an attacker would learn
+            // which numbers are registered.
+            rateLimiter.recordFailure(throttleKey);
             throw new ValidationException("Registration failed", List.of(
                     FieldErrorItem.of("phoneNumber",
                             "An account already exists for this phone number")));
@@ -81,6 +91,7 @@ public class AuthService {
         user.addRole(studentRole);
 
         User saved = userRepository.save(user);
+        rateLimiter.recordFailure(throttleKey);
         return issueTokens(saved);
     }
 
