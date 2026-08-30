@@ -9,6 +9,7 @@ import {
   toApiFailure,
 } from '../../../core';
 import { ExamService } from '../../exam/exam.service';
+import { Logo } from '../../../shared/brand/logo';
 
 /**
  * The tests a student can sit.
@@ -19,7 +20,7 @@ import { ExamService } from '../../exam/exam.service';
  */
 @Component({
   selector: 'app-test-list',
-  imports: [],
+  imports: [Logo],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './test-list.html',
   styleUrl: './test-list.scss',

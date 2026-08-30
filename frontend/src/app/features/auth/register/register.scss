@@ -1,15 +1,5 @@
-.auth-shell {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100dvh;
-  padding: 24px;
-}
-
 .auth-card {
-  width: 100%;
-  max-width: 520px;
-  padding: 32px;
+  padding: 4px;
 }
 
 .auth-head {
@@ -17,11 +7,7 @@
 }
 
 .brand {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--ms-primary);
+  display: none;
 }
 
 .auth-head h1 {

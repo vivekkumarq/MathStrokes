@@ -11,33 +11,94 @@ export const routes: Routes = [
   {
     path: 'login',
     canActivate: [guestGuard],
-    title: 'Sign in · MathStrokes',
+    title: 'Sign in · Iota',
     loadComponent: () => import('./features/auth/login/login').then((m) => m.Login),
   },
   {
     path: 'register',
     canActivate: [guestGuard],
-    title: 'Create account · MathStrokes',
+    title: 'Create account · Iota',
     loadComponent: () => import('./features/auth/register/register').then((m) => m.Register),
   },
   {
     path: 'forgot-password',
     canActivate: [guestGuard],
-    title: 'Reset password · MathStrokes',
+    title: 'Reset password · Iota',
     loadComponent: () =>
       import('./features/auth/forgot-password/forgot-password').then((m) => m.ForgotPassword),
   },
   {
     path: 'student',
     canActivate: [roleGuard('ROLE_STUDENT')],
-    title: 'Dashboard · MathStrokes',
+    title: 'Dashboard · Iota',
     loadComponent: () => import('./features/student/home/home').then((m) => m.StudentHome),
   },
   {
     path: 'admin',
     canActivate: [roleGuard('ROLE_ADMIN')],
-    title: 'Admin · MathStrokes',
+    title: 'Admin · Iota',
     loadComponent: () => import('./features/admin/home/home').then((m) => m.AdminHome),
+  },
+  {
+    path: 'student/tests',
+    canActivate: [roleGuard('ROLE_STUDENT')],
+    title: 'Available tests · Iota',
+    loadComponent: () =>
+      import('./features/student/tests/test-list').then((m) => m.TestList),
+  },
+  {
+    path: 'exam/:attemptId',
+    canActivate: [roleGuard('ROLE_STUDENT')],
+    title: 'Examination · Iota',
+    loadComponent: () => import('./features/exam/exam-runner').then((m) => m.ExamRunner),
+  },
+  {
+    // Declared before the review child so neither swallows the other; Angular matches in
+    // declaration order and both share the /results/:attemptId prefix.
+    path: 'results/:attemptId',
+    pathMatch: 'full',
+    canActivate: [roleGuard('ROLE_STUDENT')],
+    title: 'Result · Iota',
+    loadComponent: () => import('./features/results/result-page').then((m) => m.ResultPage),
+  },
+  {
+    path: 'results/:attemptId/review',
+    canActivate: [roleGuard('ROLE_STUDENT')],
+    title: 'Answer review · Iota',
+    loadComponent: () => import('./features/results/review-page').then((m) => m.ReviewPage),
+  },
+  {
+    path: 'admin/tests',
+    canActivate: [roleGuard('ROLE_ADMIN')],
+    title: 'Tests · Iota',
+    loadComponent: () =>
+      import('./features/admin/tests/test-list').then((m) => m.AdminTestList),
+  },
+  {
+    path: 'admin/questions',
+    canActivate: [roleGuard('ROLE_ADMIN')],
+    title: 'Question bank · Iota',
+    loadComponent: () =>
+      import('./features/admin/questions/question-list/question-list').then((m) => m.QuestionList),
+  },
+  {
+    // Must precede the :id route, or 'new' would be parsed as an id.
+    path: 'admin/questions/new',
+    canActivate: [roleGuard('ROLE_ADMIN')],
+    title: 'New question · Iota',
+    loadComponent: () =>
+      import('./features/admin/questions/question-editor/question-editor').then(
+        (m) => m.QuestionEditor,
+      ),
+  },
+  {
+    path: 'admin/questions/:id',
+    canActivate: [roleGuard('ROLE_ADMIN')],
+    title: 'Edit question · Iota',
+    loadComponent: () =>
+      import('./features/admin/questions/question-editor/question-editor').then(
+        (m) => m.QuestionEditor,
+      ),
   },
   {
     // Sends an authenticated user to their own dashboard and everyone else to login.

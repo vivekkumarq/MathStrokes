@@ -2,9 +2,9 @@ import { Injectable } from '@angular/core';
 
 import { AuthTokens, AuthUser } from '../models';
 
-const TOKENS_KEY = 'mathstrokes.auth.tokens';
-const USER_KEY = 'mathstrokes.auth.user';
-const EXPIRES_AT_KEY = 'mathstrokes.auth.expiresAt';
+const TOKENS_KEY = 'iota.auth.tokens';
+const USER_KEY = 'iota.auth.user';
+const EXPIRES_AT_KEY = 'iota.auth.expiresAt';
 
 /**
  * Persists the session across a refresh — which matters here because a student may
