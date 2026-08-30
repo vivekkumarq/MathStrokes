@@ -20,6 +20,7 @@ import {
   isAttemptClosedFailure,
   toApiFailure,
 } from '../../core';
+import { Logo } from '../../shared/brand/logo';
 import { MathContent } from '../../shared/math/math-content';
 import { ExamService } from './exam.service';
 
@@ -51,7 +52,7 @@ interface QuestionState {
  */
 @Component({
   selector: 'app-exam-runner',
-  imports: [MathContent],
+  imports: [MathContent, Logo],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './exam-runner.html',
   styleUrl: './exam-runner.scss',

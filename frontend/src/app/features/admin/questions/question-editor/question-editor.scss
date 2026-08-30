@@ -1,0 +1,227 @@
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.link-back {
+  padding: 0;
+  font-size: 13px;
+  color: var(--ms-ink-muted);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.link-back:hover {
+  color: var(--ms-primary);
+}
+
+.head h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+  font-size: 22px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.tag {
+  display: inline-block;
+  padding: 3px 9px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ms-ink-muted);
+  background: var(--ms-surface-sunken);
+  border: 1px solid var(--ms-border);
+  border-radius: 999px;
+}
+
+.tag--published {
+  color: #15803d;
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.tag--draft {
+  color: var(--ms-primary-strong);
+  background: var(--ms-primary-soft);
+  border-color: var(--ms-primary-border);
+}
+
+.tag--archived {
+  color: var(--ms-ink-subtle);
+}
+
+.ms-alert {
+  margin-bottom: 16px;
+}
+
+.loading {
+  padding: 40px;
+  color: var(--ms-ink-subtle);
+  text-align: center;
+}
+
+.block {
+  padding: 20px;
+  margin-bottom: 18px;
+}
+
+.block h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 16px;
+  font-size: 15px;
+}
+
+.sub {
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--ms-ink-subtle);
+}
+
+.grid-4 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 14px;
+}
+
+.ms-field {
+  margin-bottom: 0;
+}
+
+.ms-field span {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ms-ink-muted);
+}
+
+/* Source on the left, rendered maths on the right — the author sees both at once. */
+.split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 860px) {
+  .split {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pane {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.pane-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ms-ink-muted);
+}
+
+.mono {
+  font-family: var(--ms-font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.preview {
+  flex: 1;
+  padding: 12px 14px;
+  overflow-x: auto;
+  background: var(--ms-surface-sunken);
+  border: 1px dashed var(--ms-border-strong);
+  border-radius: var(--ms-radius);
+}
+
+.preview--option {
+  min-height: 74px;
+}
+
+.placeholder {
+  font-size: 13px;
+  color: var(--ms-ink-subtle);
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.option {
+  padding: 14px;
+  background: var(--ms-surface-sunken);
+  border: 1px solid var(--ms-border);
+  border-radius: var(--ms-radius);
+}
+
+/* A correct option is tinted so the answer key is obvious while authoring. */
+.option.is-correct {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.option-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ms-ink-muted);
+  background: var(--ms-surface);
+  border: 1px solid var(--ms-border-strong);
+  border-radius: 50%;
+}
+
+.correct {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ms-ink-muted);
+  cursor: pointer;
+}
+
+.option.is-correct .correct {
+  color: #15803d;
+}
+
+.correct input {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.option .preview {
+  background: var(--ms-surface);
+}
+
+.form-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-bottom: 24px;
+}

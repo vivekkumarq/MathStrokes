@@ -1,0 +1,148 @@
+<app-admin-shell>
+  <header class="head">
+    <div>
+      <h1>Question bank</h1>
+      <p class="muted">{{ rangeLabel() }}</p>
+    </div>
+    <a class="ms-btn ms-btn--primary" routerLink="/admin/questions/new">New question</a>
+  </header>
+
+  <section class="ms-card filters">
+    <div class="filter-grid">
+      <label>
+        <span>Chapter</span>
+        <select class="ms-input" [(ngModel)]="chapterId" (ngModelChange)="applyFilters()">
+          <option [ngValue]="''">All chapters</option>
+          @for (chapter of chapters(); track chapter.id) {
+            <option [ngValue]="chapter.id">{{ chapter.name }}</option>
+          }
+        </select>
+      </label>
+
+      <label>
+        <span>Pattern</span>
+        <select class="ms-input" [(ngModel)]="examPattern" (ngModelChange)="applyFilters()">
+          <option [ngValue]="''">All</option>
+          @for (pattern of patterns; track pattern) {
+            <option [ngValue]="pattern">{{ pattern === 'JEE_MAIN' ? 'JEE Main' : 'JEE Advanced' }}</option>
+          }
+        </select>
+      </label>
+
+      <label>
+        <span>Difficulty</span>
+        <select class="ms-input" [(ngModel)]="difficulty" (ngModelChange)="applyFilters()">
+          <option [ngValue]="''">All</option>
+          @for (level of difficulties; track level) {
+            <option [ngValue]="level">{{ level }}</option>
+          }
+        </select>
+      </label>
+
+      <label>
+        <span>Type</span>
+        <select class="ms-input" [(ngModel)]="questionType" (ngModelChange)="applyFilters()">
+          <option [ngValue]="''">All</option>
+          @for (type of types; track type) {
+            <option [ngValue]="type">{{ type === 'SINGLE_CORRECT' ? 'Single correct' : 'Multiple correct' }}</option>
+          }
+        </select>
+      </label>
+
+      <label>
+        <span>Status</span>
+        <select class="ms-input" [(ngModel)]="status" (ngModelChange)="applyFilters()">
+          <option [ngValue]="''">All</option>
+          @for (state of statuses; track state) {
+            <option [ngValue]="state">{{ state }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="search">
+        <span>Search</span>
+        <input
+          class="ms-input"
+          type="search"
+          placeholder="Search question text..."
+          [(ngModel)]="search"
+          (keyup.enter)="applyFilters()"
+        />
+      </label>
+    </div>
+
+    <div class="filter-actions">
+      <button class="ms-btn ms-btn--ghost" type="button" (click)="clearFilters()">Clear</button>
+      <button class="ms-btn ms-btn--primary" type="button" (click)="applyFilters()">Apply</button>
+    </div>
+  </section>
+
+  @if (error()) {
+    <p class="ms-alert ms-alert--error" role="alert">{{ error() }}</p>
+  }
+
+  <section class="ms-card list">
+    @if (loading()) {
+      <p class="empty">Loading questions...</p>
+    } @else if (rows().length === 0) {
+      <p class="empty">No questions match these filters.</p>
+    } @else {
+      <table>
+        <thead>
+          <tr>
+            <th class="col-id">ID</th>
+            <th>Question</th>
+            <th class="col-meta">Chapter</th>
+            <th class="col-tag">Pattern</th>
+            <th class="col-tag">Difficulty</th>
+            <th class="col-tag">Type</th>
+            <th class="col-tag">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows(); track row.id) {
+            <tr (click)="edit(row.id)" tabindex="0" (keyup.enter)="edit(row.id)">
+              <td class="col-id">{{ row.id }}</td>
+              <td class="preview"><app-math-content [content]="row.questionPreview" /></td>
+              <td class="col-meta">{{ row.chapterName }}</td>
+              <td class="col-tag">
+                <span class="tag">{{ row.examPattern === 'JEE_MAIN' ? 'Main' : 'Advanced' }}</span>
+              </td>
+              <td class="col-tag">
+                <span class="tag tag--{{ row.difficulty.toLowerCase() }}">{{ row.difficulty }}</span>
+              </td>
+              <td class="col-tag">
+                <span class="tag">{{ row.questionType === 'SINGLE_CORRECT' ? 'Single' : 'Multiple' }}</span>
+              </td>
+              <td class="col-tag">
+                <span class="tag tag--{{ row.status.toLowerCase() }}">{{ row.status }}</span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </section>
+
+  @if (totalPages() > 1) {
+    <nav class="pager">
+      <button
+        class="ms-btn ms-btn--ghost"
+        type="button"
+        [disabled]="page() === 0"
+        (click)="goToPage(page() - 1)"
+      >
+        Previous
+      </button>
+      <span class="page-label">Page {{ page() + 1 }} of {{ totalPages() }}</span>
+      <button
+        class="ms-btn ms-btn--ghost"
+        type="button"
+        [disabled]="page() + 1 >= totalPages()"
+        (click)="goToPage(page() + 1)"
+      >
+        Next
+      </button>
+    </nav>
+  }
+</app-admin-shell>
