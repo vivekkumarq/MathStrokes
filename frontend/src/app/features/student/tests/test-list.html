@@ -26,54 +26,69 @@
         <p class="muted">Your teacher has not published any tests. Check back shortly.</p>
       </div>
     } @else {
-      <ul class="grid">
-        @for (test of tests(); track test.id) {
-          <li class="ms-card test">
-            <div class="test-head">
-              <h2>{{ test.title }}</h2>
-              <span class="pattern">{{ patternLabel(test.examPattern) }}</span>
-            </div>
+      <div class="ms-card ms-card--flush table">
+        <!-- Hidden from assistive tech: each cell repeats its own label when the row
+             stacks on a narrow screen, so announcing the header too would double up. -->
+        <div class="thead" aria-hidden="true">
+          <span>Chapter</span>
+          <span>Pattern</span>
+          <span class="num">Questions</span>
+          <span class="num">Duration</span>
+          <span></span>
+        </div>
 
-            @if (test.description) {
-              <p class="muted desc">{{ test.description }}</p>
-            }
-
-            <dl class="facts">
-              <div><dt>Chapter</dt><dd>{{ test.chapterName }}</dd></div>
-              <div><dt>Questions</dt><dd>{{ test.questionCount }}</dd></div>
-              <div><dt>Duration</dt><dd>{{ test.durationMinutes }} min</dd></div>
-              <div>
-                <dt>Attempts</dt>
-                <dd>{{ test.attemptsUsed }} / {{ test.maxAttemptsPerStudent }}</dd>
+        <ul class="rows">
+          @for (test of tests(); track test.id) {
+            <li class="row" [class.row--blocked]="!test.canStart">
+              <div class="cell chapter">
+                <span class="chapter-name">{{ test.chapterName }}</span>
+                <span class="chapter-meta">
+                  {{ test.attemptsUsed }} of {{ test.maxAttemptsPerStudent }} attempts used@if (test.rankingEnabled) {<span class="ranked"> · ranked</span>}
+                </span>
               </div>
-            </dl>
 
-            @if (test.rankingEnabled) {
-              <p class="ranked">Ranked against everyone who sits this paper</p>
-            }
+              <div class="cell">
+                <span
+                  class="pattern"
+                  [class.pattern--advanced]="test.examPattern === 'JEE_ADVANCED'"
+                >{{ patternLabel(test.examPattern) }}</span>
+              </div>
 
-            <!-- unavailableReason is the server's own student-facing wording; rendered as sent. -->
-            @if (!test.canStart && test.unavailableReason) {
-              <p class="ms-alert ms-alert--info reason">{{ test.unavailableReason }}</p>
-            }
+              <div class="cell num">
+                <span class="cell-label">Questions</span>
+                <span>{{ test.questionCount }}</span>
+              </div>
 
-            <button
-              type="button"
-              class="ms-btn ms-btn--primary ms-btn--block"
-              [disabled]="!test.canStart || starting() !== null"
-              (click)="start(test)"
-            >
-              @if (starting() === test.id) {
-                Opening…
-              } @else if (test.activeAttemptId) {
-                Resume test
-              } @else {
-                Start test
+              <div class="cell num">
+                <span class="cell-label">Duration</span>
+                <span>{{ test.durationMinutes }} min</span>
+              </div>
+
+              <div class="cell action">
+                <button
+                  type="button"
+                  class="ms-btn ms-btn--primary"
+                  [disabled]="!test.canStart || starting() !== null"
+                  (click)="start(test)"
+                >
+                  @if (starting() === test.id) {
+                    Opening…
+                  } @else if (test.activeAttemptId) {
+                    Resume
+                  } @else {
+                    Start test
+                  }
+                </button>
+              </div>
+
+              <!-- unavailableReason is the server's own student-facing wording; rendered as sent. -->
+              @if (!test.canStart && test.unavailableReason) {
+                <p class="reason">{{ test.unavailableReason }}</p>
               }
-            </button>
-          </li>
-        }
-      </ul>
+            </li>
+          }
+        </ul>
+      </div>
     }
   </main>
 </div>

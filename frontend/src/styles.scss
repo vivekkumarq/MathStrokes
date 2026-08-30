@@ -106,6 +106,19 @@ button {
   border: 1px solid var(--ms-border);
   border-radius: var(--ms-radius-lg);
   box-shadow: var(--ms-shadow-sm);
+  /*
+   * Cards carry their own padding by default. Without it every consumer has to remember
+   * to add some, and the ones that forgot rendered text flush against the border.
+   * A component that needs different spacing just declares its own padding: component
+   * styles are scoped and therefore win over this global rule.
+   */
+  padding: 18px 20px;
+}
+
+/* Opt-out for cards that wrap a full-bleed child, such as a table with its own cell
+   padding, where an inset would leave the header rule floating short of the edge. */
+.ms-card--flush {
+  padding: 0;
 }
 
 .ms-field {
