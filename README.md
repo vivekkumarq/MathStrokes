@@ -2,7 +2,7 @@
 
 **An online Mathematics examination platform for JEE aspirants.**
 
-> **Live:** https://mathstrokes.netlify.app
+> **Live:** https://iota-jee.netlify.app
 > The frontend is deployed. The API is not yet hosted, so sign-in does not work on the public
 > site — see [Deployment status](#deployment-status).
 
@@ -24,7 +24,7 @@ data model, every endpoint, the admin question-authoring flow and deployment.
 
 | Piece | Status | Where |
 |---|---|---|
-| Frontend | **Live** | https://mathstrokes.netlify.app (Netlify) |
+| Frontend | **Live** | https://iota-jee.netlify.app (Netlify) |
 | Backend API | Not yet hosted | Container from `backend/Dockerfile`; `render.yaml` ready |
 | Database | Not yet hosted | Managed PostgreSQL; Flyway migrates on first boot |
 
