@@ -4,7 +4,6 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { Logo } from '../../../shared/brand/logo';
 
 import { AuthService } from '../../../core/auth/auth.service';
-import { AuthStore } from '../../../core/auth/auth.store';
 
 /**
  * Chrome shared by every admin screen. Presentational: pages project their own content,
@@ -21,10 +20,11 @@ import { AuthStore } from '../../../core/auth/auth.store';
           <nav>
             <a routerLink="/admin/questions" routerLinkActive="active">Questions</a>
             <a routerLink="/admin/tests" routerLinkActive="active">Tests</a>
+            <a routerLink="/admin/students" routerLinkActive="active">Students</a>
           </nav>
         </div>
         <div class="who">
-          <span>{{ store.displayName() }}</span>
+          <span>Admin</span>
           <button class="ms-btn ms-btn--ghost" type="button" (click)="signOut()">Sign out</button>
         </div>
       </header>
@@ -104,7 +104,6 @@ import { AuthStore } from '../../../core/auth/auth.store';
   `,
 })
 export class AdminShell {
-  protected readonly store = inject(AuthStore);
   private readonly auth = inject(AuthService);
 
   protected signOut(): void {
