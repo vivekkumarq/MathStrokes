@@ -33,8 +33,12 @@ export interface TestSummaryResponse {
   title: string;
   description?: string;
   subjectName: string;
-  chapterId: number;
-  chapterName: string;
+  /**
+   * Absent on a FULL-SYLLABUS paper, which draws across every chapter. Present on a
+   * chapter test. Absence is the signal, per the API's omit-nulls rule.
+   */
+  chapterId?: number;
+  chapterName?: string;
   examPattern: ExamPattern;
   questionCount: number;
   durationMinutes: number;

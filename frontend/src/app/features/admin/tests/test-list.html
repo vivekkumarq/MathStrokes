@@ -43,6 +43,7 @@
           <label class="ms-field">
             <span>Chapter</span>
             <select class="ms-input" formControlName="chapterId">
+              <option [ngValue]="0">All chapters (full syllabus)</option>
               @for (chapter of chapters(); track chapter.id) {
                 <option [ngValue]="chapter.id">{{ chapter.name }}</option>
               }
@@ -155,7 +156,7 @@
                   <span class="ranked" title="Ranking enabled">ranked</span>
                 }
               </td>
-              <td class="col-meta">{{ test.chapterName }}</td>
+              <td class="col-meta">{{ test.chapterName ?? 'Full syllabus' }}</td>
               <td class="col-tag">
                 <span class="tag">{{ test.examPattern === 'JEE_MAIN' ? 'Main' : 'Advanced' }}</span>
               </td>
