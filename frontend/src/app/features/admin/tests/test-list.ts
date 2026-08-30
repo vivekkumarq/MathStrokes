@@ -54,7 +54,8 @@ export class AdminTestList {
     {
       title: ['', [Validators.required, Validators.maxLength(150)]],
       description: [''],
-      chapterId: [0, [Validators.required, Validators.min(1)]],
+      // 0 is the 'all chapters' sentinel; it is omitted from the request entirely.
+      chapterId: [0],
       examPattern: ['JEE_MAIN' as (typeof EXAM_PATTERNS)[number], [Validators.required]],
       durationMinutes: [60, [Validators.required, Validators.min(1)]],
       questionCount: [25, [Validators.required, Validators.min(1)]],
@@ -77,9 +78,7 @@ export class AdminTestList {
     this.catalog.chapters().subscribe({
       next: (chapters) => {
         this.chapters.set(chapters);
-        if (chapters.length > 0 && this.form.controls.chapterId.value === 0) {
-          this.form.controls.chapterId.setValue(chapters[0].id);
-        }
+
       },
       error: () => undefined,
     });
@@ -111,6 +110,8 @@ export class AdminTestList {
     const request: AdminTestRequest = {
       ...raw,
       description: raw.description.trim() === '' ? undefined : raw.description.trim(),
+      // Omitting chapterId is what makes it a full-syllabus paper.
+      chapterId: raw.chapterId === 0 ? undefined : raw.chapterId,
     };
 
     this.busy.set(true);

@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import {
@@ -20,7 +21,7 @@ import { Logo } from '../../../shared/brand/logo';
  */
 @Component({
   selector: 'app-test-list',
-  imports: [Logo],
+  imports: [NgTemplateOutlet, Logo],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './test-list.html',
   styleUrl: './test-list.scss',
@@ -32,6 +33,24 @@ export class TestList {
   protected readonly auth = inject(AuthStore);
 
   protected readonly tests = signal<TestSummaryResponse[]>([]);
+
+  /**
+   * A full-syllabus paper arrives without a chapter, because it draws across all of
+   * them. This single predicate is the only place that decides, so if the backend ever
+   * signals it differently only this line changes.
+   */
+  protected isFullSyllabus(test: TestSummaryResponse): boolean {
+    return test.chapterId === undefined;
+  }
+
+  /** Full-syllabus papers first: they are the headline, not one row among 56. */
+  protected readonly fullSyllabusTests = computed(() =>
+    this.tests().filter((t) => this.isFullSyllabus(t)),
+  );
+
+  protected readonly chapterTests = computed(() =>
+    this.tests().filter((t) => !this.isFullSyllabus(t)),
+  );
   protected readonly loading = signal(true);
   protected readonly failure = signal<ApiFailure | null>(null);
   /** The test whose Start button was pressed, so only that card shows a spinner. */
