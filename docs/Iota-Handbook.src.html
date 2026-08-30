@@ -128,7 +128,7 @@
     <span class="chip">Modular monolith</span>
   </div>
   <div class="meta">
-    <div><b>Document</b>Platform Handbook — v1.4</div>
+    <div><b>Document</b>Platform Handbook — v1.5</div>
     <div><b>Applies to</b>Iota 1.0.0</div>
     <div><b>Compiled</b>30 August 2026</div>
     <div><b>Audience</b>Administrators, teachers, developers</div>
@@ -1722,7 +1722,7 @@ CREATE DATABASE mathstrokes OWNER mathstrokes;</code></pre>
     <li><b>One admin</b>, from the <code>SEED_ADMIN_*</code> environment variables.</li>
     <li><b>Mathematics</b> and its <b>28 chapters</b> — 17 from <code>V2</code> (Relations and Functions, Complex Numbers, Quadratic Equations, Sequences and Series, Permutations and Combinations, Binomial Theorem, Matrices, Determinants, Limits, Continuity and Differentiability, Applications of Derivatives, Integrals, Differential Equations, Vectors, Three Dimensional Geometry, Probability, Statistics) and 11 more from <code>V4</code>.</li>
     <li><b>Four marking schemes</b>, one per (exam pattern, question type) pair.</li>
-    <li><b>1,522 published questions</b> with LaTeX stems, options and worked solutions — 66 from <code>V3</code> and 1,456 from <code>V4</code> — spanning all 28 chapters. That is the figure for a <em>freshly seeded</em> database; a working instance will differ once an administrator has drafted or archived anything.</li>
+    <li><b>Over 1,500 questions</b> with LaTeX stems, options and worked solutions, spanning all 28 chapters — precisely 1,522, being 66 from <code>V3</code> and 1,456 from <code>V4</code>, and the migrations set <b>every one of them to <code>PUBLISHED</code></b>: there is not a single <code>DRAFT</code> or <code>ARCHIVED</code> row in the seed data.</li>
     <li><b>59 published tests</b>, each 25 questions over 60 minutes: the 56 chapter papers from <code>V5</code> (one per chapter per exam pattern) plus the demonstration tests written by the runtime bootstrap seeder.</li>
   </ul>
   <p>
@@ -1730,6 +1730,17 @@ CREATE DATABASE mathstrokes OWNER mathstrokes;</code></pre>
     answer key agrees with its own worked solution. Both runtime seeders skip silently if an admin or
     any test already exists, so restarting the application never overwrites real data.
   </p>
+  <div class="box">
+    <span class="t">Treat the question count as a starting figure, not a property of the system</span>
+    <p>
+      1,522 describes a <em>freshly migrated</em> database and nothing else. A published count drifts
+      the moment anybody authors, drafts or archives anything, so any running instance will report
+      something different — a development machine that has exercised the archive path, for example,
+      will show 1,521 published and 1,522 total. If you need a figure that stays true, quote the
+      <b>28 chapters</b> and <b>59 tests</b>: those are fixed by migration and do not move with
+      ordinary administrative work.
+    </p>
+  </div>
   <div class="box warn">
     <span class="t">The seeded papers allow five attempts, not one</span>
     <p>
@@ -1748,15 +1759,17 @@ CREATE DATABASE mathstrokes OWNER mathstrokes;</code></pre>
     <span class="t">Live, with the API pending</span>
     <p>
       The frontend is deployed and public at
-      <b><code>https://mathstrokes.netlify.app</code></b>. The <b>backend is not yet deployed</b>:
+      <b><code>https://mathstrokes.netlify.app</code></b> — <b>a provisional address</b>, see
+      below. The <b>backend is not yet deployed</b>:
       the site loads, but it cannot authenticate, because <code>/api/*</code> proxies to a
       placeholder until a backend host exists. Everything behind a sign-in is therefore
       unreachable on the public site today.
     </p>
     <p style="margin-top:.5em">
-      Note that the URL still carries the former product name. The rename to Iota did not move the
-      Netlify site, so the hostname is expected to read <code>mathstrokes</code> until somebody
-      deliberately migrates it.
+      Note that the URL still carries the former product name: the rename to Iota did not move the
+      Netlify site. Whether to rename it is an open question at the time of writing, because
+      changing the site name changes the public address. <b>Do not treat this hostname as final</b>
+      — verify it before printing it anywhere a reader cannot easily correct.
     </p>
   </div>
 
@@ -1928,7 +1941,7 @@ Managed PostgreSQL            Flyway migrates on first boot</div>
   </table>
 
   <div class="end">
-    Iota Platform Handbook v1.4 &nbsp;·&nbsp; compiled 30 August 2026 &nbsp;·&nbsp;
+    Iota Platform Handbook v1.5 &nbsp;·&nbsp; compiled 30 August 2026 &nbsp;·&nbsp;
     applies to Iota 1.0.0 at migration V5<br>
     Compiled from the repository and its documentation set. Proprietary — all rights reserved.
   </div>
