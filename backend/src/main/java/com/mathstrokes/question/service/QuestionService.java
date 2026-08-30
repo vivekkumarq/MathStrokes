@@ -1,9 +1,11 @@
 package com.mathstrokes.question.service;
 
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.stream.IntStream;
+import java.util.stream.Collectors;
 
 import com.mathstrokes.catalog.entity.Chapter;
 import com.mathstrokes.catalog.service.CatalogService;
@@ -118,6 +120,10 @@ public class QuestionService {
             // It stays published, so it must still satisfy the stricter publish rules.
             validator.validateForPublish(request.questionType(), request.options());
         }
+        // Flush so the response carries the incremented version rather than the pre-write one.
+        // The admin UI sends that value back on the next save, and a stale value would make an
+        // ordinary second edit look like a concurrent-modification conflict.
+        questionRepository.flush();
         return mapper.toResponse(question);
     }
 
@@ -168,22 +174,49 @@ public class QuestionService {
         question.setMarkingScheme(request.markingSchemeId() == null
                 ? null
                 : markingSchemeService.requireScheme(request.markingSchemeId()));
-        question.replaceOptions(toOptions(request.options()));
+        applyOptions(question, request.options());
     }
 
-    private List<QuestionOption> toOptions(List<QuestionOptionRequest> requests) {
-        return IntStream.range(0, requests.size())
-                .mapToObj(index -> {
-                    QuestionOptionRequest source = requests.get(index);
-                    QuestionOption option = new QuestionOption();
-                    option.setOptionKey(source.optionKey().toUpperCase());
-                    option.setContent(source.content().trim());
-                    option.setDisplayOrder(
-                            source.displayOrder() == null ? index : source.displayOrder());
-                    option.setCorrect(source.isCorrect());
-                    return option;
-                })
-                .toList();
+    /**
+     * Merges the submitted options onto the question in place, matching on option label.
+     *
+     * Deliberately NOT a clear-and-recreate. Hibernate orders all inserts before all deletes
+     * within a flush, so replacing the collection wholesale makes the new rows collide with the
+     * old ones on the (question_id, option_key) unique index and the whole edit fails. Matching
+     * by label means an ordinary edit issues UPDATEs and touches no constraint, and the explicit
+     * flush after the removals covers the awkward case where an admin reshuffles labels.
+     */
+    private void applyOptions(Question question, List<QuestionOptionRequest> requests) {
+        Map<String, QuestionOptionRequest> wanted = new LinkedHashMap<>();
+        for (QuestionOptionRequest request : requests) {
+            wanted.put(request.optionKey().toUpperCase(), request);
+        }
+
+        boolean removedAny = question.getOptions()
+                .removeIf(option -> !wanted.containsKey(option.getOptionKey()));
+        if (removedAny) {
+            // Force the DELETEs out before any INSERT can claim a freed label.
+            questionRepository.flush();
+        }
+
+        Map<String, QuestionOption> existing = question.getOptions().stream()
+                .collect(Collectors.toMap(QuestionOption::getOptionKey, option -> option));
+
+        int index = 0;
+        for (Map.Entry<String, QuestionOptionRequest> entry : wanted.entrySet()) {
+            QuestionOptionRequest source = entry.getValue();
+            QuestionOption option = existing.get(entry.getKey());
+            if (option == null) {
+                option = new QuestionOption();
+                option.setOptionKey(entry.getKey());
+                question.addOption(option);
+            }
+            option.setContent(source.content().trim());
+            option.setDisplayOrder(
+                    source.displayOrder() == null ? index : source.displayOrder());
+            option.setCorrect(source.isCorrect());
+            index++;
+        }
     }
 
     private List<QuestionOptionRequest> toOptionRequests(Question question) {

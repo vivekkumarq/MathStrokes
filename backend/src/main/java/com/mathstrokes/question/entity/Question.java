@@ -101,11 +101,6 @@ public class Question extends BaseEntity {
     @OrderBy("displayOrder asc, id asc")
     private List<QuestionOption> options = new ArrayList<>();
 
-    public void replaceOptions(List<QuestionOption> newOptions) {
-        this.options.clear();
-        newOptions.forEach(this::addOption);
-    }
-
     public void addOption(QuestionOption option) {
         option.setQuestion(this);
         this.options.add(option);

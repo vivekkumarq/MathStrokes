@@ -76,7 +76,7 @@ public class AuthService {
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         user.setSecurityQuestion(request.securityQuestion().trim());
         // Normalised before hashing so casing and stray spaces at reset time do not matter.
-        user.setSecurityAnswerHash(passwordEncoder.encode(normaliseAnswer(request.securityAnswer())));
+        user.setSecurityAnswerHash(passwordEncoder.encode(SecurityAnswers.normalise(request.securityAnswer())));
         user.setEnabled(true);
         user.addRole(studentRole);
 
@@ -142,10 +142,5 @@ public class AuthService {
     public UserProfileResponse toProfile(User user) {
         return new UserProfileResponse(user.getId(), user.getFullName(), user.getPhoneNumber(),
                 roleNames(user), user.isEnabled(), user.getCreatedAt());
-    }
-
-    /** Security answers are compared case- and whitespace-insensitively. */
-    static String normaliseAnswer(String answer) {
-        return answer == null ? "" : answer.trim().toLowerCase().replaceAll("\\s+", " ");
     }
 }

@@ -89,7 +89,7 @@ public class PasswordResetService {
                 });
 
         boolean matches = user.getSecurityAnswerHash() != null && passwordEncoder.matches(
-                AuthService.normaliseAnswer(securityAnswer), user.getSecurityAnswerHash());
+                SecurityAnswers.normalise(securityAnswer), user.getSecurityAnswerHash());
         if (!matches) {
             rateLimiter.recordFailure(key);
             throw new ApiException(ErrorCode.AUTHENTICATION_FAILED,

@@ -16,16 +16,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByPhoneNumber(String phoneNumber);
 
-    @Query("""
-            select distinct u from User u join u.roles r
-            where r.name = :roleName
-              and (:search is null or lower(u.fullName) like lower(concat('%', :search, '%'))
-                   or u.phoneNumber like concat('%', :search, '%'))
-            """)
-    Page<User> findByRole(@Param("roleName") RoleName roleName,
-                          @Param("search") String search,
-                          Pageable pageable);
-
     @Query("select count(distinct u) from User u join u.roles r where r.name = :roleName")
     long countByRole(@Param("roleName") RoleName roleName);
 
@@ -35,4 +25,40 @@ public interface UserRepository extends JpaRepository<User, Long> {
             """)
     long countActiveSince(@Param("roleName") RoleName roleName,
                           @Param("since") java.time.Instant since);
+
+    /**
+     * The admin student grid, with each student's attempt count folded into the same query.
+     * A LEFT JOIN onto a grouped subquery keeps this one indexed pass instead of N+1 counts.
+     */
+    @Query(value = """
+            SELECT u.id                        AS id,
+                   u.full_name                 AS fullName,
+                   u.phone_number              AS phoneNumber,
+                   u.enabled                   AS enabled,
+                   u.last_login_at             AS lastLoginAt,
+                   u.created_at                AS registeredAt,
+                   COALESCE(tally.attempts, 0) AS attemptCount
+            FROM users u
+            JOIN user_roles ur ON ur.user_id = u.id
+            JOIN roles r       ON r.id = ur.role_id AND r.name = 'ROLE_STUDENT'
+            LEFT JOIN (
+                SELECT student_id, COUNT(*) AS attempts
+                FROM test_attempts
+                GROUP BY student_id
+            ) tally ON tally.student_id = u.id
+            WHERE (:search IS NULL
+                   OR u.full_name ILIKE ('%' || :search || '%')
+                   OR u.phone_number LIKE ('%' || :search || '%'))
+            """,
+            countQuery = """
+            SELECT COUNT(*)
+            FROM users u
+            JOIN user_roles ur ON ur.user_id = u.id
+            JOIN roles r       ON r.id = ur.role_id AND r.name = 'ROLE_STUDENT'
+            WHERE (:search IS NULL
+                   OR u.full_name ILIKE ('%' || :search || '%')
+                   OR u.phone_number LIKE ('%' || :search || '%'))
+            """,
+            nativeQuery = true)
+    Page<StudentListRow> findStudentRows(@Param("search") String search, Pageable pageable);
 }

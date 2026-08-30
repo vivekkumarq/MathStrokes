@@ -4,12 +4,10 @@ import java.util.List;
 
 import com.mathstrokes.config.AppProperties;
 import com.mathstrokes.security.jwt.JwtAuthenticationFilter;
-import com.mathstrokes.security.service.AppUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -67,19 +65,14 @@ public class SecurityConfig {
     /**
      * BCrypt at strength 12. Used for both the login password and the security answer, so a
      * database leak exposes neither.
+     *
+     * Spring Security builds the authentication provider from this and AppUserDetailsService.
+     * Its default behaviour of reporting a missing account and a wrong password identically is
+     * exactly what we want: the login endpoint must not reveal which numbers are registered.
      */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(12);
-    }
-
-    @Bean
-    public DaoAuthenticationProvider daoAuthenticationProvider(AppUserDetailsService userDetailsService,
-                                                               PasswordEncoder passwordEncoder) {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
-        provider.setPasswordEncoder(passwordEncoder);
-        provider.setHideUserNotFoundExceptions(true);
-        return provider;
     }
 
     @Bean

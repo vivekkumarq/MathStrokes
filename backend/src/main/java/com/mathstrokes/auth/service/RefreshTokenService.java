@@ -8,12 +8,12 @@ import com.mathstrokes.auth.repository.RefreshTokenRepository;
 import com.mathstrokes.common.exception.ApiException;
 import com.mathstrokes.common.exception.ErrorCode;
 import com.mathstrokes.security.jwt.JwtService;
+import com.mathstrokes.security.jwt.TokenHasher;
 import com.mathstrokes.user.entity.User;
 import io.jsonwebtoken.Claims;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,13 +31,13 @@ public class RefreshTokenService {
 
     private final RefreshTokenRepository repository;
     private final JwtService jwtService;
-    private final PasswordEncoder passwordEncoder;
+    private final TokenHasher tokenHasher;
 
     public RefreshTokenService(RefreshTokenRepository repository, JwtService jwtService,
-                               PasswordEncoder passwordEncoder) {
+                               TokenHasher tokenHasher) {
         this.repository = repository;
         this.jwtService = jwtService;
-        this.passwordEncoder = passwordEncoder;
+        this.tokenHasher = tokenHasher;
     }
 
     @Transactional
@@ -75,7 +75,7 @@ public class RefreshTokenService {
             repository.revokeAllForUser(stored.getUser().getId(), now);
             throw new ApiException(ErrorCode.TOKEN_INVALID, "Refresh token is no longer valid");
         }
-        if (!passwordEncoder.matches(presentedToken, stored.getTokenHash())) {
+        if (!tokenHasher.matches(presentedToken, stored.getTokenHash())) {
             throw new ApiException(ErrorCode.TOKEN_INVALID, "Refresh token is no longer valid");
         }
 
@@ -111,7 +111,7 @@ public class RefreshTokenService {
     private void persist(User user, String tokenId, String token) {
         RefreshToken entity = new RefreshToken();
         entity.setTokenId(tokenId);
-        entity.setTokenHash(passwordEncoder.encode(token));
+        entity.setTokenHash(tokenHasher.hash(token));
         entity.setUser(user);
         entity.setIssuedAt(Instant.now());
         entity.setExpiresAt(jwtService.refreshTokenExpiryFromNow());

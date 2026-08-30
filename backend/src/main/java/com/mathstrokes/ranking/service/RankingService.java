@@ -12,7 +12,6 @@ import com.mathstrokes.ranking.repository.RankingRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -45,10 +44,11 @@ public class RankingService {
     }
 
     /**
-     * Runs in its own transaction so a ranking hiccup can never roll back an evaluation that has
-     * already been committed. A student's marks are worth more than their position.
+     * Must be called with no transaction already open on test_attempts. The UPDATE rewrites rows
+     * in that table, so running it inside the evaluation's transaction would wait on a lock that
+     * transaction only releases at commit. SubmissionService sequences the two commits.
      */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional
     public void recomputeForTest(Long testId) {
         ExamTest test = testService.requireTest(testId);
         if (!test.isRankingEnabled()) {
