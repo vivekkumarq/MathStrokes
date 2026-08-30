@@ -1,0 +1,159 @@
+<app-admin-shell>
+  <header class="head">
+    <div>
+      <h1>Students</h1>
+      <p class="muted">
+        {{ rangeLabel() }}@if (rows().length > 0) { · {{ activeCount() }} of these have signed in }
+      </p>
+    </div>
+  </header>
+
+  <section class="ms-card filters">
+    <label class="search">
+      <span>Search</span>
+      <input
+        class="ms-input"
+        type="search"
+        placeholder="Name or phone number..."
+        [(ngModel)]="search"
+        (keyup.enter)="applySearch()"
+      />
+    </label>
+    <div class="filter-actions">
+      <button class="ms-btn ms-btn--ghost" type="button" (click)="clearSearch()">Clear</button>
+      <button class="ms-btn ms-btn--primary" type="button" (click)="applySearch()">Search</button>
+    </div>
+  </section>
+
+  @if (error()) {
+    <p class="ms-alert ms-alert--error" role="alert">{{ error() }}</p>
+  }
+
+  <section class="ms-card ms-card--flush list">
+    @if (loading()) {
+      <p class="empty">Loading students...</p>
+    } @else if (rows().length === 0) {
+      <p class="empty">No students match that search.</p>
+    } @else {
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th class="col-meta">Phone</th>
+            <th class="col-meta">Last signed in</th>
+            <th class="col-meta">Registered</th>
+            <th class="col-num">Attempts</th>
+            <th class="col-tag">Access</th>
+            <th class="col-actions"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (student of rows(); track student.id) {
+            <tr
+              class="row"
+              [class.row--open]="expandedId() === student.id"
+              (click)="toggle(student)"
+              tabindex="0"
+              (keyup.enter)="toggle(student)"
+            >
+              <td class="name">{{ student.fullName }}</td>
+              <td class="col-meta mono">{{ student.phoneNumber }}</td>
+              <td class="col-meta">
+                @if (student.lastLoginAt) {
+                  {{ student.lastLoginAt | date: 'd MMM yyyy, h:mm a' }}
+                } @else {
+                  <span class="never">Never</span>
+                }
+              </td>
+              <td class="col-meta">{{ student.registeredAt | date: 'd MMM yyyy' }}</td>
+              <td class="col-num">{{ student.attemptCount }}</td>
+              <td class="col-tag">
+                <span class="tag" [class.tag--off]="!student.enabled">
+                  {{ student.enabled ? 'Active' : 'Disabled' }}
+                </span>
+              </td>
+              <td class="col-actions">
+                <button
+                  class="ms-btn ms-btn--ghost"
+                  type="button"
+                  [disabled]="busy()"
+                  (click)="setEnabled(student, !student.enabled); $event.stopPropagation()"
+                >
+                  {{ student.enabled ? 'Disable' : 'Enable' }}
+                </button>
+              </td>
+            </tr>
+
+            @if (expandedId() === student.id) {
+              <tr class="detail-row">
+                <td colspan="7">
+                  <div class="detail">
+                    <div class="detail-grid">
+                      <div>
+                        <span class="k">Full name</span>
+                        <span class="v">{{ student.fullName }}</span>
+                      </div>
+                      <div>
+                        <span class="k">Phone</span>
+                        <span class="v mono">{{ student.phoneNumber }}</span>
+                      </div>
+                      <div>
+                        <span class="k">Registered</span>
+                        <span class="v">{{ student.registeredAt | date: 'd MMM yyyy, h:mm a' }}</span>
+                      </div>
+                      <div>
+                        <span class="k">Last signed in</span>
+                        <span class="v">
+                          @if (student.lastLoginAt) {
+                            {{ student.lastLoginAt | date: 'd MMM yyyy, h:mm a' }}
+                          } @else {
+                            Never
+                          }
+                        </span>
+                      </div>
+                      <div>
+                        <span class="k">Tests taken</span>
+                        <span class="v">{{ student.attemptCount }}</span>
+                      </div>
+                      <div>
+                        <span class="k">Access</span>
+                        <span class="v">{{ student.enabled ? 'Active' : 'Disabled' }}</span>
+                      </div>
+                    </div>
+
+                    <p class="ms-alert ms-alert--info pending">
+                      Per-test results and performance for this student are not available yet — the
+                      admin endpoints for them are still being built.
+                    </p>
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    }
+  </section>
+
+  @if (totalPages() > 1) {
+    <nav class="pager">
+      <button
+        class="ms-btn ms-btn--ghost"
+        type="button"
+        [disabled]="page() === 0"
+        (click)="goToPage(page() - 1)"
+      >
+        Previous
+      </button>
+      <span class="page-label">Page {{ page() + 1 }} of {{ totalPages() }}</span>
+      <button
+        class="ms-btn ms-btn--ghost"
+        type="button"
+        [disabled]="page() + 1 >= totalPages()"
+        (click)="goToPage(page() + 1)"
+      >
+        Next
+      </button>
+    </nav>
+  }
+</app-admin-shell>

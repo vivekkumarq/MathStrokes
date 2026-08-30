@@ -149,3 +149,21 @@ export interface AdminDashboardResponse {
   attemptsInProgress: number;
   attemptsLast7Days: number;
 }
+
+/** A row of GET /admin/students. Paged, with a `search` filter. */
+export interface StudentSummaryResponse {
+  id: number;
+  fullName: string;
+  phoneNumber: string;
+  enabled: boolean;
+  /** Absent for a student who has registered but never signed in. */
+  lastLoginAt?: string;
+  registeredAt: string;
+  attemptCount: number;
+}
+
+export interface StudentQuery {
+  search?: string;
+  page?: number;
+  size?: number;
+}
