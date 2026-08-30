@@ -89,14 +89,7 @@ export class TestList {
    * so the session is cleared on both outcomes.
    */
   protected signOut(): void {
-    this.authService.logout().subscribe({
-      next: () => this.finishSignOut(),
-      error: () => this.finishSignOut(),
-    });
+    this.authService.signOut();
   }
 
-  private finishSignOut(): void {
-    this.auth.clearSession();
-    void this.router.navigate(['/login']);
-  }
 }

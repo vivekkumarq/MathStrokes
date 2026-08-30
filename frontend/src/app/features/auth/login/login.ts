@@ -14,8 +14,8 @@ import {
   shouldShowError,
 } from '../../../shared/forms/server-errors';
 
-/** Digits only, 10-15, matching the backend's phone validation. */
-const PHONE_PATTERN = /^\d{10,15}$/;
+/** Exactly ten digits. The backend accepts 10-15; the product wants 10. */
+const PHONE_PATTERN = /^\d{10}$/;
 
 @Component({
   selector: 'app-login',
@@ -60,7 +60,7 @@ export class Login {
   protected errorFor(name: 'phoneNumber' | 'password'): string | null {
     return firstErrorMessage(this.form.get(name), {
       required: name === 'password' ? 'Enter your password.' : 'Enter your phone number.',
-      pattern: 'Enter a valid phone number (10-15 digits).',
+      pattern: 'Enter a 10-digit phone number.',
     });
   }
 
