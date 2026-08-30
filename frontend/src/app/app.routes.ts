@@ -11,45 +11,45 @@ export const routes: Routes = [
   {
     path: 'login',
     canActivate: [guestGuard],
-    title: 'Sign in · Iota',
+    title: 'Sign in · iota',
     loadComponent: () => import('./features/auth/login/login').then((m) => m.Login),
   },
   {
     path: 'register',
     canActivate: [guestGuard],
-    title: 'Create account · Iota',
+    title: 'Create account · iota',
     loadComponent: () => import('./features/auth/register/register').then((m) => m.Register),
   },
   {
     path: 'forgot-password',
     canActivate: [guestGuard],
-    title: 'Reset password · Iota',
+    title: 'Reset password · iota',
     loadComponent: () =>
       import('./features/auth/forgot-password/forgot-password').then((m) => m.ForgotPassword),
   },
   {
     path: 'student',
     canActivate: [roleGuard('ROLE_STUDENT')],
-    title: 'Dashboard · Iota',
+    title: 'Dashboard · iota',
     loadComponent: () => import('./features/student/home/home').then((m) => m.StudentHome),
   },
   {
     path: 'admin',
     canActivate: [roleGuard('ROLE_ADMIN')],
-    title: 'Admin · Iota',
+    title: 'Admin · iota',
     loadComponent: () => import('./features/admin/home/home').then((m) => m.AdminHome),
   },
   {
     path: 'student/tests',
     canActivate: [roleGuard('ROLE_STUDENT')],
-    title: 'Available tests · Iota',
+    title: 'Available tests · iota',
     loadComponent: () =>
       import('./features/student/tests/test-list').then((m) => m.TestList),
   },
   {
     path: 'exam/:attemptId',
     canActivate: [roleGuard('ROLE_STUDENT')],
-    title: 'Examination · Iota',
+    title: 'Examination · iota',
     loadComponent: () => import('./features/exam/exam-runner').then((m) => m.ExamRunner),
   },
   {
@@ -58,26 +58,26 @@ export const routes: Routes = [
     path: 'results/:attemptId',
     pathMatch: 'full',
     canActivate: [roleGuard('ROLE_STUDENT')],
-    title: 'Result · Iota',
+    title: 'Result · iota',
     loadComponent: () => import('./features/results/result-page').then((m) => m.ResultPage),
   },
   {
     path: 'results/:attemptId/review',
     canActivate: [roleGuard('ROLE_STUDENT')],
-    title: 'Answer review · Iota',
+    title: 'Answer review · iota',
     loadComponent: () => import('./features/results/review-page').then((m) => m.ReviewPage),
   },
   {
     path: 'admin/tests',
     canActivate: [roleGuard('ROLE_ADMIN')],
-    title: 'Tests · Iota',
+    title: 'Tests · iota',
     loadComponent: () =>
       import('./features/admin/tests/test-list').then((m) => m.AdminTestList),
   },
   {
     path: 'admin/questions',
     canActivate: [roleGuard('ROLE_ADMIN')],
-    title: 'Question bank · Iota',
+    title: 'Question bank · iota',
     loadComponent: () =>
       import('./features/admin/questions/question-list/question-list').then((m) => m.QuestionList),
   },
@@ -85,7 +85,7 @@ export const routes: Routes = [
     // Must precede the :id route, or 'new' would be parsed as an id.
     path: 'admin/questions/new',
     canActivate: [roleGuard('ROLE_ADMIN')],
-    title: 'New question · Iota',
+    title: 'New question · iota',
     loadComponent: () =>
       import('./features/admin/questions/question-editor/question-editor').then(
         (m) => m.QuestionEditor,
@@ -94,7 +94,7 @@ export const routes: Routes = [
   {
     path: 'admin/questions/:id',
     canActivate: [roleGuard('ROLE_ADMIN')],
-    title: 'Edit question · Iota',
+    title: 'Edit question · iota',
     loadComponent: () =>
       import('./features/admin/questions/question-editor/question-editor').then(
         (m) => m.QuestionEditor,
