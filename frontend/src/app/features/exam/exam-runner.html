@@ -127,10 +127,6 @@
         <button type="button" class="ms-btn" [disabled]="isClosed()" (click)="toggleReview()">
           {{ stateOf(current()!.attemptQuestionId)?.markedForReview ? 'Unmark review' : 'Mark for review' }}
         </button>
-      </div>
-
-      <div class="right">
-        <span class="save-state" aria-live="polite">{{ saving() ? 'Saving…' : 'Saved' }}</span>
         <button
           type="button"
           class="ms-btn"
@@ -139,6 +135,10 @@
         >
           Next
         </button>
+      </div>
+
+      <div class="right">
+        <span class="save-state" aria-live="polite">{{ saving() ? 'Saving…' : 'Saved' }}</span>
         <button
           type="button"
           class="ms-btn ms-btn--primary"
