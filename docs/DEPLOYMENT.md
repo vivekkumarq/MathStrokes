@@ -9,20 +9,27 @@ deliberately the whole shape of it — there is nothing to orchestrate.
 
 | Piece | What it is | Free-tier options |
 |---|---|---|
-| Database | Managed PostgreSQL 14+ | Neon, Supabase, Aiven, Render PostgreSQL |
-| Backend | The container from `backend/Dockerfile` | Render, Railway, Fly.io, Koyeb |
+| Database | Managed PostgreSQL 14+ | Neon, Supabase, Aiven, Northflank, Render PostgreSQL |
+| Backend | The container from `backend/Dockerfile` | Northflank, Render, Railway, Fly.io, Koyeb |
 | Frontend | Static files from `npm run build` | Netlify, Vercel, Cloudflare Pages, GitHub Pages |
 
 Free tiers change constantly, so pick what is actually on offer when you deploy. Nothing in the
 project is tied to a provider: the backend is a plain container configured entirely through
 environment variables, and the frontend is plain static output.
 
-Two things to know about free tiers before you pick one:
+Three things to know about free tiers before you pick one:
 
+- **Free databases can expire.** Render deletes a free PostgreSQL instance 30 days after creation
+  plus 14 days' grace, and offers no backups on that tier. Check the retention terms before you
+  put anything you care about on one, and take your own copies regardless —
+  `scripts/backup-db.sh` does this and verifies the result is restorable.
 - **Containers idle out.** A free backend instance is often suspended after ~15 minutes of
-  inactivity and takes 30–60 seconds to wake. That is survivable for a demo but not for a real
-  examination — a student clicking "Start test" should not wait a minute. Use a paid instance for
-  anything real, or keep it warm.
+  inactivity. On this project's Render deployment, a sign-in after a deliberate 17-minute idle
+  measured 7.97 s against 1.4 s warm — but two monitoring requests separately got no response at
+  all within 120 s, and that was not reproducible on demand. Treat the wake cost as usually
+  seconds and occasionally much worse. Use a paid instance for anything real, or an always-on
+  free tier such as Northflank's — see
+  [`MIGRATING-TO-NORTHFLANK.md`](MIGRATING-TO-NORTHFLANK.md).
 - **The expiry sweep needs the app to be running.** If the container is asleep, attempts whose time
   has run out are not finalised until it wakes. They are finalised correctly when it does, and no
   marks are lost, but a student's result may be delayed.
