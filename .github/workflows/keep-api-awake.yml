@@ -1,41 +1,106 @@
 # Keeps the API from cold-starting.
 #
-# The free Render tier suspends a container after roughly 15 minutes without traffic, and the next
-# request then pays for a JVM boot and a fresh database connection - 30 to 50 seconds, which reads
-# as "the site is broken" to anyone waiting on it. A request every ten minutes keeps the instance
-# resident so nobody ever meets that.
+# The free Render tier suspends a container after roughly 15 minutes without inbound traffic. The
+# next request then pays for a full container start. Measured on this deployment: 62 seconds after
+# a long idle, and two monitoring requests have separately timed out with no response at all after
+# 120 seconds. A shorter idle costs about 8 seconds - the pool reconnecting rather than the
+# container restarting. To anyone waiting on a sign-in, the 62-second case reads as a broken site.
 #
 # This is a workaround for a hosting tier, not a fix for slow code. A paid instance removes the
-# need for it entirely, and this workflow can be deleted the day that happens.
+# need for it entirely and this workflow can be deleted the day that happens.
 #
-# Render's free allowance is 750 instance-hours a month against a ~730-hour month, so one
-# permanently-awake service fits inside it.
+# Render's free allowance is 750 instance-hours against a ~730-hour month, so one permanently-awake
+# service fits inside it.
+#
+# ---------------------------------------------------------------------------------------------
+# WHY THIS IS ONE LONG JOB RATHER THAN A FREQUENT CRON
+#
+# The previous version ran `*/10 * * * *` and pinged once. It fired FOUR times in 21 hours against
+# an expected 126 - a 97% drop rate. GitHub deprioritises high-frequency schedules on shared
+# runners; this is documented behaviour and no amount of tuning the cron expression changes it.
+# So the instance slept through most of every day and real users met the cold start instead.
+#
+# Two changes fix the shape of it:
+#
+#   1. Each run now stays alive and pings on a loop, so one surviving trigger covers hours rather
+#      than one second. Coverage no longer depends on nearly every trigger firing.
+#   2. The schedule overlaps deliberately. A trigger every two hours against a run lasting up to
+#      five hours fifty means several triggers are dropped before a gap opens.
+#
+# `cancel-in-progress` is false and that is the important part. The old workflow had it TRUE,
+# which meant each new scheduled run cancelled the one already running - actively defeating the
+# purpose. Queueing behind the current run is correct: the next one starts as this one ends.
+#
+# This is still not dependable. GitHub guarantees nothing about scheduled runs, and an external
+# uptime pinger hitting the health endpoint every five minutes is the reliable free answer.
+# ---------------------------------------------------------------------------------------------
 name: Keep API awake
 
 on:
   schedule:
-    # Every ten minutes. GitHub queues scheduled runs and can be late under load, so this is
-    # deliberately well inside the ~15 minute idle window rather than close to it.
-    - cron: '*/10 * * * *'
+    # Every two hours, against a run that lasts up to five hours fifty. Deliberately redundant:
+    # roughly three triggers must be dropped in a row before the instance is left to sleep.
+    - cron: '0 */2 * * *'
   workflow_dispatch:
 
 concurrency:
   group: keep-api-awake
-  cancel-in-progress: true
+  # Never cancel a warmer that is doing its job. A newly scheduled run waits and takes over.
+  cancel-in-progress: false
+
+permissions:
+  contents: read
 
 jobs:
-  ping:
+  keep-warm:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    # GitHub's ceiling for a job is 6 hours; stop short of it so the run ends cleanly rather than
+    # being killed mid-request.
+    timeout-minutes: 350
+
     steps:
-      - name: Ping the health endpoint
+      - name: Ping the health endpoint on a loop
         run: |
           URL="https://iota-api-jjai.onrender.com/api/actuator/health"
-          # A generous timeout on purpose: if the instance HAS gone to sleep this request is the
-          # one that wakes it, and that is the slow path we are trying to spare a real user.
-          code=$(curl -s -o /tmp/body -w '%{http_code}' --max-time 120 "$URL" || echo "000")
-          echo "HTTP $code"
-          cat /tmp/body || true
-          if [ "$code" != "200" ]; then
-            echo "::warning::Health check returned $code rather than 200"
-          fi
+          INTERVAL=300          # 5 minutes, comfortably inside the ~15 minute idle window
+          RUN_FOR=$((340 * 60)) # stop before the job timeout so the summary is always written
+
+          started=$(date +%s)
+          pings=0; ok=0; slow=0; failed=0
+
+          while [ $(( $(date +%s) - started )) -lt "$RUN_FOR" ]; do
+            # --max-time 120 on purpose: if the instance HAS gone to sleep, this request is the one
+            # paying the cold start, which is exactly the cost we are keeping off a real user.
+            t0=$(date +%s)
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 120 "$URL" || echo "000")
+            elapsed=$(( $(date +%s) - t0 ))
+            pings=$((pings + 1))
+
+            if [ "$code" = "200" ]; then
+              ok=$((ok + 1))
+              # Anything this slow means the ping arrived after a spin-down rather than preventing
+              # one - worth seeing in the log, because it says the schedule left a gap.
+              if [ "$elapsed" -ge 15 ]; then
+                slow=$((slow + 1))
+                echo "::warning::Woke a sleeping instance - health took ${elapsed}s. A gap was left."
+              fi
+            else
+              failed=$((failed + 1))
+              echo "::warning::Health check returned ${code} after ${elapsed}s"
+            fi
+
+            echo "$(date -u +%H:%M:%SZ)  http=${code}  ${elapsed}s"
+            sleep "$INTERVAL"
+          done
+
+          {
+            echo "### Keep-warm summary"
+            echo ""
+            echo "| Pings | 200 OK | Woke a sleeper | Failed |"
+            echo "|---|---|---|---|"
+            echo "| $pings | $ok | $slow | $failed |"
+            echo ""
+            echo "\"Woke a sleeper\" counts responses slower than 15s. Any of those means the"
+            echo "instance had already gone to sleep, so a scheduled trigger was dropped and a"
+            echo "real user could have met the cold start instead."
+          } >> "$GITHUB_STEP_SUMMARY"
