@@ -25,15 +25,19 @@ data model, every endpoint, the admin question-authoring flow and deployment.
 | Piece | Status | Where |
 |---|---|---|
 | Frontend | **Live** | https://iota-jee.netlify.app (Netlify) |
-| Backend API | Not yet hosted | Container from `backend/Dockerfile`; `render.yaml` ready |
-| Database | Not yet hosted | Managed PostgreSQL; Flyway migrates on first boot |
+| Backend API | **Live** | `iota-api-jjai.onrender.com/api` — container from `backend/Dockerfile` |
+| Database | **Live** | Render PostgreSQL 18.6, private network only |
 
-Netlify serves static files and **cannot run a JVM**, so the API needs its own host. Until it
-exists, `netlify.toml` proxies `/api/*` to a placeholder and anything behind a sign-in fails.
-Everything works locally — see [Local setup](#local-setup).
+Netlify serves static files and **cannot run a JVM**, so the API has its own host. The browser
+calls it directly rather than through the Netlify proxy — [Where it lives](#where-it-lives)
+explains why.
 
-The Netlify hostname still reads `mathstrokes` because the site was created before the rename.
-That is cosmetic; renaming it changes the public URL.
+> **The database is on a 30-day timer.** Free Render PostgreSQL instances expire 30 days after
+> creation, allow a 14-day grace period, and are then deleted along with their data. The free tier
+> supports no backup mechanism at all. A move to Northflank, whose free tier is always-on and
+> permits scheduled backups, is written up in
+> [`docs/MIGRATING-TO-NORTHFLANK.md`](docs/MIGRATING-TO-NORTHFLANK.md). Until that lands, take a
+> copy with `scripts/backup-db.sh` and keep it somewhere other than this machine.
 
 ---
 
@@ -346,13 +350,24 @@ misbehaved, and the migrations use no version-specific syntax, but the combinati
 upstream rather than blessed.
 
 The browser calls the API directly rather than through the Netlify proxy. The proxy is still
-configured, but its gateway gives up after about 29 seconds and a cold JVM takes 30–50 to boot, so
-routing through it turned the first request of the day into a 504. CORS is configured for the
-Netlify origin instead.
+configured, but its gateway gives up at about 29 seconds — verified in production as three
+consecutive 504s at 28.9 s, 29.8 s and 28.5 s, all of them the gateway's ceiling rather than the
+backend failing — and a wake can exceed that. Routing through it turned the first request of the
+day into a 504. Going direct costs a CORS preflight of a few milliseconds and removes the ceiling,
+since the browser's own timeout is measured in minutes. CORS is configured for the Netlify origin
+instead.
 
 The database has no public endpoint, which is the right default but has a practical consequence:
 it cannot be opened from a laptop with pgAdmin or `psql`. Everything about production has to be
 reached through the API.
+
+It also has an expiry date. Free Render PostgreSQL instances are deleted 30 days after creation
+plus a 14-day grace period, and the free tier offers no backups, so the only durable copy is one
+taken deliberately with `scripts/backup-db.sh`. That script refuses to run when the local
+`pg_dump` is older than the server — development is on 17 and production on 18.6, so the client
+that works locally cannot back up production, and finding that out during an emergency would be
+the wrong time. The planned move to an always-on host with scheduled backups is in
+[`docs/MIGRATING-TO-NORTHFLANK.md`](docs/MIGRATING-TO-NORTHFLANK.md).
 
 ### How the connection is wired
 
@@ -498,17 +513,24 @@ the part that feels large because it was authored by hand — is a rounding erro
 attempts will eventually occupy. Adding a tenth chapter of questions costs less than two students
 sitting one test.
 
-The 1 GB figure is the documented free-tier allowance and should be confirmed on the `iota-db`
-dashboard page, along with whether the free instance carries an expiry date. If it does, that
-matters more than anything below, because it ends with the data gone rather than merely slow.
+The 1 GB figure is Render's documented free-tier allowance, and it is fixed rather than a soft
+quota. The open question beside it — whether the free instance carries an expiry date — has since
+been answered, and badly: it expires 30 days after creation, allows 14 days' grace, and is then
+deleted with its data, with no backup mechanism on that tier. That matters more than anything
+below, because it ends with the data gone rather than merely slow. The creation date of `iota-db`
+is therefore the single most important number about this deployment, and it is only visible on the
+Render dashboard.
 
 ### What runs out first
 
-Ranked by what a student would actually notice. The database is not near the top.
+Ranked by what a student would actually notice, except the first, which nobody notices until it
+has already happened. The database's *size* is not near the top; its *expiry* is at the very top.
 
 | Limit | Severity | Detail |
 |---|---|---|
-| Cold start | Worst | The free web service sleeps after about 15 minutes idle and the JVM needs 30–50 seconds to boot. The first student of the morning waits through all of it. The keep-warm GitHub Action helps but is not dependable — the scheduler drops runs under load, which is documented behaviour rather than a bug in the workflow. |
+| Free database expiry | **Worst** | Free Render PostgreSQL expires 30 days after creation, allows 14 days' grace, then is deleted with its data — and the free tier supports no backups. This is the only limit here that destroys work rather than delaying it. `scripts/backup-db.sh` is the interim answer; [migrating off](docs/MIGRATING-TO-NORTHFLANK.md) is the real one. |
+| Cold start | Bad, and poorly understood | The free service sleeps after ~15 minutes idle. Measured after a deliberate 17-minute idle: a 0.49 s preflight and a 7.97 s sign-in, against 1.4 s warm. But two keep-alive runs got no response at all within 120 s, and that has not been reproduced on demand, so the wake cost is usually seconds and occasionally far worse for reasons not yet established. A preflight answering in 0.49 s beside a 7.97 s login points at the connection pool, not a JVM boot — the preflight never touches the database. |
+| The keep-warm Action | Ineffective | Scheduled `*/10`, it fired **four times in 21 hours** against an expected 126. GitHub deprioritises high-frequency schedules on shared runners; no cron tuning fixes that. An external pinger or an always-on host is the answer. |
 | 126 inserts on start | By design | The price of historical integrity, paid where the student is watching. Fixed per attempt, but thirty students starting together is 3,780 inserts arriving at once, and that shape has not been load-tested. |
 | Connection pool | Watch | Local PostgreSQL allows 100 connections; free hosted tiers usually allow considerably fewer, and the pool is sized for the generous case. The failure mode is connection exhaustion surfacing as timeouts rather than as a clear error. Worth pinning the pool size once the real limit is known. |
 | Sequential scans on `questions` | Latent | Fine at 1,522 questions. The first thing to revisit at ten times that. |
@@ -855,12 +877,24 @@ documented here because they are the behaviours the platform is judged on:
 ## Deployment
 
 Detailed instructions, including free-tier hosting, are in
-[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md). In outline:
+[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md). The move from Render to Northflank — why, and the
+step-by-step — is in [`docs/MIGRATING-TO-NORTHFLANK.md`](docs/MIGRATING-TO-NORTHFLANK.md). In
+outline:
 
 - **Backend** — a container built from `backend/Dockerfile`, deployable to any free-tier host that
   runs containers. Configure it entirely through environment variables.
 - **Database** — any managed PostgreSQL. Flyway migrates on first boot.
 - **Frontend** — `npm run build` produces static files for any static host or CDN.
+
+Back the database up before anything else, and keep the copy off the deploying machine:
+
+```bash
+scripts/backup-db.sh "<external connection string>"
+```
+
+It verifies the dump with `pg_restore --list` before reporting success, and refuses to run when
+the local `pg_dump` is older than the server rather than producing a file that only turns out to
+be unusable when it is needed.
 
 Production checklist:
 

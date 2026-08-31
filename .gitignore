@@ -53,3 +53,8 @@ e2e/.state.json
 
 # Local Netlify folder
 .netlify
+
+# Database dumps. These carry real student data - names, phone numbers and password hashes -
+# so they must never reach the repository. scripts/backup-db.sh writes here.
+backups/
+*.dump
