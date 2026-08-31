@@ -332,6 +332,22 @@ $palette-states: 'not-visited', 'not-answered', 'answered', 'review', 'answered-
   border-top: 1px solid var(--ms-border);
 }
 
+/*
+ * The host's floating badge sits over the bottom-right corner and overlapped Submit,
+ * which is how a paper got submitted by a mis-tap. Every repeated action now lives on
+ * the left, and Submit is held clear of the corner so the badge cannot cover it.
+ */
+.exam-actions .right {
+  padding-right: 9.5rem;
+}
+
+@media (max-width: 40rem) {
+  .exam-actions .right {
+    padding-right: 0;
+    padding-bottom: 2.5rem;
+  }
+}
+
 .exam-actions .left,
 .exam-actions .right {
   display: flex;
