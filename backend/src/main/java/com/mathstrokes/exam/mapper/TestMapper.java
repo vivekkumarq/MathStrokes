@@ -30,6 +30,9 @@ public class TestMapper {
                 test.getPublishedAt(),
                 test.getClosedAt(),
                 test.getCreatedAt(),
-                test.getVersion());
+                test.getVersion(),
+                test.getTestKind(),
+                test.getScheduledStartAt(),
+                test.getScheduledEndAt());
     }
 }

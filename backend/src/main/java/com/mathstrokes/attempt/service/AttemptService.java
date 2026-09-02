@@ -23,6 +23,7 @@ import com.mathstrokes.common.exception.BusinessRuleException;
 import com.mathstrokes.common.exception.ForbiddenOperationException;
 import com.mathstrokes.common.exception.ResourceNotFoundException;
 import com.mathstrokes.exam.entity.ExamTest;
+import com.mathstrokes.exam.service.TestSchedule;
 import com.mathstrokes.exam.entity.TestQuestion;
 import com.mathstrokes.exam.repository.TestQuestionRepository;
 import com.mathstrokes.exam.service.QuestionSelectionService;
@@ -105,6 +106,23 @@ public class AttemptService {
             throw new BusinessRuleException(test.getStatus() == TestStatus.CLOSED
                     ? "This test has been closed and is no longer accepting attempts."
                     : "This test is not open for attempts.");
+        }
+
+        // The scheduling window, enforced here because HERE is the gate. The catalog's canStart
+        // flag is display state; it decides what a button looks like, and a student who posts to
+        // this endpoint directly never passes through it. Note the check sits AFTER the resume
+        // branch above on purpose: an attempt already running is unaffected by the window closing,
+        // exactly as it is unaffected by the test being closed.
+        Instant clock = Instant.now();
+        if (!test.hasOpenedBy(clock)) {
+            throw new BusinessRuleException("This test opens on "
+                    + TestSchedule.humanise(test.getScheduledStartAt())
+                    + " and cannot be started before then.");
+        }
+        if (test.hasWindowClosedBy(clock)) {
+            throw new BusinessRuleException(
+                    "This test closed on " + TestSchedule.humanise(test.getScheduledEndAt())
+                            + " and is no longer accepting attempts.");
         }
 
         long used = attemptRepository.countByStudentIdAndTestId(studentId, testId);

@@ -9,6 +9,7 @@ import com.mathstrokes.catalog.entity.Subject;
 import com.mathstrokes.common.domain.BaseEntity;
 import com.mathstrokes.common.enums.ExamPattern;
 import com.mathstrokes.common.enums.TestGenerationMode;
+import com.mathstrokes.common.enums.TestKind;
 import com.mathstrokes.common.enums.TestStatus;
 import com.mathstrokes.user.entity.User;
 import jakarta.persistence.CascadeType;
@@ -100,6 +101,30 @@ public class ExamTest extends BaseEntity {
     @Column(name = "max_attempts_per_student", nullable = false)
     private int maxAttemptsPerStudent = 1;
 
+    /**
+     * What this paper is for. PRACTICE is the browsable bank; CLASS_TEST is one a teacher built
+     * by hand for a class. Explicit rather than inferred from the schedule below, because a
+     * teacher may open a class test immediately with no window at all - and because a derived
+     * kind would change once the window passed.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "test_kind", nullable = false, length = 20)
+    private TestKind testKind = TestKind.PRACTICE;
+
+    /**
+     * The window in which a student may START. Either bound may be absent, meaning unbounded on
+     * that side.
+     *
+     * This does not publish anything and nothing watches the clock: the window is evaluated when
+     * a student asks to start, so there is no scheduled job that could fail to fire. Publishing
+     * remains a deliberate act.
+     */
+    @Column(name = "scheduled_start_at")
+    private Instant scheduledStartAt;
+
+    @Column(name = "scheduled_end_at")
+    private Instant scheduledEndAt;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
     private User createdBy;
@@ -121,6 +146,28 @@ public class ExamTest extends BaseEntity {
 
     public boolean isOpenForAttempts() {
         return status == TestStatus.PUBLISHED;
+    }
+
+    public boolean isClassTest() {
+        return testKind == TestKind.CLASS_TEST;
+    }
+
+    /** True once the paper's window has opened, and always true when no start was set. */
+    public boolean hasOpenedBy(Instant now) {
+        return scheduledStartAt == null || !now.isBefore(scheduledStartAt);
+    }
+
+    /** True once the window has passed, and never when no end was set. */
+    public boolean hasWindowClosedBy(Instant now) {
+        return scheduledEndAt != null && now.isAfter(scheduledEndAt);
+    }
+
+    /**
+     * Whether a NEW attempt may begin. Says nothing about one already running: an attempt in
+     * flight finishes on its own clock, exactly as it does when a test is closed.
+     */
+    public boolean isWithinSchedule(Instant now) {
+        return hasOpenedBy(now) && !hasWindowClosedBy(now);
     }
 
     /** A paper with no chapter draws from every chapter of its subject. */

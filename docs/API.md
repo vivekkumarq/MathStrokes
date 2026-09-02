@@ -21,6 +21,7 @@ Fields that are commonly absent:
 |---|---|
 | `activeAttemptId` | the student has no attempt in flight |
 | `unavailableReason` | `canStart` is true |
+| `scheduledStartAt`, `scheduledEndAt` | the test has no window on that side |
 | `score`, `rankPosition`, `totalCandidates`, `percentile`, `correctCount`, `accuracy`, … | the attempt is not yet evaluated |
 | `markingSchemeId` | the question uses the default scheme for its pattern and type |
 | `fieldErrors` | the error is not a validation failure |
@@ -125,7 +126,7 @@ rate limiting rather than by lying to a student who mistyped their own number.
 
 | Method | Path | Notes |
 |---|---|---|
-| `GET` | `/tests` | `?subjectId=&chapterId=&examPattern=`. No question data. |
+| `GET` | `/tests` | `?subjectId=&chapterId=&examPattern=`. No question data. Includes class tests that have not opened yet — see below. |
 | `POST` | `/attempts` | `{ testId }` — starts, **or resumes** an attempt in flight |
 | `GET` | `/attempts/active` | The attempt in flight, or **204** if there is none |
 | `GET` | `/attempts/{id}` | Reload an attempt in progress |
@@ -251,6 +252,8 @@ All under `/admin/**` and requiring `ROLE_ADMIN`.
 | `GET` | `/admin/marking-schemes` | `POST`, `PUT /{id}`, `PATCH /{id}/active` |
 | `GET/POST/PUT` | `/admin/tests`, `/admin/tests/{id}` | Only drafts are editable |
 | `POST` | `/admin/tests/{id}/publish` \| `/close` \| `/archive` | Publishing a fixed-set test pins its paper |
+| `GET` | `/admin/tests/{id}/questions` | The attached paper, in the order it will be sat |
+| `PUT` | `/admin/tests/{id}/questions` | `{ questionIds: number[] }` — hand-picks the exact paper |
 | `GET` | `/admin/students` | `?search=`; `PATCH /{id}/enabled` |
 | `GET` | `/admin/analytics/dashboard` | Headline counters |
 | `GET` | `/admin/analytics/questions/hardest` | Lowest measured accuracy first |
@@ -263,3 +266,60 @@ but not all for `MULTIPLE_CORRECT`. An active marking scheme must exist for its
 Question content is LaTeX and plain text. Content containing `<script`, `<iframe`, `<object`,
 `<embed`, `javascript:` or an inline event handler is rejected. `$a < b$` is ordinary mathematics
 and is accepted.
+
+### Class tests
+
+A **class test** is a paper a teacher builds by hand for a particular class, as opposed to the
+practice bank a student browses. Three fields carry it, on `TestRequest`, `TestResponse` and the
+student-facing `AvailableTestResponse` alike:
+
+| Field | Meaning |
+|---|---|
+| `testKind` | `PRACTICE` (the default when omitted) or `CLASS_TEST` |
+| `scheduledStartAt` | Students may not **start** before this instant. Absent means no lower bound. |
+| `scheduledEndAt` | Students may not **start** after it. Absent means no upper bound. |
+
+`testKind` is explicit rather than derived from the presence of a window, because a teacher may
+open a class test for the room in front of them with no dates at all — and because a derived kind
+would silently change back to practice once the window had passed.
+
+**Hand-picking the paper.** `PUT /admin/tests/{id}/questions` replaces the attached questions with
+exactly the list given, in that order. The array order *is* the order on the paper. Drafts only,
+and every question must be published, distinct, in the test's subject, and of the test's exam
+pattern. A test filed under a chapter may only hold that chapter's questions; clear `chapterId` to
+build a paper spanning several, which is the same absence-as-signal rule that defines a
+full-syllabus test.
+
+The request also **sets `questionCount` to the length of the list**. It is not a number the form is
+allowed to disagree with: an attempt refuses to start when the stored count and the attached
+questions differ, and the resulting error reaches the student rather than the teacher.
+
+**Publishing.** A fixed-set test draws its paper at publish time only if nothing is attached, so a
+hand-picked paper survives publishing untouched. A `CLASS_TEST` with **no** questions attached is
+refused rather than drawn for — publishing it silently would hand a class an examination their
+teacher never saw. Publishing a `CLOSED` test reopens it and clears `closedAt`, which is how "take
+offline" and "go live" work.
+
+**The window is not a scheduler.** Nothing watches the clock and nothing publishes itself. The
+window is evaluated when a student asks to start, so there is no scheduled job that could fail to
+fire — which matters on a host that suspends an idle container.
+
+The window gates **starting**, not finishing. An attempt already in flight is unaffected: it runs
+out on its own clock, exactly as it does when a test is closed. `POST /attempts` returns the
+in-flight attempt before any window check runs.
+
+**Enforcement is on `POST /attempts`.** `canStart` and `unavailableReason` on the catalogue are
+display state — they tell a client what to render. The server refuses a start outside the window
+regardless of what the client believed.
+
+Unpublished-window tests are still **listed** rather than filtered out: a class needs to see that
+tomorrow's paper is coming. They come back with `canStart: false` and one of:
+
+| `unavailableReason` | When |
+|---|---|
+| `Opens on 4 September at 4:00 PM` | before `scheduledStartAt` |
+| `This test has closed` | after `scheduledEndAt` |
+
+Times in that string are rendered in **Asia/Kolkata**, deliberately fixed rather than taken from
+the reader: a class test opens at a wall-clock time the teacher announced to the room, and two
+students sitting side by side must not be told two different times because their phones disagree.

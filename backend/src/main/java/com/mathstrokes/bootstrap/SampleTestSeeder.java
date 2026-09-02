@@ -6,6 +6,7 @@ import com.mathstrokes.catalog.entity.Chapter;
 import com.mathstrokes.catalog.repository.ChapterRepository;
 import com.mathstrokes.common.enums.ExamPattern;
 import com.mathstrokes.common.enums.TestGenerationMode;
+import com.mathstrokes.common.enums.TestKind;
 import com.mathstrokes.config.AppProperties;
 import com.mathstrokes.exam.dto.TestRequest;
 import com.mathstrokes.exam.dto.TestResponse;
@@ -85,7 +86,9 @@ public class SampleTestSeeder {
         try {
             TestRequest request = new TestRequest(title, description, chapter.getId(),
                     null, pattern, durationMinutes, questionCount, TestGenerationMode.FIXED_SET,
-                    null, null, null, 1);
+                    null, null, null, 1,
+                    // A seeded sample is practice, always available, with no window.
+                    TestKind.PRACTICE, null, null);
             TestResponse created = testService.create(request);
             testService.publish(created.id());
             log.info("Published sample test '{}'", title);

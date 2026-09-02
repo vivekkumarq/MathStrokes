@@ -306,8 +306,9 @@ the schema disagree. Migrations live in `backend/src/main/resources/db/migration
 | `V4__seed_question_bank.sql` | 11 further chapters and 1,456 questions |
 | `V5__seed_chapter_tests.sql` | A chapter test per chapter and exam pattern |
 | `V6__full_syllabus_tests.sql` | Makes `chapter_id` nullable; 2 full-syllabus papers |
+| `V7__class_tests.sql` | `test_kind` and a scheduling window on `tests` |
 
-Migrations are never edited once applied — add a new `V7__...` instead. This is not a style
+Migrations are never edited once applied — add a new one instead. This is not a style
 preference. Flyway records a checksum for every migration it has run, and editing an applied file
 makes that checksum disagree on the next boot, which stops the whole application rather than just
 the migration. A comment in `V5` is inaccurate for exactly this reason: it was cheaper to carry the
