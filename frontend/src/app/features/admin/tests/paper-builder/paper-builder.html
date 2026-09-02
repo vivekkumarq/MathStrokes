@@ -1,0 +1,260 @@
+<app-admin-shell>
+  @if (loading()) {
+    <p class="ms-card empty">Loading the paper…</p>
+  } @else if (test(); as t) {
+    <header class="head">
+      <div class="head-main">
+        <a class="back" routerLink="/admin/tests">← Tests</a>
+        <h1>{{ t.title }}</h1>
+        <p class="muted">
+          {{ patternLabel(t.examPattern) }} · {{ t.chapterName ?? 'Full syllabus' }} ·
+          {{ t.durationMinutes }} min
+          @if (t.testKind === 'CLASS_TEST') {
+            <span class="kind">Class test</span>
+          }
+        </p>
+      </div>
+
+      <div class="head-actions">
+        <span class="count" [attr.data-state]="chosen().length === 0 ? 'empty' : 'ok'">
+          <strong>{{ chosen().length }}</strong>
+          question{{ chosen().length === 1 ? '' : 's' }} on the paper
+        </span>
+        @if (editable()) {
+          <button
+            class="ms-btn ms-btn--primary"
+            type="button"
+            [disabled]="saving() || chosen().length === 0"
+            (click)="save()"
+          >
+            {{ saving() ? 'Saving…' : 'Save paper' }}
+          </button>
+        }
+      </div>
+    </header>
+
+    @if (!editable()) {
+      <p class="ms-alert ms-alert--warn" role="status">
+        This test is {{ t.status | lowercase }}, so its paper is locked. Students may already
+        have sat it, and changing the questions now would invalidate their marking. Take it
+        offline and create a new draft to build a different paper.
+      </p>
+    }
+
+    @if (error()) {
+      <p class="ms-alert ms-alert--error" role="alert">{{ error() }}</p>
+    }
+    @if (notice()) {
+      <p class="ms-alert ms-alert--info" role="status">{{ notice() }}</p>
+    }
+
+    @if (chapterConflict()) {
+      <p class="ms-alert ms-alert--warn" role="status">
+        This test is filed under <strong>{{ t.chapterName }}</strong>, but the paper draws on
+        {{ chosenChapters().length === 1 ? chosenChapters()[0] : chosenChapters().length + ' chapters' }}.
+        Students would see a chapter label its questions contradict. Save this as a
+        full-syllabus test instead, from the test list.
+      </p>
+    }
+
+    @if (editable() && chosen().length > 0 && chosen().length !== createdWithCount()) {
+      <p class="ms-alert ms-alert--info" role="status">
+        This test was created as {{ createdWithCount() }} questions. Saving will make it
+        {{ chosen().length }} — the paper you pick is the paper students sit.
+      </p>
+    }
+
+    <div class="builder">
+      <!-- The bank. Only published questions are offered; a draft on a live paper is a bug. -->
+      <section class="pane bank-pane">
+        <div class="pane-head">
+          <h2>Question bank</h2>
+          <span class="muted">{{ bankTotal() }} published</span>
+        </div>
+
+        <div class="ms-card filters">
+          <label class="wide">
+            <span>Search</span>
+            <input
+              class="ms-input"
+              type="search"
+              placeholder="Find a question…"
+              [(ngModel)]="search"
+              (keyup.enter)="applyFilters()"
+            />
+          </label>
+
+          <label>
+            <span>Chapter</span>
+            <select class="ms-input" [(ngModel)]="chapterId" (ngModelChange)="applyFilters()">
+              <option [ngValue]="''">All chapters</option>
+              @for (chapter of chapters(); track chapter.id) {
+                <option [ngValue]="chapter.id">{{ chapter.name }}</option>
+              }
+            </select>
+          </label>
+
+          <label>
+            <span>Pattern</span>
+            <select class="ms-input" [(ngModel)]="examPattern" (ngModelChange)="applyFilters()">
+              <option [ngValue]="''">All</option>
+              @for (pattern of patterns; track pattern) {
+                <option [ngValue]="pattern">{{ patternLabel(pattern) }}</option>
+              }
+            </select>
+          </label>
+
+          <label>
+            <span>Difficulty</span>
+            <select class="ms-input" [(ngModel)]="difficulty" (ngModelChange)="applyFilters()">
+              <option [ngValue]="''">All</option>
+              @for (level of difficulties; track level) {
+                <option [ngValue]="level">{{ level }}</option>
+              }
+            </select>
+          </label>
+
+          <div class="filter-actions">
+            <button class="ms-btn ms-btn--ghost" type="button" (click)="clearFilters()">
+              Clear
+            </button>
+            <button class="ms-btn" type="button" (click)="applyFilters()">Search</button>
+          </div>
+        </div>
+
+        <div class="ms-card ms-card--flush results">
+          @if (bankLoading()) {
+            <p class="empty">Loading questions…</p>
+          } @else if (bank().length === 0) {
+            <p class="empty">No published questions match those filters.</p>
+          } @else {
+            <ul class="q-list">
+              @for (q of bank(); track q.id) {
+                <li class="q-row" [class.is-chosen]="isChosen(q)">
+                  <div class="q-main">
+                    <div class="q-preview"><app-math-content [content]="q.questionPreview" /></div>
+                    <p class="q-meta">
+                      <span class="chip">{{ q.chapterName }}</span>
+                      <span class="chip">{{ q.difficulty }}</span>
+                      <span class="chip">
+                        {{ q.questionType === 'SINGLE_CORRECT' ? 'Single' : 'Multiple' }}
+                      </span>
+                      <span class="chip">{{ patternLabel(q.examPattern) }}</span>
+                    </p>
+                  </div>
+                  <button
+                    class="ms-btn q-toggle"
+                    [class.ms-btn--primary]="!isChosen(q)"
+                    [class.ms-btn--ghost]="isChosen(q)"
+                    type="button"
+                    [disabled]="!editable()"
+                    (click)="toggle(q)"
+                  >
+                    {{ isChosen(q) ? 'Remove' : 'Add' }}
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+
+        @if (bankPages() > 1) {
+          <nav class="pager">
+            <button
+              class="ms-btn ms-btn--ghost"
+              type="button"
+              [disabled]="bankPage() === 0"
+              (click)="goToBankPage(bankPage() - 1)"
+            >
+              Previous
+            </button>
+            <span class="page-label">Page {{ bankPage() + 1 }} of {{ bankPages() }}</span>
+            <button
+              class="ms-btn ms-btn--ghost"
+              type="button"
+              [disabled]="bankPage() + 1 >= bankPages()"
+              (click)="goToBankPage(bankPage() + 1)"
+            >
+              Next
+            </button>
+          </nav>
+        }
+      </section>
+
+      <!-- The paper. Order here is the order students sit it in. -->
+      <section class="pane paper-pane">
+        <div class="pane-head">
+          <h2>The paper</h2>
+          @if (editable() && chosen().length > 0) {
+            <button class="ms-btn ms-btn--ghost small" type="button" (click)="clearPaper()">
+              Clear all
+            </button>
+          }
+        </div>
+
+        <div class="ms-card ms-card--flush paper">
+          @if (chosen().length === 0) {
+            <p class="empty">
+              Nothing picked yet. Add questions from the bank and they appear here in the order
+              students will sit them.
+            </p>
+          } @else {
+            <ol class="paper-list">
+              @for (q of chosen(); track q.id; let i = $index) {
+                <li class="paper-row">
+                  <span class="pos">{{ i + 1 }}</span>
+                  <div class="q-main">
+                    <div class="q-preview"><app-math-content [content]="q.questionPreview" /></div>
+                    <p class="q-meta">
+                      <span class="chip">{{ q.chapterName }}</span>
+                      <span class="chip">{{ q.difficulty }}</span>
+                    </p>
+                  </div>
+                  @if (editable()) {
+                    <div class="row-actions">
+                      <button
+                        class="ms-btn ms-btn--ghost icon"
+                        type="button"
+                        title="Move up"
+                        [attr.aria-label]="'Move question ' + (i + 1) + ' up'"
+                        [disabled]="i === 0"
+                        (click)="move(i, -1)"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        class="ms-btn ms-btn--ghost icon"
+                        type="button"
+                        title="Move down"
+                        [attr.aria-label]="'Move question ' + (i + 1) + ' down'"
+                        [disabled]="i === chosen().length - 1"
+                        (click)="move(i, 1)"
+                      >
+                        ↓
+                      </button>
+                      <button
+                        class="ms-btn ms-btn--ghost icon"
+                        type="button"
+                        title="Remove from paper"
+                        [attr.aria-label]="'Remove question ' + (i + 1) + ' from the paper'"
+                        (click)="removeAt(i)"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  }
+                </li>
+              }
+            </ol>
+          }
+        </div>
+
+        @if (editable() && dirty()) {
+          <p class="unsaved" role="status">Unsaved changes — save the paper to keep them.</p>
+        }
+      </section>
+    </div>
+  } @else {
+    <p class="ms-card empty">That test could not be loaded.</p>
+  }
+</app-admin-shell>

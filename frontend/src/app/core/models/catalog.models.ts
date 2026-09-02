@@ -1,4 +1,4 @@
-import { ExamPattern } from './enums';
+import { ExamPattern, TestKind } from './enums';
 
 /**
  * Catalog + test browsing.
@@ -54,6 +54,21 @@ export interface TestSummaryResponse {
   unavailableReason?: string;
   /** Present only while an attempt on this test is in flight. Absence means nothing to resume. */
   activeAttemptId?: number;
+  /**
+   * PRACTICE for the always-on self-study papers, CLASS_TEST for one a teacher scheduled.
+   * Students see the two in separate groups.
+   */
+  testKind: TestKind;
+  /**
+   * When a scheduled class test opens and closes, as ISO-8601 instants. Both absent when the
+   * teacher set no window, in which case a published paper is simply open.
+   *
+   * These are for DISPLAY only - whether the paper can actually be started is `canStart`,
+   * decided server-side. Never gate the start button on a clock comparison done here: the
+   * student's device clock is not trustworthy and would let a wrong one open a test early.
+   */
+  scheduledStartAt?: string;
+  scheduledEndAt?: string;
 }
 
 /** Query for GET /tests. Both filters are optional and combine. */

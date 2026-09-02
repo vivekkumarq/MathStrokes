@@ -4,6 +4,7 @@ import {
   QuestionStatus,
   QuestionType,
   TestGenerationMode,
+  TestKind,
   TestStatus,
 } from './enums';
 
@@ -106,10 +107,33 @@ export interface AdminTestRequest {
   durationMinutes: number;
   questionCount: number;
   generationMode: TestGenerationMode;
-  easyCount: number;
-  mediumCount: number;
-  hardCount: number;
+  /**
+   * The difficulty blueprint for a randomly drawn paper. Every band is optional on the
+   * server (@PositiveOrZero, not @NotNull) and a null band means "no constraint", so a
+   * hand-picked class test omits all three rather than sending a split it never uses.
+   */
+  easyCount?: number;
+  mediumCount?: number;
+  hardCount?: number;
   maxAttemptsPerStudent: number;
+  /** Defaults to PRACTICE server-side, so existing papers keep their meaning. */
+  testKind?: TestKind;
+  /**
+   * ISO-8601 instants bounding when a class test may be sat. Both optional: a teacher may
+   * flag a paper live with no window at all. Publishing stays the master switch — the
+   * window is a second, independent gate, so no scheduler has to fire for a test to open.
+   */
+  scheduledStartAt?: string;
+  scheduledEndAt?: string;
+}
+
+/**
+ * The exact paper for a hand-picked test. Array order IS the question order, so reordering
+ * the tray and saving is the whole reorder operation - there is no separate order field
+ * that could disagree with the sequence.
+ */
+export interface TestQuestionsRequest {
+  questionIds: number[];
 }
 
 export interface AdminTestResponse {
@@ -130,6 +154,10 @@ export interface AdminTestResponse {
   generationMode: TestGenerationMode;
   maxAttemptsPerStudent: number;
   rankingEnabled: boolean;
+  testKind: TestKind;
+  /** Absent when the teacher set no window. */
+  scheduledStartAt?: string;
+  scheduledEndAt?: string;
   publishedAt?: string;
   createdAt: string;
   version: number;

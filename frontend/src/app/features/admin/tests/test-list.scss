@@ -219,3 +219,120 @@ tbody td {
 .tag--archived {
   color: var(--ms-ink-subtle);
 }
+
+/* --- Class tests ---------------------------------------------------------------------
+   A class test is built and scheduled by hand, so the form asks a different set of
+   questions depending on which kind is chosen. The two are picked up front rather than
+   inferred from whatever the teacher fills in afterwards. */
+
+.kind-choice {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 0 0 18px;
+  padding: 0;
+  border: 0;
+}
+
+.kind-choice legend {
+  margin-bottom: 8px;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ms-ink-muted);
+}
+
+.kind-option {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  cursor: pointer;
+  background: var(--ms-surface);
+  border: 1px solid var(--ms-border);
+  border-radius: var(--ms-radius);
+}
+
+.kind-option:hover {
+  border-color: var(--ms-primary-border);
+}
+
+.kind-option.is-picked {
+  background: var(--ms-primary-soft);
+  border-color: var(--ms-primary);
+}
+
+.kind-option input {
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+.kind-option span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.kind-option strong {
+  font-size: 13.5px;
+}
+
+.kind-option small {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ms-ink-muted);
+}
+
+.field-hint {
+  margin-top: 4px;
+  font-size: 11.5px;
+  color: var(--ms-ink-subtle);
+}
+
+.t-title {
+  display: inline-block;
+}
+
+.kind {
+  margin-left: 8px;
+  padding: 2px 7px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* The window and the missing-paper warning sit under the title, where they are read as
+   facts about that test rather than as another column to scan. */
+.window,
+.needs-paper {
+  display: block;
+  margin-top: 4px;
+  font-size: 11.5px;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.window {
+  color: var(--ms-ink-subtle);
+}
+
+.needs-paper {
+  color: #b45309;
+}
+
+.col-actions a.ms-btn {
+  text-decoration: none;
+}
+
+@media (max-width: 46rem) {
+  .kind-choice {
+    grid-template-columns: 1fr;
+  }
+}

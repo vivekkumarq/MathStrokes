@@ -43,14 +43,61 @@ export class TestList {
     return test.chapterId === undefined;
   }
 
-  /** Full-syllabus papers first: they are the headline, not one row among 56. */
+  /**
+   * A paper a teacher built and scheduled, as opposed to the always-on practice ones.
+   *
+   * The kind is sent explicitly rather than inferred from the presence of a schedule: a
+   * teacher may flag a class test live with no window at all, and a derived rule would both
+   * miss that paper and quietly move a scheduled one back into practice once its window
+   * passed.
+   */
+  protected isClassTest(test: TestSummaryResponse): boolean {
+    return test.testKind === 'CLASS_TEST';
+  }
+
+  /**
+   * Class tests lead the page. A paper the student's own teacher scheduled for a named time
+   * is the one thing here that can be missed by not looking, so it cannot sit below fifty-odd
+   * practice papers that will still be there tomorrow.
+   */
+  protected readonly classTests = computed(() => this.tests().filter((t) => this.isClassTest(t)));
+
+  /** Full-syllabus papers next: they are the headline of practice, not one row among 56. */
   protected readonly fullSyllabusTests = computed(() =>
-    this.tests().filter((t) => this.isFullSyllabus(t)),
+    this.tests().filter((t) => !this.isClassTest(t) && this.isFullSyllabus(t)),
   );
 
   protected readonly chapterTests = computed(() =>
-    this.tests().filter((t) => !this.isFullSyllabus(t)),
+    this.tests().filter((t) => !this.isClassTest(t) && !this.isFullSyllabus(t)),
   );
+
+  /**
+   * The scheduled window, in IST — the zone the teacher set it in, and the one the class
+   * sits in. Deliberately not the browser's zone: a student whose laptop clock is set to
+   * another country would otherwise read a different start time from their classmates.
+   *
+   * Display only. Whether the paper can actually be started is `canStart`, which the server
+   * decides and enforces again when the attempt is created.
+   */
+  protected windowLabel(test: TestSummaryResponse): string | null {
+    if (test.scheduledStartAt === undefined && test.scheduledEndAt === undefined) {
+      return null;
+    }
+    const fmt = (iso: string) =>
+      new Date(iso).toLocaleString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        day: 'numeric',
+        month: 'short',
+        hour: 'numeric',
+        minute: '2-digit',
+      });
+    if (test.scheduledStartAt !== undefined && test.scheduledEndAt !== undefined) {
+      return `${fmt(test.scheduledStartAt)} — ${fmt(test.scheduledEndAt)}`;
+    }
+    return test.scheduledStartAt !== undefined
+      ? `Opens ${fmt(test.scheduledStartAt)}`
+      : `Closes ${fmt(test.scheduledEndAt!)}`;
+  }
 
   /**
    * Chapter+pattern pairs that have more than one paper. Three chapters carry a spare

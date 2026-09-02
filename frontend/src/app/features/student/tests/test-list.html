@@ -26,7 +26,32 @@
         <p class="muted">Your teacher has not published any tests. Check back shortly.</p>
       </div>
     } @else {
-      <!-- Full-syllabus papers lead: they are the headline, not one row among fifty-six. -->
+      <!-- Class tests lead: a paper scheduled for a named time is the one thing on this page
+           that can be missed by not looking. -->
+      @if (classTests().length > 0) {
+        <section class="group group--class">
+          <h2 class="group-title">Class tests</h2>
+          <p class="group-sub">
+            Set by your teacher. Each one runs at its own time, and the questions are chosen
+            rather than drawn at random.
+          </p>
+          <div class="ms-card ms-card--flush table">
+            <div class="thead" aria-hidden="true">
+              <span>Test</span>
+              <span>Pattern</span>
+              <span class="num">Questions</span>
+              <span class="num">Duration</span>
+              <span></span>
+            </div>
+            <ng-container
+              [ngTemplateOutlet]="rowList"
+              [ngTemplateOutletContext]="{ $implicit: classTests() }"
+            />
+          </div>
+        </section>
+      }
+
+      <!-- Full-syllabus papers lead the practice papers. -->
       @if (fullSyllabusTests().length > 0) {
         <section class="group">
           <h2 class="group-title">Full syllabus</h2>
@@ -77,7 +102,9 @@
       <li class="row" [class.row--blocked]="!test.canStart">
         <div class="cell chapter">
           <span class="chapter-name">
-            @if (isFullSyllabus(test)) {
+            @if (isClassTest(test)) {
+              {{ test.title }}
+            } @else if (isFullSyllabus(test)) {
               Full syllabus
             } @else {
               {{ test.chapterName }}
@@ -86,6 +113,9 @@
           <span class="chapter-meta">
             @if (needsTitle(test)) {<span class="title-hint">{{ test.title }} · </span>}{{ test.attemptsUsed }} of {{ test.maxAttemptsPerStudent }} attempts used@if (test.rankingEnabled) {<span class="ranked"> · ranked</span>}
           </span>
+          @if (windowLabel(test); as window) {
+            <span class="window">{{ window }}</span>
+          }
         </div>
 
         <div class="cell">
@@ -116,6 +146,8 @@
               Opening…
             } @else if (test.activeAttemptId) {
               Resume
+            } @else if (!test.canStart && test.scheduledStartAt) {
+              Not open yet
             } @else {
               Start test
             }
