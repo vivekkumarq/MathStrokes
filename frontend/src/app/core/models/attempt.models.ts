@@ -1,4 +1,12 @@
-import { AnswerStatus, AttemptStatus, Difficulty, ExamPattern, QuestionResultStatus, QuestionType } from './enums';
+import {
+  AnswerStatus,
+  AttemptStatus,
+  Difficulty,
+  ExamPattern,
+  QuestionResultStatus,
+  QuestionType,
+  TestKind,
+} from './enums';
 
 /**
  * The exam engine contract.
@@ -71,7 +79,17 @@ export interface AttemptResponse {
   testId: number;
   testTitle: string;
   subjectName: string;
-  chapterName: string;
+  /**
+   * Absent for a full-syllabus paper AND for a cross-chapter class test. Optional because
+   * the server omits it, which the previous required typing quietly contradicted.
+   */
+  chapterName?: string;
+  /**
+   * Always present. Name the paper from this FIRST and fall back to chapterName only for a
+   * PRACTICE test: "Full syllabus" is the right label for a practice paper drawn across
+   * every chapter, and a lie about a three-question class test that simply spans a few.
+   */
+  testKind: TestKind;
   examPattern: ExamPattern;
   status: AttemptStatus;
   durationMinutes: number;
@@ -130,7 +148,17 @@ export interface AttemptResultResponse {
   testId: number;
   testTitle: string;
   subjectName: string;
-  chapterName: string;
+  /**
+   * Absent for a full-syllabus paper AND for a cross-chapter class test. Optional because
+   * the server omits it, which the previous required typing quietly contradicted.
+   */
+  chapterName?: string;
+  /**
+   * Always present. Name the paper from this FIRST and fall back to chapterName only for a
+   * PRACTICE test: "Full syllabus" is the right label for a practice paper drawn across
+   * every chapter, and a lie about a three-question class test that simply spans a few.
+   */
+  testKind: TestKind;
   examPattern: ExamPattern;
   status: AttemptStatus;
   startedAt: string;
@@ -204,7 +232,17 @@ export interface AttemptHistoryItem {
   attemptId: number;
   testId: number;
   testTitle: string;
-  chapterName: string;
+  /**
+   * Absent for a full-syllabus paper AND for a cross-chapter class test. Optional because
+   * the server omits it, which the previous required typing quietly contradicted.
+   */
+  chapterName?: string;
+  /**
+   * Always present. Name the paper from this FIRST and fall back to chapterName only for a
+   * PRACTICE test: "Full syllabus" is the right label for a practice paper drawn across
+   * every chapter, and a lie about a three-question class test that simply spans a few.
+   */
+  testKind: TestKind;
   examPattern: ExamPattern;
   status: AttemptStatus;
   startedAt: string;

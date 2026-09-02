@@ -13,7 +13,7 @@
         <app-logo [size]="26" />
         <div class="titles">
           <h1>{{ att.testTitle }}</h1>
-          <p class="chapter">{{ att.chapterName ?? 'Full syllabus' }} · {{ att.subjectName }}</p>
+          <p class="chapter">{{ scopeLabel(att) }} · {{ att.subjectName }}</p>
         </div>
       </div>
 

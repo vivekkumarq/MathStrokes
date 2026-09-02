@@ -7,6 +7,7 @@ import {
   AttemptHistoryItem,
   StudentPerformanceResponse,
   StudentSummaryResponse,
+  paperScopeLabel,
 } from '../../../core/models';
 import { StudentAdminService } from '../data/student-admin.service';
 import { AdminShell } from '../layout/admin-shell';
@@ -20,6 +21,9 @@ const PAGE_SIZE = 20;
   styleUrl: './student-list.scss',
 })
 export class AdminStudentList {
+  /** testKind first, chapter only for a practice paper. Shared so the screens agree. */
+  protected readonly scopeLabel = paperScopeLabel;
+
   private readonly students = inject(StudentAdminService);
 
   protected readonly rows = signal<StudentSummaryResponse[]>([]);
@@ -126,9 +130,7 @@ export class AdminStudentList {
       next: () => {
         this.busy.set(false);
         // Patch in place rather than refetching, so the row does not jump under the cursor.
-        this.rows.update((list) =>
-          list.map((s) => (s.id === student.id ? { ...s, enabled } : s)),
-        );
+        this.rows.update((list) => list.map((s) => (s.id === student.id ? { ...s, enabled } : s)));
       },
       error: (err: unknown) => {
         this.busy.set(false);

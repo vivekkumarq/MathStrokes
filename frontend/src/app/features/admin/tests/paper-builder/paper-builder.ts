@@ -13,6 +13,7 @@ import {
   ExamPattern,
   QuestionQuery,
   QuestionSummaryResponse,
+  paperScopeLabel,
 } from '../../../../core/models';
 import { MathContent } from '../../../../shared/math/math-content';
 import { AdminCatalogService } from '../../data/admin-catalog.service';
@@ -39,6 +40,9 @@ const PAGE_SIZE = 10;
   styleUrl: './paper-builder.scss',
 })
 export class PaperBuilder {
+  /** testKind first, chapter only for a practice paper. Shared so the screens agree. */
+  protected readonly scopeLabel = paperScopeLabel;
+
   private readonly route = inject(ActivatedRoute);
   private readonly tests = inject(TestService);
   private readonly questions = inject(QuestionService);
@@ -90,8 +94,8 @@ export class PaperBuilder {
   protected readonly createdWithCount = computed(() => this.test()?.questionCount ?? 0);
 
   /** Distinct chapters represented in the tray, by name. */
-  protected readonly chosenChapters = computed(
-    () => [...new Set(this.chosen().map((q) => q.chapterName))].sort(),
+  protected readonly chosenChapters = computed(() =>
+    [...new Set(this.chosen().map((q) => q.chapterName))].sort(),
   );
 
   /**
@@ -227,21 +231,26 @@ export class PaperBuilder {
     this.notice.set(null);
     this.saving.set(true);
 
-    this.tests.setQuestions(this.testId, this.chosen().map((q) => q.id)).subscribe({
-      next: (updated) => {
-        this.saving.set(false);
-        this.dirty.set(false);
-        this.test.set(updated);
-        const n = this.chosen().length;
-        this.notice.set(
-          `Paper saved — ${n} question${n === 1 ? '' : 's'}. The test is now ${n} questions long. Go live from the test list when you are ready.`,
-        );
-      },
-      error: (err: unknown) => {
-        this.saving.set(false);
-        this.error.set(toApiFailure(err).message);
-      },
-    });
+    this.tests
+      .setQuestions(
+        this.testId,
+        this.chosen().map((q) => q.id),
+      )
+      .subscribe({
+        next: (updated) => {
+          this.saving.set(false);
+          this.dirty.set(false);
+          this.test.set(updated);
+          const n = this.chosen().length;
+          this.notice.set(
+            `Paper saved — ${n} question${n === 1 ? '' : 's'}. The test is now ${n} questions long. Go live from the test list when you are ready.`,
+          );
+        },
+        error: (err: unknown) => {
+          this.saving.set(false);
+          this.error.set(toApiFailure(err).message);
+        },
+      });
   }
 
   protected patternLabel(pattern: ExamPattern): string {

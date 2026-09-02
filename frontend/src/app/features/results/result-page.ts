@@ -13,7 +13,7 @@ import {
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Chart, ArcElement, DoughnutController, Legend, Tooltip } from 'chart.js';
 
-import { ApiFailure, AttemptResultResponse, toApiFailure } from '../../core';
+import { ApiFailure, AttemptResultResponse, paperScopeLabel, toApiFailure } from '../../core';
 import { Logo } from '../../shared/brand/logo';
 import { ExamService } from '../exam/exam.service';
 
@@ -34,6 +34,9 @@ Chart.register(DoughnutController, ArcElement, Legend, Tooltip);
   styleUrl: './result-page.scss',
 })
 export class ResultPage implements AfterViewInit, OnDestroy {
+  /** testKind first, chapter only for a practice paper. Shared so the screens agree. */
+  protected readonly scopeLabel = paperScopeLabel;
+
   private readonly exam = inject(ExamService);
   private readonly route = inject(ActivatedRoute);
 

@@ -7,7 +7,7 @@
         <a class="back" routerLink="/admin/tests">← Tests</a>
         <h1>{{ t.title }}</h1>
         <p class="muted">
-          {{ patternLabel(t.examPattern) }} · {{ t.chapterName ?? 'Full syllabus' }} ·
+          {{ patternLabel(t.examPattern) }} · {{ scopeLabel(t) }} ·
           {{ t.durationMinutes }} min
           @if (t.testKind === 'CLASS_TEST') {
             <span class="kind">Class test</span>

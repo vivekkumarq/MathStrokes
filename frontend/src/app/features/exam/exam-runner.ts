@@ -23,6 +23,7 @@ import {
 import { Logo } from '../../shared/brand/logo';
 import { MathContent } from '../../shared/math/math-content';
 import { ExamService } from './exam.service';
+import { paperScopeLabel } from '../../core/models';
 
 /** Local working state for one question, kept in step with the server's acks. */
 interface QuestionState {
@@ -58,6 +59,9 @@ interface QuestionState {
   styleUrl: './exam-runner.scss',
 })
 export class ExamRunner implements OnDestroy {
+  /** testKind first, chapter only for a practice paper. Shared so the screens agree. */
+  protected readonly scopeLabel = paperScopeLabel;
+
   private readonly exam = inject(ExamService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -107,7 +111,9 @@ export class ExamRunner implements OnDestroy {
     const minutes = Math.floor((total % 3600) / 60);
     const seconds = total % 60;
     const pad = (value: number) => String(value).padStart(2, '0');
-    return hours > 0 ? `${pad(hours)}:${pad(minutes)}:${pad(seconds)}` : `${pad(minutes)}:${pad(seconds)}`;
+    return hours > 0
+      ? `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
+      : `${pad(minutes)}:${pad(seconds)}`;
   });
 
   /** Under five minutes the timer turns urgent; under one, critical. */

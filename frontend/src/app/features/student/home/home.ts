@@ -4,7 +4,11 @@ import { RouterLink } from '@angular/router';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { AuthStore } from '../../../core/auth/auth.store';
-import { AttemptHistoryItem, StudentPerformanceResponse } from '../../../core/models';
+import {
+  AttemptHistoryItem,
+  StudentPerformanceResponse,
+  paperScopeLabel,
+} from '../../../core/models';
 import { Logo } from '../../../shared/brand/logo';
 import { StudentService } from '../data/student.service';
 
@@ -15,6 +19,9 @@ import { StudentService } from '../data/student.service';
   styleUrl: './home.scss',
 })
 export class StudentHome {
+  /** testKind first, chapter only for a practice paper. Shared so the screens agree. */
+  protected readonly scopeLabel = paperScopeLabel;
+
   protected readonly store = inject(AuthStore);
   private readonly auth = inject(AuthService);
   private readonly students = inject(StudentService);
