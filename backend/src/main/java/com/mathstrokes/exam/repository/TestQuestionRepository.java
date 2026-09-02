@@ -13,6 +13,8 @@ public interface TestQuestionRepository extends JpaRepository<TestQuestion, Long
             select tq from TestQuestion tq
             join fetch tq.question q
             left join fetch q.options
+            join fetch q.chapter
+            join fetch q.subject
             where tq.test.id = :testId
             order by tq.questionOrder asc
             """)

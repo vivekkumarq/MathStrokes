@@ -43,14 +43,61 @@ export class TestList {
     return test.chapterId === undefined;
   }
 
-  /** Full-syllabus papers first: they are the headline, not one row among 56. */
+  /**
+   * A paper a teacher built and scheduled, as opposed to the always-on practice ones.
+   *
+   * The kind is sent explicitly rather than inferred from the presence of a schedule: a
+   * teacher may flag a class test live with no window at all, and a derived rule would both
+   * miss that paper and quietly move a scheduled one back into practice once its window
+   * passed.
+   */
+  protected isClassTest(test: TestSummaryResponse): boolean {
+    return test.testKind === 'CLASS_TEST';
+  }
+
+  /**
+   * Class tests lead the page. A paper the student's own teacher scheduled for a named time
+   * is the one thing here that can be missed by not looking, so it cannot sit below fifty-odd
+   * practice papers that will still be there tomorrow.
+   */
+  protected readonly classTests = computed(() => this.tests().filter((t) => this.isClassTest(t)));
+
+  /** Full-syllabus papers next: they are the headline of practice, not one row among 56. */
   protected readonly fullSyllabusTests = computed(() =>
-    this.tests().filter((t) => this.isFullSyllabus(t)),
+    this.tests().filter((t) => !this.isClassTest(t) && this.isFullSyllabus(t)),
   );
 
   protected readonly chapterTests = computed(() =>
-    this.tests().filter((t) => !this.isFullSyllabus(t)),
+    this.tests().filter((t) => !this.isClassTest(t) && !this.isFullSyllabus(t)),
   );
+
+  /**
+   * The scheduled window, in IST — the zone the teacher set it in, and the one the class
+   * sits in. Deliberately not the browser's zone: a student whose laptop clock is set to
+   * another country would otherwise read a different start time from their classmates.
+   *
+   * Display only. Whether the paper can actually be started is `canStart`, which the server
+   * decides and enforces again when the attempt is created.
+   */
+  protected windowLabel(test: TestSummaryResponse): string | null {
+    if (test.scheduledStartAt === undefined && test.scheduledEndAt === undefined) {
+      return null;
+    }
+    const fmt = (iso: string) =>
+      new Date(iso).toLocaleString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        day: 'numeric',
+        month: 'short',
+        hour: 'numeric',
+        minute: '2-digit',
+      });
+    if (test.scheduledStartAt !== undefined && test.scheduledEndAt !== undefined) {
+      return `${fmt(test.scheduledStartAt)} — ${fmt(test.scheduledEndAt)}`;
+    }
+    return test.scheduledStartAt !== undefined
+      ? `Opens ${fmt(test.scheduledStartAt)}`
+      : `Closes ${fmt(test.scheduledEndAt!)}`;
+  }
 
   /**
    * Chapter+pattern pairs that have more than one paper. Three chapters carry a spare
@@ -95,12 +142,26 @@ export class TestList {
   }
 
   /**
+   * Whether this row's button should do anything.
+   *
+   * An attempt already in flight is ALWAYS resumable — the server returns it before any
+   * other check runs, which is what lets a student who started at 4:55 finish a paper whose
+   * window shut at 5:00. Gating on canStart alone would render "Resume" and then refuse it,
+   * locking a student out of an exam they are sitting, and it would do so on the one path
+   * where being wrong costs them the paper. Mirroring the server's own invariant here means
+   * the client fails open on that path instead of failing shut.
+   */
+  protected canOpen(test: TestSummaryResponse): boolean {
+    return test.canStart || test.activeAttemptId !== undefined;
+  }
+
+  /**
    * Start and resume are the same call. If an attempt is already in flight the server hands
    * back that attempt rather than creating a second one, so the button can say "Resume"
    * without needing a different code path behind it.
    */
   protected start(test: TestSummaryResponse): void {
-    if (!test.canStart || this.starting() !== null) {
+    if (!this.canOpen(test) || this.starting() !== null) {
       return;
     }
     this.starting.set(test.id);

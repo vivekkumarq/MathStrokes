@@ -1,7 +1,10 @@
 package com.mathstrokes.exam.dto;
 
+import java.time.Instant;
+
 import com.mathstrokes.common.enums.ExamPattern;
 import com.mathstrokes.common.enums.TestGenerationMode;
+import com.mathstrokes.common.enums.TestKind;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -57,5 +60,22 @@ public record TestRequest(
 
         @Min(value = 1, message = "A student must be allowed at least one attempt")
         @Max(value = 100, message = "Attempt limit cannot exceed 100")
-        Integer maxAttemptsPerStudent) {
+        Integer maxAttemptsPerStudent,
+
+        /**
+         * PRACTICE when omitted, which is what keeps every existing caller meaning what it
+         * meant. Send CLASS_TEST for a paper built for a particular class.
+         */
+        TestKind testKind,
+
+        /**
+         * The window in which students may START. Both bounds optional and independent: a class
+         * test opened for the room in front of you needs neither.
+         *
+         * Setting a window does NOT publish the test. Publishing stays a separate, deliberate
+         * act, so nothing goes live because a clock ticked past it.
+         */
+        Instant scheduledStartAt,
+
+        Instant scheduledEndAt) {
 }

@@ -1,5 +1,6 @@
 package com.mathstrokes.attempt.service;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -9,6 +10,7 @@ import com.mathstrokes.common.enums.ExamPattern;
 import com.mathstrokes.exam.dto.AvailableTestResponse;
 import com.mathstrokes.exam.entity.ExamTest;
 import com.mathstrokes.exam.repository.ExamTestRepository;
+import com.mathstrokes.exam.service.TestSchedule;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,10 +48,13 @@ public class StudentTestCatalogService {
         Optional<TestAttempt> active =
                 attemptRepository.findActiveByStudentAndTest(studentId, test.getId());
 
+        Instant clock = Instant.now();
         boolean canStart;
         String reason;
         if (active.isPresent()) {
-            // An attempt in flight is always resumable, whatever the attempt allowance says.
+            // An attempt in flight is always resumable, whatever the attempt allowance or the
+            // scheduling window says. A student sitting a paper when the window closes finishes
+            // it on their own clock, which is how closing a test has always behaved.
             canStart = true;
             reason = null;
         } else if (used >= test.getMaxAttemptsPerStudent()) {
@@ -57,6 +62,14 @@ public class StudentTestCatalogService {
             reason = test.getMaxAttemptsPerStudent() == 1
                     ? "You have already taken this test"
                     : "You have used all " + test.getMaxAttemptsPerStudent() + " attempts";
+        } else if (!test.hasOpenedBy(clock)) {
+            // Deliberately still listed rather than filtered out of the query: a class needs to
+            // SEE tomorrow's paper in order to know it is coming.
+            canStart = false;
+            reason = "Opens on " + TestSchedule.humanise(test.getScheduledStartAt());
+        } else if (test.hasWindowClosedBy(clock)) {
+            canStart = false;
+            reason = "This test has closed";
         } else {
             canStart = true;
             reason = null;
@@ -77,6 +90,9 @@ public class StudentTestCatalogService {
                 (int) used,
                 canStart,
                 active.map(TestAttempt::getId).orElse(null),
-                reason);
+                reason,
+                test.getTestKind(),
+                test.getScheduledStartAt(),
+                test.getScheduledEndAt());
     }
 }

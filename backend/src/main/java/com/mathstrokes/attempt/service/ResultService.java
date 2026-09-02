@@ -54,6 +54,7 @@ public class ResultService {
                 attempt.getTest().getTitle(),
                 attempt.getTest().getSubject().getName(),
                 attempt.getTest().chapterName(),
+                attempt.getTest().getTestKind(),
                 attempt.getTest().getExamPattern(),
                 attempt.getStatus(),
                 attempt.getStartedAt(),

@@ -82,6 +82,13 @@ export const routes: Routes = [
       import('./features/admin/tests/test-list').then((m) => m.AdminTestList),
   },
   {
+    path: 'admin/tests/:id/questions',
+    canActivate: [roleGuard('ROLE_ADMIN')],
+    title: 'Build paper · iota',
+    loadComponent: () =>
+      import('./features/admin/tests/paper-builder/paper-builder').then((m) => m.PaperBuilder),
+  },
+  {
     path: 'admin/questions',
     canActivate: [roleGuard('ROLE_ADMIN')],
     title: 'Question bank · iota',

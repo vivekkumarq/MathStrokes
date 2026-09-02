@@ -3,8 +3,8 @@
     <div>
       <h1>Tests</h1>
       <p class="muted">
-        A test draws its questions from the bank for one chapter and pattern. Students only
-        see it once it is published.
+        A practice test draws its own questions from the bank. A class test is one you build
+        by hand and schedule. Neither is visible to students until you flag it live.
       </p>
     </div>
     <button class="ms-btn ms-btn--primary" type="button" (click)="toggleForm()">
@@ -23,6 +23,24 @@
     <section class="ms-card block">
       <h2>Create a test</h2>
       <form [formGroup]="form" (ngSubmit)="create()" novalidate>
+        <fieldset class="kind-choice">
+          <legend>What kind of test is this?</legend>
+          <label class="kind-option" [class.is-picked]="!isClassTest()">
+            <input type="radio" formControlName="testKind" value="PRACTICE" />
+            <span>
+              <strong>Practice test</strong>
+              <small>Always available. Questions drawn from the bank to a difficulty split.</small>
+            </span>
+          </label>
+          <label class="kind-option" [class.is-picked]="isClassTest()">
+            <input type="radio" formControlName="testKind" value="CLASS_TEST" />
+            <span>
+              <strong>Class test</strong>
+              <small>You pick every question, set when it runs, and flag it live yourself.</small>
+            </span>
+          </label>
+        </fieldset>
+
         <div class="ms-field">
           <label for="title">Title</label>
           <input
@@ -61,16 +79,18 @@
             </select>
           </label>
 
-          <label class="ms-field">
-            <span>Generation</span>
-            <select class="ms-input" formControlName="generationMode">
-              @for (mode of modes; track mode) {
-                <option [ngValue]="mode">
-                  {{ mode === 'FIXED_SET' ? 'Fixed set (ranked)' : 'Random per attempt' }}
-                </option>
-              }
-            </select>
-          </label>
+          @if (!isClassTest()) {
+            <label class="ms-field">
+              <span>Generation</span>
+              <select class="ms-input" formControlName="generationMode">
+                @for (mode of modes; track mode) {
+                  <option [ngValue]="mode">
+                    {{ mode === 'FIXED_SET' ? 'Fixed set (ranked)' : 'Random per attempt' }}
+                  </option>
+                }
+              </select>
+            </label>
+          }
 
           <label class="ms-field">
             <span>Duration (minutes)</span>
@@ -78,8 +98,11 @@
           </label>
 
           <label class="ms-field">
-            <span>Questions</span>
+            <span>Questions{{ isClassTest() ? ' (for now)' : '' }}</span>
             <input class="ms-input" formControlName="questionCount" type="number" min="1" />
+            @if (isClassTest()) {
+              <small class="field-hint">Replaced by however many you pick.</small>
+            }
           </label>
 
           <label class="ms-field">
@@ -88,6 +111,29 @@
           </label>
         </div>
 
+        @if (isClassTest()) {
+          <fieldset class="split-fields">
+            <legend>When does it run? <span class="opt">optional</span></legend>
+            <div class="grid">
+              <label class="ms-field">
+                <span>Opens</span>
+                <input class="ms-input" formControlName="scheduledStartAt" type="datetime-local" />
+              </label>
+              <label class="ms-field">
+                <span>Closes</span>
+                <input class="ms-input" formControlName="scheduledEndAt" type="datetime-local" />
+              </label>
+            </div>
+            <p class="ms-hint">
+              Times are IST. The window controls when students may <em>start</em>; a student
+              already sitting the paper when it closes keeps their full time and finishes
+              normally. Leave both blank to have it open as soon as you flag it live — either
+              way, nothing is visible to students until you do.
+            </p>
+          </fieldset>
+        }
+
+        @if (!isClassTest()) {
         <fieldset class="split-fields">
           <legend>
             Difficulty split
@@ -117,6 +163,7 @@
             published questions of each difficulty for this chapter and pattern.
           </p>
         </fieldset>
+        }
 
         <div class="form-foot">
           <button class="ms-btn ms-btn--ghost" type="button" (click)="toggleForm()">Cancel</button>
@@ -151,9 +198,18 @@
           @for (test of rows(); track test.id) {
             <tr>
               <td class="title-cell">
-                {{ test.title }}
+                <span class="t-title">{{ test.title }}</span>
+                @if (test.testKind === 'CLASS_TEST') {
+                  <span class="kind" title="Scheduled by a teacher">class test</span>
+                }
                 @if (test.rankingEnabled) {
                   <span class="ranked" title="Ranking enabled">ranked</span>
+                }
+                @if (windowLabel(test); as window) {
+                  <small class="window">{{ window }}</small>
+                }
+                @if (needsPaper(test)) {
+                  <small class="needs-paper">No questions picked yet</small>
                 }
               </td>
               <td class="col-meta">{{ test.chapterName ?? 'Full syllabus' }}</td>
@@ -168,13 +224,18 @@
               </td>
               <td class="col-actions">
                 @if (test.status === 'DRAFT') {
+                  <a class="ms-btn ms-btn--ghost" [routerLink]="['/admin/tests', test.id, 'questions']">
+                    {{ test.attachedQuestionCount > 0 ? 'Edit paper' : 'Choose questions' }}
+                  </a>
+                }
+                @if (test.status === 'DRAFT' && !needsPaper(test)) {
                   <button
                     class="ms-btn ms-btn--primary"
                     type="button"
                     [disabled]="busy()"
                     (click)="transition(test, 'publish')"
                   >
-                    Publish
+                    Go live
                   </button>
                 }
                 @if (test.status === 'PUBLISHED') {
@@ -184,7 +245,17 @@
                     [disabled]="busy()"
                     (click)="transition(test, 'close')"
                   >
-                    Close
+                    Take offline
+                  </button>
+                }
+                @if (test.status === 'CLOSED') {
+                  <button
+                    class="ms-btn ms-btn--primary"
+                    type="button"
+                    [disabled]="busy()"
+                    (click)="transition(test, 'publish')"
+                  >
+                    Go live again
                   </button>
                 }
                 @if (test.status !== 'ARCHIVED') {

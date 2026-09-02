@@ -1,0 +1,288 @@
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 18px;
+}
+
+.head h1 {
+  margin: 2px 0 0;
+  font-size: 22px;
+  /* Long test titles must wrap rather than push the action group off the card. */
+  overflow-wrap: anywhere;
+}
+
+.back {
+  font-size: 13px;
+  color: var(--ms-ink-muted);
+  text-decoration: none;
+}
+
+.back:hover {
+  color: var(--ms-primary);
+}
+
+.muted {
+  margin-top: 4px;
+  font-size: 13.5px;
+  color: var(--ms-ink-muted);
+}
+
+.kind {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ms-primary-strong);
+  background: var(--ms-primary-soft);
+  border: 1px solid var(--ms-primary-border);
+  border-radius: 999px;
+}
+
+.head-actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 14px;
+}
+
+.count {
+  font-size: 13px;
+  color: var(--ms-ink-muted);
+  white-space: nowrap;
+}
+
+.count strong {
+  font-size: 17px;
+  color: var(--ms-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.count[data-state='empty'] strong {
+  color: var(--ms-ink-subtle);
+}
+
+.ms-alert {
+  margin-bottom: 14px;
+}
+
+/* --- Two panes -----------------------------------------------------------------------
+   The bank is browsed and the paper is assembled side by side, so a teacher can see what
+   they have picked without leaving the search they are picking from. */
+.builder {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.pane {
+  min-width: 0;
+}
+
+.pane-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.pane-head h2 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.pane-head .muted {
+  margin: 0;
+  font-size: 12.5px;
+}
+
+.ms-btn.small {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.filters label.wide {
+  grid-column: 1 / -1;
+}
+
+.filters span {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ms-ink-muted);
+}
+
+.filter-actions {
+  display: flex;
+  grid-column: 1 / -1;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.results,
+.paper {
+  /* A long bank page scrolls inside its own card so both panes stay level on screen. */
+  max-height: 62vh;
+  overflow-y: auto;
+}
+
+.empty {
+  padding: 36px 20px;
+  font-size: 13.5px;
+  color: var(--ms-ink-subtle);
+  text-align: center;
+}
+
+.q-list,
+.paper-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.q-row,
+.paper-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--ms-border);
+}
+
+.q-list li:last-child,
+.paper-list li:last-child {
+  border-bottom: 0;
+}
+
+.q-row.is-chosen {
+  background: var(--ms-primary-soft);
+}
+
+.q-main {
+  flex: 1;
+  min-width: 0;
+}
+
+/* KaTeX can render wider than its container; it scrolls rather than bleeding past the card. */
+.q-preview {
+  overflow-x: auto;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.q-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 7px 0 0;
+}
+
+.chip {
+  padding: 2px 8px;
+  font-size: 11px;
+  color: var(--ms-ink-muted);
+  background: var(--ms-surface-sunken);
+  border: 1px solid var(--ms-border);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.q-toggle {
+  flex-shrink: 0;
+  min-width: 76px;
+  padding: 6px 12px;
+  font-size: 12.5px;
+}
+
+.pos {
+  flex-shrink: 0;
+  width: 24px;
+  padding-top: 1px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ms-ink-subtle);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.row-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 4px;
+}
+
+.ms-btn.icon {
+  min-width: 30px;
+  padding: 4px 7px;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.page-label {
+  font-size: 13px;
+  color: var(--ms-ink-muted);
+}
+
+.unsaved {
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: #92400e;
+  text-align: right;
+}
+
+/* --- Narrow screens ------------------------------------------------------------------
+   Below this the two panes cannot both hold a question preview, so they stack: bank first,
+   then the paper built from it. */
+@media (max-width: 62rem) {
+  .builder {
+    grid-template-columns: 1fr;
+  }
+
+  .results,
+  .paper {
+    max-height: none;
+  }
+}
+
+@media (max-width: 40rem) {
+  .head {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .head-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .filters {
+    grid-template-columns: 1fr;
+  }
+}

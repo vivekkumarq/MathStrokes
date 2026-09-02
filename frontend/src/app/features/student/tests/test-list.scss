@@ -247,3 +247,29 @@ $cols: minmax(0, 1fr) 8.5rem 6rem 6.5rem 8.5rem;
 .title-hint {
   color: var(--ms-ink-muted);
 }
+
+/* --- Class tests ---------------------------------------------------------------------
+   Given a left rule so the group reads as its own thing at a glance, rather than as the
+   first of three identical tables. These are the papers with a deadline attached. */
+.group--class .group-title {
+  color: var(--ms-primary-strong);
+}
+
+.group--class .table {
+  border-left: 3px solid var(--ms-primary);
+}
+
+/* The scheduled window, under the test name. Sits with the name rather than in a column of
+   its own because most papers have no window at all and the column would be empty. */
+.window {
+  margin-top: 0.15rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ms-primary-strong);
+}
+
+/* A paper that has not opened yet is dimmed like any other unstartable row, but its window
+   stays at full strength: it is the one thing the student actually needs to read. */
+.row--blocked .window {
+  opacity: 1;
+}

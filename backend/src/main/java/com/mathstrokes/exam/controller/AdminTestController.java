@@ -1,11 +1,15 @@
 package com.mathstrokes.exam.controller;
 
+import java.util.List;
+
 import com.mathstrokes.common.dto.PageResponse;
 import com.mathstrokes.common.enums.ExamPattern;
 import com.mathstrokes.common.enums.TestStatus;
+import com.mathstrokes.exam.dto.TestQuestionSetRequest;
 import com.mathstrokes.exam.dto.TestRequest;
 import com.mathstrokes.exam.dto.TestResponse;
 import com.mathstrokes.exam.service.TestService;
+import com.mathstrokes.question.dto.QuestionSummaryResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -63,6 +67,25 @@ public class AdminTestController {
             description = "Only drafts are editable; a published test may already have been sat.")
     public TestResponse update(@PathVariable Long id, @Valid @RequestBody TestRequest request) {
         return testService.update(id, request);
+    }
+
+    @GetMapping("/{id}/questions")
+    @Operation(summary = "The questions attached to a test",
+            description = "In the order they will be sat. Empty until a paper has been picked or "
+                    + "the test has been published, whichever draws the set.")
+    public List<QuestionSummaryResponse> questions(@PathVariable Long id) {
+        return testService.listQuestions(id);
+    }
+
+    @PutMapping("/{id}/questions")
+    @Operation(summary = "Hand-pick the exact paper",
+            description = "Replaces the attached questions with the list given, in that order, "
+                    + "and sets the test's question count to match. Drafts only. Publishing a "
+                    + "test that already has a paper leaves it exactly as picked rather than "
+                    + "drawing a fresh one.")
+    public TestResponse setQuestions(@PathVariable Long id,
+                                     @Valid @RequestBody TestQuestionSetRequest request) {
+        return testService.attachQuestions(id, request);
     }
 
     @PostMapping("/{id}/publish")

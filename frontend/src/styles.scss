@@ -241,6 +241,14 @@ button {
   border-color: var(--ms-primary-border);
 }
 
+/* Something is wrong but nothing has failed: a locked paper, a label its contents
+   contradict. Distinct from --error, which reports an action that did not happen. */
+.ms-alert--warn {
+  color: #92400e;
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+
 .ms-visually-hidden {
   position: absolute;
   width: 1px;

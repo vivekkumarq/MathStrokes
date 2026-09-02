@@ -191,7 +191,7 @@
                           @for (a of attempts(); track a.attemptId) {
                             <tr>
                               <td class="t-title">{{ a.testTitle }}</td>
-                              <td class="col-meta">{{ a.chapterName ?? 'Full syllabus' }}</td>
+                              <td class="col-meta">{{ scopeLabel(a) }}</td>
                               <td class="col-meta">
                                 {{ a.examPattern === 'JEE_MAIN' ? 'Main' : 'Advanced' }}
                               </td>

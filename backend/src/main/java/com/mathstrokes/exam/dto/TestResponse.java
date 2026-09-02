@@ -4,6 +4,7 @@ import java.time.Instant;
 
 import com.mathstrokes.common.enums.ExamPattern;
 import com.mathstrokes.common.enums.TestGenerationMode;
+import com.mathstrokes.common.enums.TestKind;
 import com.mathstrokes.common.enums.TestStatus;
 
 /** Admin view of a test, including its blueprint and how many questions are actually attached. */
@@ -30,5 +31,9 @@ public record TestResponse(
         Instant publishedAt,
         Instant closedAt,
         Instant createdAt,
-        Integer version) {
+        Integer version,
+        TestKind testKind,
+        /** Absent when the paper has no lower bound on when it may be started. */
+        Instant scheduledStartAt,
+        Instant scheduledEndAt) {
 }

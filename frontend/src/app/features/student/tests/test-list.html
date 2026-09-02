@@ -9,7 +9,11 @@
 
   <main class="content">
     <h1>Available tests</h1>
-    <p class="sub">Pick a paper. Each one is timed and starts as soon as you open it.</p>
+    <p class="sub">
+      Pick a paper. Each one is timed and starts as soon as you open
+      it@if (classTests().length > 0) {, except a class test, which opens at the time your
+      teacher set}.
+    </p>
 
     @if (failure(); as f) {
       <p class="ms-alert ms-alert--error" role="alert">
@@ -26,7 +30,32 @@
         <p class="muted">Your teacher has not published any tests. Check back shortly.</p>
       </div>
     } @else {
-      <!-- Full-syllabus papers lead: they are the headline, not one row among fifty-six. -->
+      <!-- Class tests lead: a paper scheduled for a named time is the one thing on this page
+           that can be missed by not looking. -->
+      @if (classTests().length > 0) {
+        <section class="group group--class">
+          <h2 class="group-title">Class tests</h2>
+          <p class="group-sub">
+            Set by your teacher. Each one runs at its own time, and the questions are chosen
+            rather than drawn at random.
+          </p>
+          <div class="ms-card ms-card--flush table">
+            <div class="thead" aria-hidden="true">
+              <span>Test</span>
+              <span>Pattern</span>
+              <span class="num">Questions</span>
+              <span class="num">Duration</span>
+              <span></span>
+            </div>
+            <ng-container
+              [ngTemplateOutlet]="rowList"
+              [ngTemplateOutletContext]="{ $implicit: classTests() }"
+            />
+          </div>
+        </section>
+      }
+
+      <!-- Full-syllabus papers lead the practice papers. -->
       @if (fullSyllabusTests().length > 0) {
         <section class="group">
           <h2 class="group-title">Full syllabus</h2>
@@ -74,10 +103,12 @@
 <ng-template #rowList let-list>
   <ul class="rows">
     @for (test of list; track test.id) {
-      <li class="row" [class.row--blocked]="!test.canStart">
+      <li class="row" [class.row--blocked]="!canOpen(test)">
         <div class="cell chapter">
           <span class="chapter-name">
-            @if (isFullSyllabus(test)) {
+            @if (isClassTest(test)) {
+              {{ test.title }}
+            } @else if (isFullSyllabus(test)) {
               Full syllabus
             } @else {
               {{ test.chapterName }}
@@ -86,6 +117,9 @@
           <span class="chapter-meta">
             @if (needsTitle(test)) {<span class="title-hint">{{ test.title }} · </span>}{{ test.attemptsUsed }} of {{ test.maxAttemptsPerStudent }} attempts used@if (test.rankingEnabled) {<span class="ranked"> · ranked</span>}
           </span>
+          @if (windowLabel(test); as window) {
+            <span class="window">{{ window }}</span>
+          }
         </div>
 
         <div class="cell">
@@ -109,13 +143,15 @@
           <button
             type="button"
             class="ms-btn ms-btn--primary"
-            [disabled]="!test.canStart || starting() !== null"
+            [disabled]="!canOpen(test) || starting() !== null"
             (click)="start(test)"
           >
             @if (starting() === test.id) {
               Opening…
             } @else if (test.activeAttemptId) {
               Resume
+            } @else if (!test.canStart && test.scheduledStartAt) {
+              Not open yet
             } @else {
               Start test
             }
@@ -123,7 +159,7 @@
         </div>
 
         <!-- unavailableReason is the server's own student-facing wording; rendered as sent. -->
-        @if (!test.canStart && test.unavailableReason) {
+        @if (!canOpen(test) && test.unavailableReason) {
           <p class="reason">{{ test.unavailableReason }}</p>
         }
       </li>

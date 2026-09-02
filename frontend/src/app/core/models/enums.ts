@@ -33,6 +33,17 @@ export type TestStatus = (typeof TEST_STATUSES)[number];
 export const TEST_GENERATION_MODES = ['FIXED_SET', 'RANDOM_PER_ATTEMPT'] as const;
 export type TestGenerationMode = (typeof TEST_GENERATION_MODES)[number];
 
+/**
+ * What a paper is FOR. A practice test is always-on self-study; a class test is one the
+ * teacher schedules, hand-picks the questions for, and flags live for a specific sitting.
+ *
+ * Explicit rather than derived from the presence of a schedule: a teacher who flags a paper
+ * live right now, with no date on it, still means it as a class test, and deriving the kind
+ * from the window would silently file that paper under practice.
+ */
+export const TEST_KINDS = ['PRACTICE', 'CLASS_TEST'] as const;
+export type TestKind = (typeof TEST_KINDS)[number];
+
 export const QUESTION_RESULT_STATUSES = [
   'CORRECT',
   'PARTIALLY_CORRECT',
