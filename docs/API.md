@@ -323,3 +323,10 @@ tomorrow's paper is coming. They come back with `canStart: false` and one of:
 Times in that string are rendered in **Asia/Kolkata**, deliberately fixed rather than taken from
 the reader: a class test opens at a wall-clock time the teacher announced to the room, and two
 students sitting side by side must not be told two different times because their phones disagree.
+
+**`testKind` also rides on the attempt payloads** — `POST /attempts`, `GET /attempts/{id}`,
+`GET /attempts/{id}/result` and `GET /attempts/history`. It is there because the absence of
+`chapterName` no longer has a single meaning. It used to imply "full syllabus", and a client could
+safely label it so; a hand-picked class test spanning chapters is *also* chapterless, and calling
+that a full-syllabus paper tells a student their three-question class test covered the whole
+course. Label from `testKind` first and fall back to `chapterName` only for a `PRACTICE` paper.

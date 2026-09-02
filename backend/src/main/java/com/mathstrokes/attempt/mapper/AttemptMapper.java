@@ -23,6 +23,11 @@ public class AttemptMapper {
     // chapterName comes from ExamTest.chapterName(), which is null for a full-syllabus paper.
     // Null is omitted from the response, and the client labels its absence - the same contract
     // as activeAttemptId and unavailableReason.
+    //
+    // testKind travels beside it because the absence of a chapter no longer has one meaning. It
+    // used to imply "full syllabus" and a client could safely label it so. A hand-picked class
+    // test spanning chapters is also chapterless, and calling that a full-syllabus paper tells a
+    // student their three-question class test covered the entire course.
 
 
     public AttemptTimingResponse toTiming(TestAttempt attempt) {
@@ -44,6 +49,7 @@ public class AttemptMapper {
                 attempt.getTest().getTitle(),
                 attempt.getTest().getSubject().getName(),
                 attempt.getTest().chapterName(),
+                attempt.getTest().getTestKind(),
                 attempt.getTest().getExamPattern(),
                 attempt.getStatus(),
                 attempt.getTotalQuestions(),
@@ -92,6 +98,7 @@ public class AttemptMapper {
                 attempt.getTest().getId(),
                 attempt.getTest().getTitle(),
                 attempt.getTest().chapterName(),
+                attempt.getTest().getTestKind(),
                 attempt.getTest().getExamPattern(),
                 attempt.getStatus(),
                 attempt.getStartedAt(),
