@@ -142,12 +142,26 @@ export class TestList {
   }
 
   /**
+   * Whether this row's button should do anything.
+   *
+   * An attempt already in flight is ALWAYS resumable — the server returns it before any
+   * other check runs, which is what lets a student who started at 4:55 finish a paper whose
+   * window shut at 5:00. Gating on canStart alone would render "Resume" and then refuse it,
+   * locking a student out of an exam they are sitting, and it would do so on the one path
+   * where being wrong costs them the paper. Mirroring the server's own invariant here means
+   * the client fails open on that path instead of failing shut.
+   */
+  protected canOpen(test: TestSummaryResponse): boolean {
+    return test.canStart || test.activeAttemptId !== undefined;
+  }
+
+  /**
    * Start and resume are the same call. If an attempt is already in flight the server hands
    * back that attempt rather than creating a second one, so the button can say "Resume"
    * without needing a different code path behind it.
    */
   protected start(test: TestSummaryResponse): void {
-    if (!test.canStart || this.starting() !== null) {
+    if (!this.canOpen(test) || this.starting() !== null) {
       return;
     }
     this.starting.set(test.id);

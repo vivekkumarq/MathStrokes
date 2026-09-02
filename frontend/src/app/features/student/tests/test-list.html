@@ -9,7 +9,11 @@
 
   <main class="content">
     <h1>Available tests</h1>
-    <p class="sub">Pick a paper. Each one is timed and starts as soon as you open it.</p>
+    <p class="sub">
+      Pick a paper. Each one is timed and starts as soon as you open
+      it@if (classTests().length > 0) {, except a class test, which opens at the time your
+      teacher set}.
+    </p>
 
     @if (failure(); as f) {
       <p class="ms-alert ms-alert--error" role="alert">
@@ -99,7 +103,7 @@
 <ng-template #rowList let-list>
   <ul class="rows">
     @for (test of list; track test.id) {
-      <li class="row" [class.row--blocked]="!test.canStart">
+      <li class="row" [class.row--blocked]="!canOpen(test)">
         <div class="cell chapter">
           <span class="chapter-name">
             @if (isClassTest(test)) {
@@ -139,7 +143,7 @@
           <button
             type="button"
             class="ms-btn ms-btn--primary"
-            [disabled]="!test.canStart || starting() !== null"
+            [disabled]="!canOpen(test) || starting() !== null"
             (click)="start(test)"
           >
             @if (starting() === test.id) {
@@ -155,7 +159,7 @@
         </div>
 
         <!-- unavailableReason is the server's own student-facing wording; rendered as sent. -->
-        @if (!test.canStart && test.unavailableReason) {
+        @if (!canOpen(test) && test.unavailableReason) {
           <p class="reason">{{ test.unavailableReason }}</p>
         }
       </li>
