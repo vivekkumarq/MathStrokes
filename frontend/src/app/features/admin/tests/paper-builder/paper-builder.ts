@@ -1,6 +1,15 @@
 import { LowerCasePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import {
+  AbstractControl,
+  FormArray,
+  FormBuilder,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { toApiFailure } from '../../../../core/http/api-failure';
@@ -11,7 +20,10 @@ import {
   Difficulty,
   EXAM_PATTERNS,
   ExamPattern,
+  QUESTION_TYPES,
   QuestionQuery,
+  QuestionRequest,
+  QuestionResponse,
   QuestionSummaryResponse,
   paperScopeLabel,
 } from '../../../../core/models';
@@ -22,6 +34,28 @@ import { TestService } from '../../data/test.service';
 import { AdminShell } from '../../layout/admin-shell';
 
 const PAGE_SIZE = 10;
+
+const OPTION_KEYS = ['A', 'B', 'C', 'D'] as const;
+
+/**
+ * Same rule the standalone question editor applies, and the same rule the server enforces:
+ * one correct option for a single-correct question, at least one for a multiple-correct.
+ * Checked here so the author is told before a round trip, not by a 400 afterwards.
+ */
+function correctAnswerRule(group: AbstractControl): ValidationErrors | null {
+  const options = group.get('options') as FormArray | null;
+  if (!options) {
+    return null;
+  }
+  const correct = options.controls.filter((c) => c.get('isCorrect')?.value === true);
+  if (correct.length === 0) {
+    return { noCorrectOption: true };
+  }
+  if (group.get('questionType')?.value === 'SINGLE_CORRECT' && correct.length > 1) {
+    return { tooManyCorrectOptions: true };
+  }
+  return null;
+}
 
 /**
  * Hand-picks the exact paper for a test.
@@ -35,7 +69,7 @@ const PAGE_SIZE = 10;
  */
 @Component({
   selector: 'app-paper-builder',
-  imports: [AdminShell, FormsModule, LowerCasePipe, MathContent, RouterLink],
+  imports: [AdminShell, FormsModule, LowerCasePipe, MathContent, ReactiveFormsModule, RouterLink],
   templateUrl: './paper-builder.html',
   styleUrl: './paper-builder.scss',
 })
@@ -115,16 +149,225 @@ export class PaperBuilder {
     return chapters.length > 1 || chapters[0] !== testChapter;
   });
 
+  // --- Writing a question -------------------------------------------------------------
+  // A teacher setting tomorrow's paper often needs a question that does not exist yet, and
+  // sending them to the question bank to write it would lose the paper they are mid-way
+  // through building. Composed here, published, and dropped straight onto the tray.
+
+  private readonly fb = inject(FormBuilder);
+
+  protected readonly optionKeys = OPTION_KEYS;
+  protected readonly types = QUESTION_TYPES;
+
+  protected readonly composerOpen = signal(false);
+  protected readonly composing = signal(false);
+  protected readonly composerError = signal<string | null>(null);
+
+  protected readonly composer = this.fb.nonNullable.group(
+    {
+      // The pattern is NOT here: it is the test's, and a question of the other pattern is
+      // refused when the paper is saved. Offering the choice would only offer the mistake.
+      chapterId: [0, [Validators.required, Validators.min(1)]],
+      difficulty: ['MEDIUM' as (typeof DIFFICULTIES)[number], [Validators.required]],
+      questionType: ['SINGLE_CORRECT' as (typeof QUESTION_TYPES)[number], [Validators.required]],
+      questionContent: ['', [Validators.required]],
+      solutionContent: [''],
+      options: this.fb.array(
+        OPTION_KEYS.map((key, index) =>
+          this.fb.nonNullable.group({
+            optionKey: [key as string],
+            content: ['', [Validators.required]],
+            displayOrder: [index + 1],
+            isCorrect: [false],
+          }),
+        ),
+      ),
+    },
+    { validators: correctAnswerRule },
+  );
+
+  protected get composerOptions(): FormArray<FormGroup> {
+    return this.composer.controls.options as FormArray<FormGroup>;
+  }
+
+  /** Live preview source, mirrored from the textareas as they are typed into. */
+  protected readonly stemPreview = signal('');
+  protected readonly solutionPreview = signal('');
+
+  protected optionPreview(index: number): string {
+    return (this.composerOptions.at(index).get('content')?.value as string) ?? '';
+  }
+
+  protected toggleComposer(): void {
+    this.composerOpen.update((open) => !open);
+    this.composerError.set(null);
+  }
+
+  /** Single-correct means exactly one, so picking another clears the previous. */
+  protected onCorrectChange(index: number): void {
+    if (this.composer.controls.questionType.value !== 'SINGLE_CORRECT') {
+      return;
+    }
+    this.composerOptions.controls.forEach((control, i) => {
+      if (i !== index) {
+        control.get('isCorrect')?.setValue(false, { emitEvent: false });
+      }
+    });
+  }
+
+  /** Switching to single-correct collapses any extra selections down to the first. */
+  protected onTypeChange(): void {
+    if (this.composer.controls.questionType.value !== 'SINGLE_CORRECT') {
+      return;
+    }
+    let seen = false;
+    this.composerOptions.controls.forEach((control) => {
+      const isCorrect = control.get('isCorrect');
+      if (isCorrect?.value === true) {
+        if (seen) {
+          isCorrect.setValue(false, { emitEvent: false });
+        }
+        seen = true;
+      }
+    });
+  }
+
+  /**
+   * Creates the question, publishes it, and puts it on the tray.
+   *
+   * Publishing is not optional: only a published question may be attached to a paper, so a
+   * draft written here could never be saved onto one. The paper itself stays unsaved
+   * afterwards - the teacher still sets the order, and nothing reaches students until the
+   * paper is saved AND the test is flagged live.
+   */
+  protected addWrittenQuestion(): void {
+    const test = this.test();
+    if (test === null || this.composing()) {
+      return;
+    }
+    this.composerError.set(null);
+
+    if (this.composer.invalid) {
+      this.composer.markAllAsTouched();
+      if (this.composer.hasError('noCorrectOption')) {
+        this.composerError.set('Mark at least one option as correct.');
+      } else if (this.composer.hasError('tooManyCorrectOptions')) {
+        this.composerError.set('A single-correct question can have only one correct option.');
+      } else if (this.composer.controls.chapterId.invalid) {
+        this.composerError.set('Choose the chapter this question belongs to.');
+      } else {
+        this.composerError.set('Fill in the question and all four options.');
+      }
+      return;
+    }
+
+    const raw = this.composer.getRawValue();
+    const request: QuestionRequest = {
+      chapterId: raw.chapterId,
+      // Inherited from the paper, never chosen: the server refuses a question whose pattern
+      // differs from the test's, and it would be refused at save time rather than here.
+      examPattern: test.examPattern,
+      difficulty: raw.difficulty,
+      questionType: raw.questionType,
+      questionContent: raw.questionContent.trim(),
+      solutionContent: raw.solutionContent.trim() === '' ? undefined : raw.solutionContent.trim(),
+      options: raw.options.map((option, index) => ({
+        optionKey: option.optionKey,
+        content: option.content.trim(),
+        displayOrder: index + 1,
+        isCorrect: option.isCorrect,
+      })),
+    };
+
+    this.composing.set(true);
+    this.questions.create(request).subscribe({
+      next: (created) => {
+        this.questions.publish(created.id).subscribe({
+          next: () => {
+            this.composing.set(false);
+            this.chosen.update((list) => [...list, this.asSummary(created)]);
+            this.dirty.set(true);
+            this.notice.set('Question added to the paper. Save the paper to keep it.');
+            this.resetComposer();
+            // A written question belongs in the bank listing too, so writing a near-duplicate
+            // next time shows it is already there.
+            this.loadBank();
+          },
+          error: (err: unknown) => {
+            this.composing.set(false);
+            // The question exists but is still a draft, so it cannot go on the paper. Say
+            // that plainly rather than leaving the teacher thinking nothing was saved.
+            this.composerError.set(
+              'Saved to the question bank as a draft, but publishing it failed, so it is not ' +
+                'on the paper: ' +
+                toApiFailure(err).message,
+            );
+          },
+        });
+      },
+      error: (err: unknown) => {
+        this.composing.set(false);
+        this.composerError.set(toApiFailure(err).message);
+      },
+    });
+  }
+
+  /** The tray renders bank rows, so a freshly written question is shaped like one. */
+  private asSummary(question: QuestionResponse): QuestionSummaryResponse {
+    return {
+      id: question.id,
+      chapterName: question.chapterName,
+      examPattern: question.examPattern,
+      difficulty: question.difficulty,
+      questionType: question.questionType,
+      questionPreview: question.questionContent,
+      status: 'PUBLISHED',
+      optionCount: question.options.length,
+      updatedAt: question.updatedAt,
+      version: question.version,
+    };
+  }
+
+  private resetComposer(): void {
+    // Keep the chapter: the next question is usually for the same one.
+    const chapterId = this.composer.controls.chapterId.value;
+    this.composer.reset({
+      chapterId,
+      difficulty: 'MEDIUM',
+      questionType: 'SINGLE_CORRECT',
+      questionContent: '',
+      solutionContent: '',
+      options: OPTION_KEYS.map((key, index) => ({
+        optionKey: key as string,
+        content: '',
+        displayOrder: index + 1,
+        isCorrect: false,
+      })),
+    });
+    this.stemPreview.set('');
+    this.solutionPreview.set('');
+  }
+
   constructor() {
     this.catalog.chapters().subscribe({
       next: (chapters) => this.chapters.set(chapters),
       error: () => undefined,
     });
 
+    this.composer.controls.questionContent.valueChanges.subscribe((v) =>
+      this.stemPreview.set(v ?? ''),
+    );
+    this.composer.controls.solutionContent.valueChanges.subscribe((v) =>
+      this.solutionPreview.set(v ?? ''),
+    );
+
     this.tests.get(this.testId).subscribe({
       next: (test) => {
         this.test.set(test);
         this.loading.set(false);
+        if (test.chapterId !== undefined) {
+          this.composer.controls.chapterId.setValue(test.chapterId);
+        }
         // Default the bank filters to the paper's own scope, which is what a teacher
         // building a chapter test almost always wants to see first.
         if (test.chapterId !== undefined) {
