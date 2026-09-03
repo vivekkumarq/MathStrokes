@@ -163,6 +163,14 @@ export class PaperBuilder {
   protected readonly composing = signal(false);
   protected readonly composerError = signal<string | null>(null);
 
+  /**
+   * The question being edited, or null when writing a new one. The composer is the same form
+   * either way - a teacher fixing a typo and a teacher writing a fresh question want the same
+   * fields and the same live preview, and two forms would drift.
+   */
+  protected readonly editingId = signal<number | null>(null);
+  protected readonly loadingEdit = signal(false);
+
   protected readonly composer = this.fb.nonNullable.group(
     {
       // The pattern is NOT here: it is the test's, and a question of the other pattern is
@@ -201,6 +209,75 @@ export class PaperBuilder {
   protected toggleComposer(): void {
     this.composerOpen.update((open) => !open);
     this.composerError.set(null);
+    if (this.editingId() !== null) {
+      // Leaving an edit returns to a blank new-question form, so a saved question is not left
+      // loaded in a panel that now says "Write a question".
+      //
+      // Deliberately NOT done when merely closing a half-written new question: that draft is
+      // the teacher's own unsaved work, and closing the panel should not be a way to lose it.
+      this.editingId.set(null);
+      this.resetComposer();
+    }
+  }
+
+  /**
+   * Loads a saved question into the composer.
+   *
+   * Fetched in full rather than reused from the row: the list carries only a preview, with no
+   * options, no answer key and no worked solution, so editing from it would blank exactly the
+   * parts a teacher is most likely to be fixing.
+   */
+  protected editQuestion(question: QuestionSummaryResponse): void {
+    if (!this.editable() || this.loadingEdit()) {
+      return;
+    }
+    this.composerError.set(null);
+    this.notice.set(null);
+    this.loadingEdit.set(true);
+    this.composerOpen.set(true);
+    this.editingId.set(question.id);
+
+    this.questions.get(question.id).subscribe({
+      next: (full) => {
+        this.loadingEdit.set(false);
+        // The teacher may have closed the panel or started editing something else while this
+        // was in flight; overwriting the form then would replace what they are looking at.
+        if (this.editingId() !== question.id) {
+          return;
+        }
+        this.composer.patchValue({
+          chapterId: full.chapterId,
+          difficulty: full.difficulty,
+          questionType: full.questionType,
+          questionContent: full.questionContent,
+          solutionContent: full.solutionContent ?? '',
+        });
+        // Options are a FormArray of four, and the server returns them in display order.
+        const sorted = [...full.options].sort((a, b) => a.displayOrder - b.displayOrder);
+        this.composerOptions.controls.forEach((control, i) => {
+          const option = sorted[i];
+          control.patchValue({
+            optionKey: option?.optionKey ?? OPTION_KEYS[i],
+            content: option?.content ?? '',
+            displayOrder: i + 1,
+            isCorrect: option?.isCorrect ?? false,
+          });
+        });
+        this.stemPreview.set(full.questionContent);
+        this.solutionPreview.set(full.solutionContent ?? '');
+      },
+      error: (err: unknown) => {
+        this.loadingEdit.set(false);
+        this.editingId.set(null);
+        this.composerError.set(toApiFailure(err).message);
+      },
+    });
+  }
+
+  protected cancelEdit(): void {
+    this.editingId.set(null);
+    this.composerError.set(null);
+    this.resetComposer();
   }
 
   /** Single-correct means exactly one, so picking another clears the previous. */
@@ -280,6 +357,31 @@ export class PaperBuilder {
     };
 
     this.composing.set(true);
+
+    const editing = this.editingId();
+    if (editing !== null) {
+      // An edit is a straight update. It stays published, so nothing needs publishing again,
+      // and any attempt already sitting this question keeps its own snapshot of it.
+      this.questions.update(editing, request).subscribe({
+        next: (saved) => {
+          this.composing.set(false);
+          const summary = this.asSummary(saved);
+          // Refresh it wherever it is shown, so the preview stops showing the old wording.
+          this.chosen.update((list) => list.map((q) => (q.id === editing ? summary : q)));
+          this.bank.update((list) => list.map((q) => (q.id === editing ? summary : q)));
+          this.notice.set('Question updated.');
+          this.editingId.set(null);
+          this.resetComposer();
+          this.composerOpen.set(false);
+        },
+        error: (err: unknown) => {
+          this.composing.set(false);
+          this.composerError.set(toApiFailure(err).message);
+        },
+      });
+      return;
+    }
+
     this.questions.create(request).subscribe({
       next: (created) => {
         this.questions.publish(created.id).subscribe({
