@@ -34,6 +34,11 @@
   @if (formError()) {
     <p class="ms-alert ms-alert--error" role="alert">{{ formError() }}</p>
   }
+
+  @if (delimiterWarning(); as warning) {
+    <p class="ms-alert ms-alert--warn" role="status">{{ warning }}</p>
+  }
+
   @if (notice()) {
     <p class="ms-alert ms-alert--info" role="status">{{ notice() }}</p>
   }

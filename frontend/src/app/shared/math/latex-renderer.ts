@@ -75,6 +75,52 @@ function findClosing(source: string, from: number, delimiter: string): number {
 }
 
 /**
+ * Whether any maths delimiter in this source is opened and never closed.
+ *
+ * renderLatex treats an unclosed delimiter as literal text, which is the right thing to do
+ * at render time - a stray dollar in a stem should not swallow the rest of the paragraph.
+ * But it means a mistyped stem renders as raw LaTeX to a student with no error anywhere,
+ * which is precisely how "equation$\mathrm{y}=..." reached the live question bank.
+ *
+ * So the authoring UI needs to ask the question render time deliberately does not: is this
+ * balanced? Kept here, next to the scanner, and reusing findClosing and the same escaped-
+ * dollar rule, because a checker that disagreed with the renderer about what counts as a
+ * delimiter would be worse than none - it would warn about correct maths, or stay silent on
+ * broken maths, and either teaches the author to ignore it.
+ */
+export function hasUnclosedDelimiter(source: string | null | undefined): boolean {
+  if (!source) {
+    return false;
+  }
+
+  let i = 0;
+  while (i < source.length) {
+    const char = source[i];
+
+    // An escaped dollar is a literal dollar, never a delimiter. Same rule as renderLatex.
+    if (char === BACKSLASH && source[i + 1] === '$') {
+      i += 2;
+      continue;
+    }
+
+    if (char !== '$') {
+      i += 1;
+      continue;
+    }
+
+    const isDisplay = source[i + 1] === '$';
+    const delimiter = isDisplay ? '$$' : '$';
+    const closing = findClosing(source, i + delimiter.length, delimiter);
+    if (closing === -1) {
+      return true;
+    }
+    i = closing + delimiter.length;
+  }
+
+  return false;
+}
+
+/**
  * Converts LaTeX source to HTML.
  *
  * An unmatched or unknown delimiter is emitted as literal text rather than guessed at, so

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { escapeHtml, renderLatex } from './latex-renderer';
+import { escapeHtml, hasUnclosedDelimiter, renderLatex } from './latex-renderer';
 
 describe('renderLatex', () => {
   describe('security: content is never treated as markup', () => {
@@ -98,7 +98,8 @@ describe('renderLatex', () => {
   describe('real seeded content from the API', () => {
     // Copied verbatim from GET /attempts/2/review so the renderer is pinned to the
     // shape the backend actually produces, not to invented examples.
-    const STEM = 'If $\\alpha$ and $\\beta$ are the roots of\n\n$$3x^2 + 7x + 2 = 0$$\n\nfind the product of the roots.';
+    const STEM =
+      'If $\\alpha$ and $\\beta$ are the roots of\n\n$$3x^2 + 7x + 2 = 0$$\n\nfind the product of the roots.';
     const SOLUTION =
       'For $ax^2 + bx + c = 0$ the product of the roots is $\\frac{c}{a}$.\n\nHere $a = 3$, $b = 7$, $c = 2$, so the product is $\\frac{2}{3}$.';
 
@@ -126,5 +127,66 @@ describe('renderLatex', () => {
     it('escapes all five significant characters', () => {
       expect(escapeHtml(`&<>"'`)).toBe('&amp;&lt;&gt;&quot;&#39;');
     });
+  });
+});
+
+describe('hasUnclosedDelimiter', () => {
+  it('accepts balanced inline and display maths', () => {
+    expect(hasUnclosedDelimiter('Evaluate $x^2$ and $$y = 1$$.')).toBe(false);
+  });
+
+  it('accepts source with no maths at all', () => {
+    expect(hasUnclosedDelimiter('Which of the following is true?')).toBe(false);
+  });
+
+  it('treats empty and nullish source as balanced', () => {
+    expect(hasUnclosedDelimiter('')).toBe(false);
+    expect(hasUnclosedDelimiter(null)).toBe(false);
+    expect(hasUnclosedDelimiter(undefined)).toBe(false);
+  });
+
+  /**
+   * The shape that reached the live bank: a delimiter opened mid-sentence and never closed,
+   * which renders as raw LaTeX to a student without erroring anywhere.
+   */
+  it('flags a delimiter that is opened and never closed', () => {
+    expect(hasUnclosedDelimiter('the differential equation$\\mathrm{y}=\\left(\\mathrm{x}')).toBe(
+      true,
+    );
+  });
+
+  it('flags a lone dollar', () => {
+    expect(hasUnclosedDelimiter('costs $5 per item')).toBe(true);
+  });
+
+  it('flags an unclosed display block', () => {
+    expect(hasUnclosedDelimiter('$$x = 1')).toBe(true);
+  });
+
+  // A literal dollar written correctly must not be reported, or the warning cries wolf on
+  // valid content and authors learn to ignore it.
+  it('accepts escaped dollars as literal text', () => {
+    expect(hasUnclosedDelimiter('costs \\$5 and \\$10')).toBe(false);
+  });
+
+  it('accepts an escaped dollar alongside real maths', () => {
+    expect(hasUnclosedDelimiter('\\$5 buys $x$ apples')).toBe(false);
+  });
+
+  // A CLOSED pair with nothing inside is literal text to the renderer, so it is balanced.
+  it('accepts an empty but closed delimiter pair', () => {
+    expect(hasUnclosedDelimiter('a $ $ b')).toBe(false);
+  });
+
+  // '$$' with no second '$$' anywhere is a display block that never closes, not an empty
+  // pair. The renderer emits it literally for that reason, so flagging it is agreement.
+  it('flags a lone $$ as an unclosed display block', () => {
+    expect(hasUnclosedDelimiter('a $$ b')).toBe(true);
+  });
+
+  it('agrees with the renderer: flagged source renders as raw text, not maths', () => {
+    const broken = 'equation$\\mathrm{y}=1';
+    expect(hasUnclosedDelimiter(broken)).toBe(true);
+    expect(renderLatex(broken)).not.toContain('katex');
   });
 });
