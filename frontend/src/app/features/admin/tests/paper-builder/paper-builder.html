@@ -102,6 +102,10 @@
             <p class="ms-alert ms-alert--error" role="alert">{{ composerError() }}</p>
           }
 
+          @if (delimiterWarning(); as warning) {
+            <p class="ms-alert ms-alert--warn" role="status">{{ warning }}</p>
+          }
+
           <div class="composer-meta">
             <label class="ms-field">
               <span>Chapter</span>

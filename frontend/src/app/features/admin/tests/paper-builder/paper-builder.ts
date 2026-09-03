@@ -27,6 +27,7 @@ import {
   QuestionSummaryResponse,
   paperScopeLabel,
 } from '../../../../core/models';
+import { hasUnclosedDelimiter } from '../../../../shared/math/latex-renderer';
 import { MathContent } from '../../../../shared/math/math-content';
 import { AdminCatalogService } from '../../data/admin-catalog.service';
 import { QuestionService } from '../../data/question.service';
@@ -205,6 +206,43 @@ export class PaperBuilder {
   protected optionPreview(index: number): string {
     return (this.composerOptions.at(index).get('content')?.value as string) ?? '';
   }
+
+  /** Mirrors the option contents into a signal so the delimiter check can react to them. */
+  private readonly optionPreviews = signal<string[]>(OPTION_KEYS.map(() => ''));
+
+  /**
+   * Names the fields with a maths delimiter that is opened and never closed.
+   *
+   * Worth catching here because nothing downstream will: such a stem saves, publishes, and
+   * then renders to a student as raw LaTeX rather than maths, with no error raised anywhere.
+   * One is already in the live bank, entered by hand from a real paper. The live preview
+   * beside each field shows the same problem, but only to someone who looks - this says it.
+   *
+   * A warning rather than a block: an author mid-sentence is legitimately unbalanced, and a
+   * disabled Save button at that moment would be maddening.
+   */
+  protected readonly delimiterWarning = computed<string | null>(() => {
+    const broken: string[] = [];
+    if (hasUnclosedDelimiter(this.stemPreview())) {
+      broken.push('the question');
+    }
+    this.optionPreviews().forEach((content, i) => {
+      if (hasUnclosedDelimiter(content)) {
+        broken.push(`option ${OPTION_KEYS[i]}`);
+      }
+    });
+    if (hasUnclosedDelimiter(this.solutionPreview())) {
+      broken.push('the solution');
+    }
+    if (broken.length === 0) {
+      return null;
+    }
+    const list =
+      broken.length === 1
+        ? broken[0]
+        : `${broken.slice(0, -1).join(', ')} and ${broken[broken.length - 1]}`;
+    return `${list} ${broken.length === 1 ? 'has' : 'have'} a $ that is never closed, so the maths after it will show to students as raw text. Write a literal dollar as \\$.`;
+  });
 
   protected toggleComposer(): void {
     this.composerOpen.update((open) => !open);
@@ -461,6 +499,9 @@ export class PaperBuilder {
     );
     this.composer.controls.solutionContent.valueChanges.subscribe((v) =>
       this.solutionPreview.set(v ?? ''),
+    );
+    this.composer.controls.options.valueChanges.subscribe((options) =>
+      this.optionPreviews.set(options.map((o) => o.content ?? '')),
     );
 
     this.tests.get(this.testId).subscribe({

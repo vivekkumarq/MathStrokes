@@ -22,6 +22,7 @@ import {
   QuestionStatus,
 } from '../../../../core/models';
 import { applyServerErrors, clearServerErrors } from '../../../../shared/forms/server-errors';
+import { hasUnclosedDelimiter } from '../../../../shared/math/latex-renderer';
 import { MathContent } from '../../../../shared/math/math-content';
 import { AdminCatalogService } from '../../data/admin-catalog.service';
 import { QuestionService } from '../../data/question.service';
@@ -80,7 +81,9 @@ export class QuestionEditor {
   protected readonly loaded = signal<QuestionResponse | null>(null);
 
   protected readonly isNew = computed(() => this.id() === undefined || this.id() === 'new');
-  protected readonly heading = computed(() => (this.isNew() ? 'New question' : `Question #${this.id()}`));
+  protected readonly heading = computed(() =>
+    this.isNew() ? 'New question' : `Question #${this.id()}`,
+  );
 
   protected readonly form = this.fb.nonNullable.group(
     {
@@ -121,6 +124,9 @@ export class QuestionEditor {
     this.form.controls.solutionContent.valueChanges.subscribe((value) =>
       this.solutionPreview.set(value ?? ''),
     );
+    this.form.controls.options.valueChanges.subscribe((options) =>
+      this.optionPreviews.set(options.map((o) => o.content ?? '')),
+    );
 
     const id = this.id();
     if (id !== undefined && id !== 'new') {
@@ -131,6 +137,42 @@ export class QuestionEditor {
   protected optionPreview(index: number): string {
     return (this.options.at(index).get('content')?.value as string) ?? '';
   }
+
+  /** Mirrors the option contents into a signal so the delimiter check can react to them. */
+  private readonly optionPreviews = signal<string[]>(OPTION_KEYS.map(() => ''));
+
+  /**
+   * Names the fields with a maths delimiter that is opened and never closed.
+   *
+   * This editor is where bank questions are written by hand, and a hand-typed stem is where
+   * the one broken question in the live bank came from - pasted from a real paper, one
+   * delimiter short. Such a stem saves and publishes without complaint and then renders to a
+   * student as raw LaTeX, so nothing downstream catches it.
+   *
+   * A warning rather than a block: an author mid-sentence is legitimately unbalanced.
+   */
+  protected readonly delimiterWarning = computed<string | null>(() => {
+    const broken: string[] = [];
+    if (hasUnclosedDelimiter(this.stemPreview())) {
+      broken.push('the question');
+    }
+    this.optionPreviews().forEach((content, i) => {
+      if (hasUnclosedDelimiter(content)) {
+        broken.push(`option ${OPTION_KEYS[i]}`);
+      }
+    });
+    if (hasUnclosedDelimiter(this.solutionPreview())) {
+      broken.push('the solution');
+    }
+    if (broken.length === 0) {
+      return null;
+    }
+    const list =
+      broken.length === 1
+        ? broken[0]
+        : `${broken.slice(0, -1).join(', ')} and ${broken[broken.length - 1]}`;
+    return `${list} ${broken.length === 1 ? 'has' : 'have'} a $ that is never closed, so the maths after it will show to students as raw text. Write a literal dollar as \\$.`;
+  });
 
   /**
    * Selecting a correct option in SINGLE_CORRECT mode clears the others, so the form
