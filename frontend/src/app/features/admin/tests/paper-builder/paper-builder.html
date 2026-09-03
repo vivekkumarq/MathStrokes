@@ -71,19 +71,32 @@
         </button>
         <span class="compose-hint">
           Not in the bank yet? Write it here with LaTeX and it goes straight onto this paper.
+          Already saved one? Edit it from either list below.
         </span>
       </div>
 
       @if (composerOpen()) {
         <section class="ms-card composer" [formGroup]="composer">
           <div class="composer-head">
-            <h2>Write a question</h2>
-            <p class="muted">
-              Added to this paper and saved to the question bank. It follows the paper's
-              pattern &mdash; {{ patternLabel(t.examPattern) }} &mdash; so its marking matches
-              the rest of the test.
-            </p>
+            <h2>{{ editingId() ? 'Edit question' : 'Write a question' }}</h2>
+            @if (editingId()) {
+              <p class="muted">
+                Saved back to the question bank, so the corrected wording reaches every test
+                that uses it. A student already sitting it keeps the version they started
+                with, so no marked paper changes underneath anyone.
+              </p>
+            } @else {
+              <p class="muted">
+                Added to this paper and saved to the question bank. It follows the paper's
+                pattern &mdash; {{ patternLabel(t.examPattern) }} &mdash; so its marking matches
+                the rest of the test.
+              </p>
+            }
           </div>
+
+          @if (loadingEdit()) {
+            <p class="ms-alert ms-alert--info" role="status">Loading the saved question&hellip;</p>
+          }
 
           @if (composerError()) {
             <p class="ms-alert ms-alert--error" role="alert">{{ composerError() }}</p>
@@ -226,16 +239,26 @@
           </div>
 
           <div class="composer-foot">
-            <button class="ms-btn ms-btn--ghost" type="button" (click)="toggleComposer()">
-              Cancel
-            </button>
+            @if (editingId()) {
+              <button class="ms-btn ms-btn--ghost" type="button" (click)="cancelEdit()">
+                Discard changes
+              </button>
+            } @else {
+              <button class="ms-btn ms-btn--ghost" type="button" (click)="toggleComposer()">
+                Cancel
+              </button>
+            }
             <button
               class="ms-btn ms-btn--primary"
               type="button"
-              [disabled]="composing()"
+              [disabled]="composing() || loadingEdit()"
               (click)="addWrittenQuestion()"
             >
-              {{ composing() ? 'Adding...' : 'Add to paper' }}
+              @if (composing()) {
+                {{ editingId() ? 'Saving...' : 'Adding...' }}
+              } @else {
+                {{ editingId() ? 'Save changes' : 'Add to paper' }}
+              }
             </button>
           </div>
         </section>
@@ -320,16 +343,28 @@
                       <span class="chip">{{ patternLabel(q.examPattern) }}</span>
                     </p>
                   </div>
-                  <button
-                    class="ms-btn q-toggle"
-                    [class.ms-btn--primary]="!isChosen(q)"
-                    [class.ms-btn--ghost]="isChosen(q)"
-                    type="button"
-                    [disabled]="!editable()"
-                    (click)="toggle(q)"
-                  >
-                    {{ isChosen(q) ? 'Remove' : 'Add' }}
-                  </button>
+                  <div class="q-actions">
+                    <button
+                      class="ms-btn q-toggle"
+                      [class.ms-btn--primary]="!isChosen(q)"
+                      [class.ms-btn--ghost]="isChosen(q)"
+                      type="button"
+                      [disabled]="!editable()"
+                      (click)="toggle(q)"
+                    >
+                      {{ isChosen(q) ? 'Remove' : 'Add' }}
+                    </button>
+                    @if (editable()) {
+                      <button
+                        class="ms-btn ms-btn--ghost q-edit"
+                        type="button"
+                        [disabled]="loadingEdit()"
+                        (click)="editQuestion(q)"
+                      >
+                        Edit
+                      </button>
+                    }
+                  </div>
                 </li>
               }
             </ul>
@@ -390,6 +425,16 @@
                   </div>
                   @if (editable()) {
                     <div class="row-actions">
+                      <button
+                        class="ms-btn ms-btn--ghost icon icon--wide"
+                        type="button"
+                        title="Edit this question"
+                        [attr.aria-label]="'Edit question ' + (i + 1)"
+                        [disabled]="loadingEdit()"
+                        (click)="editQuestion(q)"
+                      >
+                        Edit
+                      </button>
                       <button
                         class="ms-btn ms-btn--ghost icon"
                         type="button"
