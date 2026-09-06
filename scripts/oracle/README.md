@@ -20,6 +20,7 @@ Run these in sequence. Each one stops rather than continuing past a failed check
 
 | | Script | Does | Needs |
 |---|---|---|---|
+| 0 | `00-provision.sh` | VCN, subnet, gateway, security list, and the VM itself | OCI CLI configured |
 | 1 | `01-bootstrap.sh` | Java 21, PostgreSQL 18, Nginx, firewall, `iota` user | a fresh Ubuntu 24.04 VM |
 | 2 | `02-database.sh` | role, database, restore, verify | a verified dump |
 | 3 | `03-deploy.sh` | build, install jar, systemd | `config/iota.env` written by hand |
@@ -36,9 +37,12 @@ Every component is native arm64 — the JDK, PostgreSQL, Nginx — so there is n
 no compatibility work. `01-bootstrap.sh` prints the architecture it found so this is checked
 rather than assumed.
 
-A1 capacity is frequently exhausted, especially in Indian regions. If creation returns
-"Out of capacity", that is normal and not a mistake in the request; retry, or try another
-availability domain in the same region. Do **not** fall back to the x86 `E2.1.Micro` shape:
+A1 capacity is frequently exhausted, and India South (Hyderabad) is among the worst regions
+for it. "Out of host capacity" is the normal first answer, not a mistake in the request.
+`00-provision.sh` retries in a loop and walks the fault domains on each pass, because capacity
+frees unevenly across them - leave it running rather than clicking.
+
+Do **not** fall back to the x86 `E2.1.Micro` shape:
 1 GB of RAM will not hold Spring Boot, PostgreSQL and a Maven build at once, and it is a
 worse machine than the Render instance we are leaving.
 
