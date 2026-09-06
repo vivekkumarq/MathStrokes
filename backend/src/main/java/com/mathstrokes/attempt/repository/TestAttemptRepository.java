@@ -60,6 +60,25 @@ public interface TestAttemptRepository extends JpaRepository<TestAttempt, Long> 
     long countByStudentIdAndTestId(Long studentId, Long testId);
 
     /**
+     * How many attempts this student has made against each test they have ever touched.
+     * Columns: testId, attemptCount.
+     *
+     * Exists so the student catalogue can ask once instead of once per test. Listing 62 tests
+     * through countByStudentIdAndTestId is 62 round trips to answer a question one GROUP BY
+     * answers, on the first screen every student opens.
+     *
+     * Tests the student has never attempted are absent rather than zero, so callers must treat
+     * a missing key as none - which is what getOrDefault is for.
+     */
+    @Query("""
+            select a.test.id, count(a)
+            from TestAttempt a
+            where a.student.id = :studentId
+            group by a.test.id
+            """)
+    List<Object[]> attemptCountsByTest(@Param("studentId") Long studentId);
+
+    /**
      * Attempts whose clock has run out but which are still open. Drives the finalisation sweep.
      * Ordered oldest first so a backlog is cleared in the order it built up.
      */
