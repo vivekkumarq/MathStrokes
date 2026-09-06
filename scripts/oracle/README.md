@@ -21,6 +21,7 @@ Run these in sequence. Each one stops rather than continuing past a failed check
 | | Script | Does | Needs |
 |---|---|---|---|
 | 0 | `00-provision.sh` | VCN, subnet, gateway, security list, and the VM itself | OCI CLI configured |
+| | `watch-capacity.cmd` | double-click wrapper for the above, for the long wait | the same |
 | 1 | `01-bootstrap.sh` | Java 21, PostgreSQL 18, Nginx, firewall, `iota` user | a fresh Ubuntu 24.04 VM |
 | 2 | `02-database.sh` | role, database, restore, verify | a verified dump |
 | 3 | `03-deploy.sh` | build, install jar, systemd | `config/iota.env` written by hand |
