@@ -41,7 +41,11 @@ echo "  $(sudo -u "$APP_USER" git -C "$REPO" log -1 --format='%h %s')"
 log "Building"
 # Tests are skipped here on purpose: this step exists to produce a runnable artefact from a
 # commit that already passed CI. Running them on the VM would test the VM, slowly.
-sudo -u "$APP_USER" bash -c "cd '$REPO/backend' && ./mvnw -q -B -DskipTests package"
+#
+# mvnw is invoked through bash rather than as ./mvnw. The repository now records it as mode
+# 755, but a clone made on Windows with core.fileMode=false can still arrive without the bit,
+# and the resulting "Permission denied" gives no hint that a file mode is the cause.
+sudo -u "$APP_USER" bash -c "cd '$REPO/backend' && bash ./mvnw -q -B -DskipTests package"
 
 jar=$(sudo -u "$APP_USER" bash -c "ls -t '$REPO/backend/target/'*.jar | grep -v sources | head -1")
 [ -n "$jar" ] || die "Build produced no jar."
@@ -108,10 +112,12 @@ sudo systemctl restart iota
 log "Waiting for the application to answer"
 port=$(grep -E '^PORT=' "$ENV_FILE" | cut -d= -f2 | tr -d '"' || echo 8080)
 port=${port:-8080}
+# /api/actuator/health, not /actuator/health: server.servlet.context-path is /api, so every
+# route including the actuator sits under it. health is one of the two endpoints
+# application.yml exposes, and show-details is never, so it reveals nothing to whoever
+# reaches it - though on this host nothing outside the box can.
 for i in $(seq 1 60); do
-    if curl -sf "http://127.0.0.1:$port/api/actuator/health" >/dev/null 2>&1 \
-    || curl -sf "http://127.0.0.1:$port/api/auth/login" -o /dev/null 2>&1 \
-    || [ "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$port/api/tests")" != "000" ]; then
+    if curl -sf "http://127.0.0.1:$port/api/actuator/health" >/dev/null 2>&1; then
         echo "  up after ${i}s"
         break
     fi
