@@ -38,7 +38,11 @@ if not exist "%BASH%" (
 cd /d "%REPO%" || exit /b 1
 
 echo.
-echo  Asking Oracle for VM.Standard.A1.Flex - 4 OCPU / 24 GB, Ubuntu 24.04 aarch64.
+REM  The shape is deliberately not named here. It lives in 00-provision.sh, and a copy in
+REM  this banner went stale the first time it changed - saying "4 OCPU / 24 GB" while the
+REM  script asked for something else entirely. The script prints what it is actually
+REM  requesting a few lines down; that line is the one to trust.
+echo  Asking Oracle for an Ampere A1 instance, Ubuntu 24.04 aarch64.
 echo  Leave this window open. Ctrl-C stops it; re-running is safe.
 echo.
 
