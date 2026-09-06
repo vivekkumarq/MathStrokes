@@ -29,7 +29,13 @@ DISPLAY_NAME="iota-api"
 VCN_NAME="iota-vcn"
 SUBNET_NAME="iota-public-subnet"
 SSH_PUB="${SSH_PUB:-$HOME/.ssh/iota_oracle.pub}"
-RETRY_SECONDS="${RETRY_SECONDS:-90}"
+# Gentle by default. Oracle rate-limits launch_instance per user and a free-tier account
+# reaches that limit quickly; asking every few seconds does not find capacity sooner, it just
+# converts "no capacity" into "too many requests" and hides the signal we actually want.
+RETRY_SECONDS="${RETRY_SECONDS:-300}"
+# Pause between individual fault-domain attempts, so one pass is three spaced requests rather
+# than a burst of three.
+SPACING="${SPACING:-30}"
 
 log()  { printf '\n\033[1;34m==> %s\033[0m\n' "$*"; }
 info() { printf '    %s\n' "$*"; }
@@ -141,8 +147,9 @@ log "Availability domains: ${ADS[*]}"
 FDS=(FAULT-DOMAIN-1 FAULT-DOMAIN-2 FAULT-DOMAIN-3)
 
 attempt=0
+backoff="$RETRY_SECONDS"
 log "Requesting $SHAPE  ${OCPUS} OCPU / ${MEMORY_GB} GB"
-info "Retrying every ${RETRY_SECONDS}s until capacity appears. Ctrl-C to stop; re-running is safe."
+info "Retrying until capacity appears. Ctrl-C to stop; re-running is safe."
 while true; do
     for ad in "${ADS[@]}"; do
         for fd in "${FDS[@]}"; do
@@ -180,6 +187,18 @@ while true; do
 
             if printf '%s' "$out" | grep -qi 'out of host capacity\|OutOfCapacity\|Out of capacity'; then
                 echo "no capacity"
+                backoff="$RETRY_SECONDS"
+                sleep "$SPACING"
+            elif printf '%s' "$out" | grep -qi 'TooManyRequests\|"status": *429'; then
+                # Oracle throttles launch_instance per user, and free-tier accounts hit it
+                # easily. Retrying harder is counterproductive - the throttle widens under
+                # load - so each 429 doubles the wait, up to half an hour. This is why the
+                # loop is deliberately unhurried: a request refused for being too frequent
+                # is not the same problem as a request refused for want of a machine.
+                echo "throttled (429) - backing off ${backoff}s"
+                sleep "$backoff"
+                backoff=$(( backoff * 2 ))
+                [ "$backoff" -gt 1800 ] && backoff=1800
             elif printf '%s' "$out" | grep -qi 'LimitExceeded\|QuotaExceeded'; then
                 # A service limit is not transient and will not clear by waiting.
                 echo "LIMIT"
