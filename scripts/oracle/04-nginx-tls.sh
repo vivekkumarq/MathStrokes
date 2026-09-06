@@ -15,7 +15,7 @@
 #
 set -euo pipefail
 
-DOMAIN="${1:-}"
+DOMAIN="${1:-${DUCKDNS_DOMAIN_FQDN:-iotaexam.duckdns.org}}"
 EMAIL="${2:-}"
 APP_PORT="${APP_PORT:-8080}"
 

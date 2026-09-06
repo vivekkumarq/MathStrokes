@@ -94,8 +94,16 @@ Netlify serves the frontend over HTTPS, so the browser refuses to call an `http:
 at all — blocked as mixed content before the request leaves. Let's Encrypt will not issue for
 a bare IP. So a hostname is required; there is no free workaround that keeps TLS honest.
 
-Either a domain you own (~₹100–1000/year), or a free DuckDNS subdomain pointed at the VM's
-public IP. Both give real, valid TLS.
+The hostname is **`iotaexam.duckdns.org`** - a free DuckDNS subdomain, which is a real name
+with real TLS, just not one we own outright.
+
+`00-provision.sh` points it at the instance automatically the moment a launch succeeds, using
+a token read from `~/.duckdns-token`. That is deliberate: the address is only known at that
+instant, and a stale A record does not fail visibly - it fails much later, as a certificate
+error that says nothing about DNS. The token is a credential and never enters the repository.
+
+`04-nginx-tls.sh` checks the name resolves to this VM before asking Let's Encrypt for
+anything, because failed challenges count against a rate limit that takes a week to clear.
 
 ## Cutover
 

@@ -38,6 +38,15 @@ DISPLAY_NAME="iota-api"
 VCN_NAME="iota-vcn"
 SUBNET_NAME="iota-public-subnet"
 SSH_PUB="${SSH_PUB:-$HOME/.ssh/iota_oracle.pub}"
+# DuckDNS gives the backend a real hostname, which Let's Encrypt needs and a bare IP cannot
+# have. Pointing it at the new instance happens here rather than by hand because the address
+# is only known the moment a launch succeeds, and a stale A record surfaces much later as a
+# certificate failure that says nothing about DNS.
+#
+# The token is a credential and stays out of the repository - it lives in a file in $HOME.
+# Both are optional: without them the script just prints the IP for you to set manually.
+DUCKDNS_DOMAIN="${DUCKDNS_DOMAIN:-iotaexam}"
+DUCKDNS_TOKEN_FILE="${DUCKDNS_TOKEN_FILE:-$HOME/.duckdns-token}"
 # Gentle by default. Oracle rate-limits launch_instance per user and a free-tier account
 # reaches that limit quickly; asking every few seconds does not find capacity sooner, it just
 # converts "no capacity" into "too many requests" and hides the signal we actually want.
@@ -187,6 +196,22 @@ while true; do
                 printf '    shape  %s  %s OCPU / %s GB\n' "$SHAPE" "$OCPUS" "$MEMORY_GB"
                 printf '    image  %s\n'     "$image_name"
                 printf '    ip     %s\n\n'   "$ip"
+                if [ -f "$DUCKDNS_TOKEN_FILE" ]; then
+                    printf '  Pointing %s.duckdns.org at %s ... ' "$DUCKDNS_DOMAIN" "$ip"
+                    tok=$(tr -d '[:space:]' < "$DUCKDNS_TOKEN_FILE")
+                    # DuckDNS answers 200 whether it worked or not, with a bare OK or KO as the body, so
+                    # the body is the only thing worth checking.
+                    duck=$(curl -s --max-time 20 "https://www.duckdns.org/update?domains=$DUCKDNS_DOMAIN&token=$tok&ip=$ip" || true)
+                    if [ "$duck" = "OK" ]; then
+                        echo "OK"
+                    else
+                        echo "FAILED (answered ${duck:-nothing})"
+                        echo "    Set it by hand at https://www.duckdns.org/domains before asking for a certificate."
+                    fi
+                else
+                    echo "  No DuckDNS token at $DUCKDNS_TOKEN_FILE - set the A record by hand."
+                fi
+                echo
                 printf '  Connect:\n    ssh -i ~/.ssh/iota_oracle ubuntu@%s\n\n' "$ip"
                 printf '  Then:\n'
                 printf '    scp -i ~/.ssh/iota_oracle scripts/oracle/01-bootstrap.sh ubuntu@%s:~\n' "$ip"
