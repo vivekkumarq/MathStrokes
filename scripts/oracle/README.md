@@ -32,7 +32,14 @@ a working backend nobody can reach yet, which is the safest thing to have while 
 
 ## Shape
 
-Ask for **VM.Standard.A1.Flex**, 4 OCPU / 24 GB, **Ubuntu 24.04 LTS (aarch64)**.
+Ask for **VM.Standard.A1.Flex**, **1 OCPU / 6 GB**, **Ubuntu 24.04 LTS (aarch64)**.
+
+Not the full 4 OCPU / 24 GB the free tier allows, even though it is free either way. Capacity
+is fragmented, and a small request fits into gaps a large one cannot; asking for the maximum
+as one block is the slowest way to get anything at all. The tradeoff barely exists at this
+scale - against the 0.1 vCPU and 512 MB the application runs on today, 1 OCPU and 6 GB is ten
+times the CPU and twelve times the memory, and it does not spin down. The remaining allowance
+stays available to grow into once something is actually serving students.
 
 Every component is native arm64 — the JDK, PostgreSQL, Nginx — so there is no emulation and
 no compatibility work. `01-bootstrap.sh` prints the architecture it found so this is checked

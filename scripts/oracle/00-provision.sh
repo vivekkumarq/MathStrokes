@@ -4,7 +4,7 @@
 #
 #   bash scripts/oracle/00-provision.sh
 #
-# Ampere A1 is the whole reason for choosing Oracle - 4 OCPU and 24 GB against Render's 0.1
+# Ampere A1 is the whole reason for choosing Oracle - a real machine against Render's 0.1
 # vCPU and 512 MB - and it is also the hard part. Free A1 capacity is genuinely scarce, and
 # India South (Hyderabad) is among the worst regions for it. "Out of host capacity" is the
 # normal first answer, not a mistake in the request. So this script asks in a loop rather
@@ -12,9 +12,12 @@
 # because capacity frees unevenly across them.
 #
 # Everything it creates is inside the Always Free allowance:
-#   - VM.Standard.A1.Flex at 4 OCPU / 24 GB   (the entire A1 allowance, as one instance)
+#   - VM.Standard.A1.Flex at 1 OCPU / 6 GB    (a quarter of the A1 allowance - see below)
 #   - a 50 GB boot volume                     (allowance is 200 GB across all volumes)
 #   - one VCN, one public subnet, one gateway (no charge)
+#
+# Override the size with OCPUS and MEMORY_GB if capacity ever looks plentiful:
+#   OCPUS=4 MEMORY_GB=24 bash scripts/oracle/00-provision.sh
 #
 # Nothing here touches Render or Netlify.
 #
@@ -22,8 +25,14 @@ set -euo pipefail
 
 COMPARTMENT="${COMPARTMENT_OCID:-}"
 SHAPE="VM.Standard.A1.Flex"
-OCPUS=4
-MEMORY_GB=24
+# 1 OCPU / 6 GB rather than the full 4 / 24 the free tier allows. Capacity is fragmented, and
+# a small request fits into gaps a large one cannot - asking for the maximum as a single block
+# is the slowest way to get anything at all. The tradeoff barely exists at this scale: against
+# the 0.1 vCPU and 512 MB the application runs on today this is ten times the CPU and twelve
+# times the memory, and it does not spin down. The remaining 3 OCPU of the allowance stay
+# available to grow into once something is actually running.
+OCPUS="${OCPUS:-1}"
+MEMORY_GB="${MEMORY_GB:-6}"
 BOOT_GB=50
 DISPLAY_NAME="iota-api"
 VCN_NAME="iota-vcn"
