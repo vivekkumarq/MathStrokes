@@ -2,7 +2,9 @@ package com.mathstrokes.attempt.service;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import com.mathstrokes.attempt.entity.TestAttempt;
 import com.mathstrokes.attempt.repository.TestAttemptRepository;
@@ -38,20 +40,37 @@ public class StudentTestCatalogService {
 
     public List<AvailableTestResponse> availableTests(Long studentId, Long subjectId,
                                                       Long chapterId, ExamPattern examPattern) {
-        return testRepository.findPublished(subjectId, chapterId, examPattern).stream()
-                .map(test -> toAvailable(test, studentId))
+        List<ExamTest> published = testRepository.findPublished(subjectId, chapterId, examPattern);
+
+        // Both of these are asked once for the whole student rather than once per test. Asking
+        // per test made this three queries plus two more for every row - 125 of them across the
+        // 62 published tests - to build the first screen a student sees after signing in.
+        Map<Long, Long> usedByTest = attemptRepository.attemptCountsByTest(studentId).stream()
+                .collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
+        Map<Long, TestAttempt> activeByTest = attemptRepository.findActiveByStudent(studentId)
+                .stream()
+                .collect(Collectors.toMap(a -> a.getTest().getId(), Function.identity(),
+                        // A student should never hold two active attempts on one test - the
+                        // start path enforces it. If the data ever disagrees, keep the first,
+                        // which findActiveByStudent orders as the most recent, rather than
+                        // letting toMap throw and take the whole catalogue down with it.
+                        (first, second) -> first));
+
+        // One clock for the entire list. Calling Instant.now() per row let a test open or close
+        // partway down the page, so two rows could disagree about what time it was.
+        Instant clock = Instant.now();
+
+        return published.stream()
+                .map(test -> toAvailable(test, usedByTest.getOrDefault(test.getId(), 0L),
+                        activeByTest.get(test.getId()), clock))
                 .toList();
     }
 
-    private AvailableTestResponse toAvailable(ExamTest test, Long studentId) {
-        long used = attemptRepository.countByStudentIdAndTestId(studentId, test.getId());
-        Optional<TestAttempt> active =
-                attemptRepository.findActiveByStudentAndTest(studentId, test.getId());
-
-        Instant clock = Instant.now();
+    private AvailableTestResponse toAvailable(ExamTest test, long used, TestAttempt activeAttempt,
+                                              Instant clock) {
         boolean canStart;
         String reason;
-        if (active.isPresent()) {
+        if (activeAttempt != null) {
             // An attempt in flight is always resumable, whatever the attempt allowance or the
             // scheduling window says. A student sitting a paper when the window closes finishes
             // it on their own clock, which is how closing a test has always behaved.
@@ -89,7 +108,7 @@ public class StudentTestCatalogService {
                 test.getMaxAttemptsPerStudent(),
                 (int) used,
                 canStart,
-                active.map(TestAttempt::getId).orElse(null),
+                activeAttempt == null ? null : activeAttempt.getId(),
                 reason,
                 test.getTestKind(),
                 test.getScheduledStartAt(),
