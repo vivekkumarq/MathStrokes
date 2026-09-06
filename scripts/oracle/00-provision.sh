@@ -51,9 +51,11 @@ DUCKDNS_TOKEN_FILE="${DUCKDNS_TOKEN_FILE:-$HOME/.duckdns-token}"
 # reaches that limit quickly; asking every few seconds does not find capacity sooner, it just
 # converts "no capacity" into "too many requests" and hides the signal we actually want.
 RETRY_SECONDS="${RETRY_SECONDS:-300}"
-# Pause between individual fault-domain attempts, so one pass is three spaced requests rather
-# than a burst of three.
-SPACING="${SPACING:-30}"
+# Pause between individual fault-domain attempts. Thirty seconds was still fast enough to trip
+# Oracle's launch throttle: in one run three attempts out of four came back 429, meaning only
+# one of them ever reached the capacity check at all. A throttled request tells us nothing
+# about whether a machine was free, so asking less often actually samples capacity more.
+SPACING="${SPACING:-180}"
 
 log()  { printf '\n\033[1;34m==> %s\033[0m\n' "$*"; }
 info() { printf '    %s\n' "$*"; }
