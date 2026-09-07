@@ -16,7 +16,9 @@
 #   - a 50 GB boot volume                     (allowance is 200 GB across all volumes)
 #   - one VCN, one public subnet, one gateway (no charge)
 #
-# Override the size with OCPUS and MEMORY_GB if capacity ever looks plentiful:
+# Memory is rotated across attempts (see MEMORY_LADDER). Pin one size, or take the whole
+# allowance if capacity ever looks plentiful:
+#   MEMORY_GB=4 bash scripts/oracle/00-provision.sh
 #   OCPUS=4 MEMORY_GB=24 bash scripts/oracle/00-provision.sh
 #
 # Nothing here touches Render or Netlify.
@@ -32,7 +34,17 @@ SHAPE="VM.Standard.A1.Flex"
 # times the memory, and it does not spin down. The remaining 3 OCPU of the allowance stay
 # available to grow into once something is actually running.
 OCPUS="${OCPUS:-1}"
-MEMORY_GB="${MEMORY_GB:-6}"
+# Memory is rotated rather than fixed. Twelve hours of asking for one size, including
+# overnight, produced nothing but "no capacity" - so the pool is persistently short rather
+# than briefly busy, and asking the same question again is unlikely to get a different answer.
+#
+# Each attempt is one request whatever size it names, so cycling the size samples several
+# capacity pools at exactly the request rate that samples one. 4 GB leads because a smaller
+# footprint fits into fragments a larger one cannot; 6 GB stays in the rotation in case the
+# constraint is elsewhere; 2 GB is a floor worth taking if it is all that is going.
+#
+# Set MEMORY_GB to pin a single size and skip the rotation entirely.
+MEMORY_LADDER="${MEMORY_LADDER:-4 6 2}"
 BOOT_GB=50
 DISPLAY_NAME="iota-api"
 VCN_NAME="iota-vcn"
@@ -167,21 +179,28 @@ log "Availability domains: ${ADS[*]}"
 FDS=(FAULT-DOMAIN-1 FAULT-DOMAIN-2 FAULT-DOMAIN-3)
 
 attempt=0
+pass=0
 backoff="$RETRY_SECONDS"
-log "Requesting $SHAPE  ${OCPUS} OCPU / ${MEMORY_GB} GB"
+read -r -a MEM_SIZES <<< "${MEMORY_GB:-$MEMORY_LADDER}"
+log "Requesting $SHAPE  ${OCPUS} OCPU, trying ${MEM_SIZES[*]} GB in turn" 
 info "Retrying until capacity appears. Ctrl-C to stop; re-running is safe."
 while true; do
+    # Memory rotates once per pass rather than once per attempt. The fault domains and the
+    # ladder are both three long, so advancing them together would pin each fault domain to a
+    # single size and never try the other six combinations.
+    mem="${MEM_SIZES[$(( pass % ${#MEM_SIZES[@]} ))]}"
+    pass=$((pass + 1))
     for ad in "${ADS[@]}"; do
         for fd in "${FDS[@]}"; do
             attempt=$((attempt + 1))
-            printf '    [%s] attempt %-4d %s / %s ... ' "$(date -u +%H:%M:%S)" "$attempt" "${ad##*:}" "$fd"
+            printf '    [%s] attempt %-4d %s / %s / %s GB ... ' "$(date -u +%H:%M:%S)" "$attempt" "${ad##*:}" "$fd" "$mem"
             if out=$(oci compute instance launch \
                         --compartment-id "$COMPARTMENT" \
                         --availability-domain "$ad" \
                         --fault-domain "$fd" \
                         --display-name "$DISPLAY_NAME" \
                         --shape "$SHAPE" \
-                        --shape-config "{\"ocpus\":$OCPUS,\"memoryInGBs\":$MEMORY_GB}" \
+                        --shape-config "{\"ocpus\":$OCPUS,\"memoryInGBs\":$mem}" \
                         --image-id "$image_id" \
                         --boot-volume-size-in-gbs "$BOOT_GB" \
                         --subnet-id "$subnet_id" \

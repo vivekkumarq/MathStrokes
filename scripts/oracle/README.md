@@ -32,7 +32,8 @@ a working backend nobody can reach yet, which is the safest thing to have while 
 
 ## Shape
 
-Ask for **VM.Standard.A1.Flex**, **1 OCPU / 6 GB**, **Ubuntu 24.04 LTS (aarch64)**.
+Ask for **VM.Standard.A1.Flex**, **1 OCPU**, **Ubuntu 24.04 LTS (aarch64)**, and let the
+script rotate the memory size.
 
 Not the full 4 OCPU / 24 GB the free tier allows, even though it is free either way. Capacity
 is fragmented, and a small request fits into gaps a large one cannot; asking for the maximum
@@ -47,8 +48,13 @@ rather than assumed.
 
 A1 capacity is frequently exhausted, and India South (Hyderabad) is among the worst regions
 for it. "Out of host capacity" is the normal first answer, not a mistake in the request.
-`00-provision.sh` retries in a loop and walks the fault domains on each pass, because capacity
-frees unevenly across them - leave it running rather than clicking.
+`00-provision.sh` retries in a loop, walks the fault domains on each pass, and rotates the
+memory size once per pass - 4 GB, then 6, then 2. Twelve hours of asking for a single size,
+overnight included, produced nothing but "no capacity", which says the pool is persistently
+short rather than briefly busy. Each attempt costs one request whatever size it names, so
+cycling the size samples several capacity pools at the rate that samples one.
+
+Leave it running rather than clicking.
 
 Do **not** fall back to the x86 `E2.1.Micro` shape:
 1 GB of RAM will not hold Spring Boot, PostgreSQL and a Maven build at once, and it is a
