@@ -48,11 +48,17 @@ rather than assumed.
 
 A1 capacity is frequently exhausted, and India South (Hyderabad) is among the worst regions
 for it. "Out of host capacity" is the normal first answer, not a mistake in the request.
-`00-provision.sh` retries in a loop, walks the fault domains on each pass, and rotates the
-memory size once per pass - 4 GB, then 6, then 2. Twelve hours of asking for a single size,
-overnight included, produced nothing but "no capacity", which says the pool is persistently
-short rather than briefly busy. Each attempt costs one request whatever size it names, so
-cycling the size samples several capacity pools at the rate that samples one.
+`00-provision.sh` retries in a loop, alternating 4 GB and 6 GB on each pass, and lets Oracle
+choose the fault domain.
+
+Naming a fault domain was a mistake: a request that names one can only be satisfied from that
+one pool, so covering all three took three requests - three times the throttle pressure to ask
+the same question. Unnamed, a single request is satisfied from whichever fault domain has
+room. Fewer requests and wider coverage at once.
+
+The size alternates because twelve hours of asking for one, overnight included, produced
+nothing but "no capacity" - a persistently short pool rather than a briefly busy one, and a
+smaller footprint fits fragments a larger one cannot.
 
 Leave it running rather than clicking.
 
