@@ -44,7 +44,7 @@ OCPUS="${OCPUS:-1}"
 # constraint is elsewhere; 2 GB is a floor worth taking if it is all that is going.
 #
 # Set MEMORY_GB to pin a single size and skip the rotation entirely.
-MEMORY_LADDER="${MEMORY_LADDER:-4 6 2}"
+MEMORY_LADDER="${MEMORY_LADDER:-4 6}"
 BOOT_GB=50
 DISPLAY_NAME="iota-api"
 VCN_NAME="iota-vcn"
@@ -62,12 +62,9 @@ DUCKDNS_TOKEN_FILE="${DUCKDNS_TOKEN_FILE:-$HOME/.duckdns-token}"
 # Gentle by default. Oracle rate-limits launch_instance per user and a free-tier account
 # reaches that limit quickly; asking every few seconds does not find capacity sooner, it just
 # converts "no capacity" into "too many requests" and hides the signal we actually want.
-RETRY_SECONDS="${RETRY_SECONDS:-300}"
-# Pause between individual fault-domain attempts. Thirty seconds was still fast enough to trip
-# Oracle's launch throttle: in one run three attempts out of four came back 429, meaning only
-# one of them ever reached the capacity check at all. A throttled request tells us nothing
-# about whether a machine was free, so asking less often actually samples capacity more.
-SPACING="${SPACING:-180}"
+# One request per pass now that Oracle picks the fault domain, so the same throttle budget
+# buys a shorter gap between passes than it did when each pass fired three.
+RETRY_SECONDS="${RETRY_SECONDS:-180}"
 
 log()  { printf '\n\033[1;34m==> %s\033[0m\n' "$*"; }
 info() { printf '    %s\n' "$*"; }
@@ -173,10 +170,11 @@ mapfile -t ADS < <(oci iam availability-domain list --compartment-id "$COMPARTME
 [ "${#ADS[@]}" -gt 0 ] || die "Could not list availability domains."
 log "Availability domains: ${ADS[*]}"
 
-# Fault domains are tried explicitly. Capacity is tracked per fault domain, so a region that
-# reports "out of capacity" for one can still have room in another, and letting Oracle pick
-# gives up that extra chance.
-FDS=(FAULT-DOMAIN-1 FAULT-DOMAIN-2 FAULT-DOMAIN-3)
+# The fault domain is deliberately not named. Naming one means the request can only be
+# satisfied from that one pool, so covering all three took three requests - three times
+# the throttle pressure for the same question. Letting Oracle place the instance lets a
+# single request be satisfied from whichever fault domain has room, which is both fewer
+# requests and wider coverage.
 
 attempt=0
 pass=0
@@ -185,92 +183,88 @@ read -r -a MEM_SIZES <<< "${MEMORY_GB:-$MEMORY_LADDER}"
 log "Requesting $SHAPE  ${OCPUS} OCPU, trying ${MEM_SIZES[*]} GB in turn" 
 info "Retrying until capacity appears. Ctrl-C to stop; re-running is safe."
 while true; do
-    # Memory rotates once per pass rather than once per attempt. The fault domains and the
-    # ladder are both three long, so advancing them together would pin each fault domain to a
-    # single size and never try the other six combinations.
+    # Memory rotates once per pass. There is one request per pass now that Oracle chooses the
+    # fault domain, so the pass is the only place a size can change.
     mem="${MEM_SIZES[$(( pass % ${#MEM_SIZES[@]} ))]}"
     pass=$((pass + 1))
     for ad in "${ADS[@]}"; do
-        for fd in "${FDS[@]}"; do
-            attempt=$((attempt + 1))
-            printf '    [%s] attempt %-4d %s / %s / %s GB ... ' "$(date -u +%H:%M:%S)" "$attempt" "${ad##*:}" "$fd" "$mem"
-            if out=$(oci compute instance launch \
-                        --compartment-id "$COMPARTMENT" \
-                        --availability-domain "$ad" \
-                        --fault-domain "$fd" \
-                        --display-name "$DISPLAY_NAME" \
-                        --shape "$SHAPE" \
-                        --shape-config "{\"ocpus\":$OCPUS,\"memoryInGBs\":$mem}" \
-                        --image-id "$image_id" \
-                        --boot-volume-size-in-gbs "$BOOT_GB" \
-                        --subnet-id "$subnet_id" \
-                        --assign-public-ip true \
-                        --ssh-authorized-keys-file "$SSH_PUB" \
-                        --wait-for-state RUNNING \
-                        --query 'data.id' --raw-output 2>&1); then
-                echo "launched"
-                instance_id=$(printf '%s' "$out" | tail -1)
-                ip=$(oci compute instance list-vnics --instance-id "$instance_id" \
-                     --query 'data[0]."public-ip"' --raw-output)
-                printf '\n  Instance running after %d attempts.\n\n' "$attempt"
-                printf '    id     %s\n'     "$instance_id"
-                printf '    shape  %s  %s OCPU / %s GB\n' "$SHAPE" "$OCPUS" "$MEMORY_GB"
-                printf '    image  %s\n'     "$image_name"
-                printf '    ip     %s\n\n'   "$ip"
-                if [ -f "$DUCKDNS_TOKEN_FILE" ]; then
-                    printf '  Pointing %s.duckdns.org at %s ... ' "$DUCKDNS_DOMAIN" "$ip"
-                    tok=$(tr -d '[:space:]' < "$DUCKDNS_TOKEN_FILE")
-                    # DuckDNS answers 200 whether it worked or not, with a bare OK or KO as the body, so
-                    # the body is the only thing worth checking.
-                    duck=$(curl -s --max-time 20 "https://www.duckdns.org/update?domains=$DUCKDNS_DOMAIN&token=$tok&ip=$ip" || true)
-                    if [ "$duck" = "OK" ]; then
-                        echo "OK"
-                    else
-                        echo "FAILED (answered ${duck:-nothing})"
-                        echo "    Set it by hand at https://www.duckdns.org/domains before asking for a certificate."
-                    fi
+        attempt=$((attempt + 1))
+        printf '    [%s] attempt %-4d %s / %s GB ... ' "$(date -u +%H:%M:%S)" "$attempt" "${ad##*:}" "$mem"
+        if out=$(oci compute instance launch \
+                    --compartment-id "$COMPARTMENT" \
+                    --availability-domain "$ad" \
+                    --display-name "$DISPLAY_NAME" \
+                    --shape "$SHAPE" \
+                    --shape-config "{\"ocpus\":$OCPUS,\"memoryInGBs\":$mem}" \
+                    --image-id "$image_id" \
+                    --boot-volume-size-in-gbs "$BOOT_GB" \
+                    --subnet-id "$subnet_id" \
+                    --assign-public-ip true \
+                    --ssh-authorized-keys-file "$SSH_PUB" \
+                    --wait-for-state RUNNING \
+                    --query 'data.id' --raw-output 2>&1); then
+            echo "launched"
+            instance_id=$(printf '%s' "$out" | tail -1)
+            ip=$(oci compute instance list-vnics --instance-id "$instance_id" \
+                 --query 'data[0]."public-ip"' --raw-output)
+            printf '\n  Instance running after %d attempts.\n\n' "$attempt"
+            printf '    id     %s\n'     "$instance_id"
+            printf '    shape  %s  %s OCPU / %s GB
+' "$SHAPE" "$OCPUS" "$mem"
+            printf '    image  %s\n'     "$image_name"
+            printf '    ip     %s\n\n'   "$ip"
+            if [ -f "$DUCKDNS_TOKEN_FILE" ]; then
+                printf '  Pointing %s.duckdns.org at %s ... ' "$DUCKDNS_DOMAIN" "$ip"
+                tok=$(tr -d '[:space:]' < "$DUCKDNS_TOKEN_FILE")
+                # DuckDNS answers 200 whether it worked or not, with a bare OK or KO as the body, so
+                # the body is the only thing worth checking.
+                duck=$(curl -s --max-time 20 "https://www.duckdns.org/update?domains=$DUCKDNS_DOMAIN&token=$tok&ip=$ip" || true)
+                if [ "$duck" = "OK" ]; then
+                    echo "OK"
                 else
-                    echo "  No DuckDNS token at $DUCKDNS_TOKEN_FILE - set the A record by hand."
+                    echo "FAILED (answered ${duck:-nothing})"
+                    echo "    Set it by hand at https://www.duckdns.org/domains before asking for a certificate."
                 fi
-                echo
-                printf '  Connect:\n    ssh -i ~/.ssh/iota_oracle ubuntu@%s\n\n' "$ip"
-                printf '  Then:\n'
-                printf '    scp -i ~/.ssh/iota_oracle scripts/oracle/01-bootstrap.sh ubuntu@%s:~\n' "$ip"
-                printf '    ssh -i ~/.ssh/iota_oracle ubuntu@%s "bash ~/01-bootstrap.sh"\n' "$ip"
-                exit 0
+            else
+                echo "  No DuckDNS token at $DUCKDNS_TOKEN_FILE - set the A record by hand."
             fi
+            echo
+            printf '  Connect:\n    ssh -i ~/.ssh/iota_oracle ubuntu@%s\n\n' "$ip"
+            printf '  Then:\n'
+            printf '    scp -i ~/.ssh/iota_oracle scripts/oracle/01-bootstrap.sh ubuntu@%s:~\n' "$ip"
+            printf '    ssh -i ~/.ssh/iota_oracle ubuntu@%s "bash ~/01-bootstrap.sh"\n' "$ip"
+            exit 0
+        fi
 
-            if printf '%s' "$out" | grep -qi 'out of host capacity\|OutOfCapacity\|Out of capacity'; then
-                echo "no capacity"
-                backoff="$RETRY_SECONDS"
-                sleep "$SPACING"
-            elif printf '%s' "$out" | grep -qi 'TooManyRequests\|"status": *429'; then
-                # Oracle throttles launch_instance per user, and free-tier accounts hit it
-                # easily. Retrying harder is counterproductive - the throttle widens under
-                # load - so each 429 doubles the wait, up to half an hour. This is why the
-                # loop is deliberately unhurried: a request refused for being too frequent
-                # is not the same problem as a request refused for want of a machine.
-                echo "throttled (429) - backing off ${backoff}s"
-                sleep "$backoff"
-                backoff=$(( backoff * 2 ))
-                [ "$backoff" -gt 1800 ] && backoff=1800
-            elif printf '%s' "$out" | grep -qi 'LimitExceeded\|QuotaExceeded'; then
-                # A service limit is not transient and will not clear by waiting.
-                echo "LIMIT"
-                die "Hit a service limit rather than a capacity shortage:
+        if printf '%s' "$out" | grep -qi 'out of host capacity\|OutOfCapacity\|Out of capacity'; then
+            echo "no capacity"
+            backoff="$RETRY_SECONDS"
+        elif printf '%s' "$out" | grep -qi 'TooManyRequests\|"status": *429'; then
+            # Oracle throttles launch_instance per user, and free-tier accounts hit it
+            # easily. Retrying harder is counterproductive - the throttle widens under
+            # load - so each 429 doubles the wait, up to half an hour. This is why the
+            # loop is deliberately unhurried: a request refused for being too frequent
+            # is not the same problem as a request refused for want of a machine.
+            echo "throttled (429) - backing off ${backoff}s"
+            sleep "$backoff"
+            backoff=$(( backoff * 2 ))
+            [ "$backoff" -gt 1800 ] && backoff=1800
+        elif printf '%s' "$out" | grep -qi 'LimitExceeded\|QuotaExceeded'; then
+            # A service limit is not transient and will not clear by waiting.
+            echo "LIMIT"
+            die "Hit a service limit rather than a capacity shortage:
 
 $out
 
 Check Governance > Limits, Quotas and Usage for VM.Standard.A1.Flex. A Free Tier account is
 allowed 4 OCPU and 24 GB of A1 in total, so this usually means an A1 instance already exists
 somewhere in the tenancy - including a stopped one, which still holds the allocation."
-            else
-                echo "error"
-                die "Launch failed for a reason that is not capacity:
+        else
+            echo "error"
+            die "Launch failed for a reason that is not capacity:
 
 $out"
-            fi
-        done
+        fi
     done
     sleep "$RETRY_SECONDS"
 done
