@@ -31,13 +31,16 @@ services:
       - key: JWT_SECRET
         generateValue: true
 
-      # Wired automatically from the database declared below. The app accepts Render's
-      # postgresql://user:pass@host/db form directly and derives the JDBC URL and credentials
-      # from it, so there is nothing to copy out of the dashboard by hand.
+      # Set in the dashboard, not here. The database now lives on Neon, outside Render, so
+      # there is no Render database left to wire this from. `sync: false` means the blueprint
+      # leaves whatever is set on the service alone instead of overwriting it on every sync -
+      # without it, the next sync would quietly point production back at the old database.
+      #
+      # The value is a libpq URL; DatabaseUrlEnvironmentPostProcessor derives the JDBC URL and
+      # the credentials from it. Do not include channel_binding - that is a libpq option and
+      # the JDBC driver does not understand it.
       - key: DATABASE_URL
-        fromDatabase:
-          name: iota-db
-          property: connectionString
+        sync: false
 
       # The Netlify site origin. Requests arriving through the Netlify proxy are same-origin and
       # never preflight, so this only matters for a browser calling the API directly.
@@ -48,7 +51,7 @@ services:
       # SEED_ENABLED to false. The seeder refuses to invent a default password, so leaving
       # them unset simply means no admin is created.
       - key: SEED_ENABLED
-        value: "true"
+        value: "false"
       - key: SEED_ADMIN_NAME
         value: Vivek Kumar
       - key: SEED_ADMIN_PHONE
@@ -73,6 +76,10 @@ services:
       - key: BCRYPT_STRENGTH
         value: "10"
 
+# Kept deliberately. This is the database production ran on until the move to Neon, and it is
+# the rollback: putting the old DATABASE_URL back on the service restores service immediately.
+# Removing it from here would let a blueprint sync delete it, so it stays until Neon has served
+# real traffic. Render deletes it on its own after the free plan expires on 29 September 2026.
 databases:
   - name: iota-db
     plan: free
