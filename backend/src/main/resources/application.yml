@@ -10,7 +10,14 @@ spring:
     hikari:
       pool-name: mathstrokes-pool
       maximum-pool-size: ${DB_POOL_MAX:10}
-      minimum-idle: ${DB_POOL_MIN:2}
+      # Idle connections keep a serverless Postgres awake, and Neon's free plan meters compute
+      # by the hour: exhaust the monthly allowance and it suspends the database until the next
+      # billing month. A pool that holds connections open overnight would spend the entire
+      # budget on nobody. Closing them well inside Neon's five-minute suspend window lets the
+      # database sleep whenever no one is sitting a test. Harmless on an always-on Postgres.
+      minimum-idle: ${DB_POOL_MIN:0}
+      idle-timeout: ${DB_POOL_IDLE_TIMEOUT:120000}
+      max-lifetime: ${DB_POOL_MAX_LIFETIME:900000}
       connection-timeout: 30000
   jpa:
     open-in-view: false
