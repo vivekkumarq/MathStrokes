@@ -1,7 +1,7 @@
 /**
  * Production configuration.
  *
- * ABSOLUTE, calling Render directly rather than the relative /api proxy.
+ * ABSOLUTE, calling the backend directly rather than the relative /api proxy.
  *
  * The proxy was the original design and it removed CORS entirely, which was a real
  * benefit. It also introduced a fatal one: Netlify's proxy gives up at ~29 seconds, and
@@ -13,8 +13,13 @@
  * Going direct removes that ceiling. The browser's own timeout is minutes, so a cold
  * start is now slow but successful instead of a hard failure. The cost is a CORS
  * preflight of a few milliseconds; the backend already allows this origin.
+ *
+ * That reasoning outlives the host it was written for. This backend also scales to zero,
+ * so the cold start it describes is still there and the proxy would still time out on it.
+ * The previous host stays running as a rollback: put its URL back here and in
+ * netlify.toml, redeploy, and the site is served by it again.
  */
 export const environment = {
   production: true,
-  apiBaseUrl: 'https://iota-api-jjai.onrender.com/api',
+  apiBaseUrl: 'https://iota-api.antideploy.com/api',
 };

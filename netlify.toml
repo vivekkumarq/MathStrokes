@@ -3,8 +3,12 @@
 # static files and edge functions only - so the API lives on a container host and Netlify
 # proxies through to it.
 #
-# The backend runs on Render as the `iota-api` service. If it ever moves, the hostname in the
-# /api/* rule below is the only place that needs changing - it is not compiled into the bundle.
+# The backend runs on Antideploy as `iota-api`, with Render kept as a rollback.
+#
+# The hostname lives in TWO places, not one: the /api/* rule below, and apiBaseUrl in
+# frontend/src/environments/environment.prod.ts. Production uses the second - the bundle calls
+# the backend directly, because Netlify's proxy times out at ~29s and a cold JVM boot is longer
+# than that. Changing only this file moves nothing. Change both.
 # =====================================================================================
 
 [build]
@@ -20,18 +24,19 @@
 # -------------------------------------------------------------------------------------
 # API proxy.
 #
-# The browser calls /api/... on the Netlify origin and Netlify forwards it to the backend.
-# This is worth doing rather than calling the backend directly: it makes the API
-# same-origin, so there is no CORS preflight on every request and no cross-origin
-# configuration to keep in step between two hosts. The backend still needs
-# CORS_ALLOWED_ORIGINS set for local development, where there is no proxy.
+# Kept, but NOT what production uses. The bundle calls the backend directly - see the comment
+# in environment.prod.ts for why: Netlify's proxy gives up at ~29s and a cold JVM boot takes
+# longer, which turned every request to a sleeping backend into a 504.
+#
+# It stays here because it is still the right shape for anything served same-origin, and
+# because leaving a stale hostname in it is how the two copies drift apart.
 #
 # Placed BEFORE the SPA fallback: Netlify applies rules in order, and the catch-all below
 # would otherwise swallow API calls and return index.html.
 # -------------------------------------------------------------------------------------
 [[redirects]]
   from   = "/api/*"
-  to     = "https://iota-api-jjai.onrender.com/api/:splat"
+  to     = "https://iota-api.antideploy.com/api/:splat"
   status = 200
   force  = true
 
