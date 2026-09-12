@@ -37,6 +37,27 @@ class DatabaseUrlEnvironmentPostProcessorTest {
     }
 
     @Test
+    @DisplayName("a value wrapped in quotes by the host is still recognised")
+    void toleratesQuotedValue() {
+        MockEnvironment environment =
+                process("\"postgresql://u:p@ep-cool.aws.neon.tech/neondb?sslmode=require\"");
+
+        assertThat(environment.getProperty("spring.datasource.url"))
+                .isEqualTo("jdbc:postgresql://ep-cool.aws.neon.tech/neondb?sslmode=require");
+        assertThat(environment.getProperty("spring.datasource.username")).isEqualTo("u");
+    }
+
+    @Test
+    @DisplayName("surrounding whitespace does not defeat the scheme check")
+    void tolerantOfWhitespace() {
+        MockEnvironment environment =
+                process("  postgresql://u:p@ep-cool.aws.neon.tech/neondb  ");
+
+        assertThat(environment.getProperty("spring.datasource.url"))
+                .isEqualTo("jdbc:postgresql://ep-cool.aws.neon.tech/neondb");
+    }
+
+    @Test
     @DisplayName("query parameters survive, so sslmode=require is not silently dropped")
     void preservesQueryParameters() {
         MockEnvironment environment =

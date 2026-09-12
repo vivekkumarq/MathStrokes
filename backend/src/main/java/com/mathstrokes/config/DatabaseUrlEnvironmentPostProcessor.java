@@ -31,7 +31,7 @@ public class DatabaseUrlEnvironmentPostProcessor implements EnvironmentPostProce
     @Override
     public void postProcessEnvironment(ConfigurableEnvironment environment,
                                        SpringApplication application) {
-        String raw = environment.getProperty("DATABASE_URL");
+        String raw = unwrap(environment.getProperty("DATABASE_URL"));
         if (raw == null || raw.isBlank() || raw.startsWith("jdbc:")) {
             return;
         }
@@ -68,6 +68,28 @@ public class DatabaseUrlEnvironmentPostProcessor implements EnvironmentPostProce
 
         // addFirst so this beats the DATABASE_URL placeholder in application.yml.
         environment.getPropertySources().addFirst(new MapPropertySource(SOURCE_NAME, resolved));
+    }
+
+    /**
+     * Strips surrounding whitespace and quotes.
+     *
+     * A host that reads its variable names out of a committed .env file can carry the quotes in
+     * that file through to the value it injects, and a URL that arrives as "postgresql://..."
+     * with the quotes attached matches none of the scheme checks below. It then reaches the
+     * connection pool untouched and fails with 'url' must start with "jdbc", which says nothing
+     * about the two stray characters that caused it. Cheaper to tolerate than to diagnose again.
+     */
+    private String unwrap(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        if (trimmed.length() >= 2
+                && ((trimmed.startsWith("\"") && trimmed.endsWith("\""))
+                    || (trimmed.startsWith("'") && trimmed.endsWith("'")))) {
+            return trimmed.substring(1, trimmed.length() - 1).trim();
+        }
+        return trimmed;
     }
 
     /** Passwords arrive percent-encoded when they contain characters a URL reserves. */
