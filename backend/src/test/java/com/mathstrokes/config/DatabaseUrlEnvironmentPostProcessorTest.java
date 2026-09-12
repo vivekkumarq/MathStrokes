@@ -37,6 +37,30 @@ class DatabaseUrlEnvironmentPostProcessorTest {
     }
 
     @Test
+    @DisplayName("DATABASE_JDBC_URL overrides a DATABASE_URL the host will not let us replace")
+    void overrideWins() {
+        MockEnvironment environment = new MockEnvironment();
+        environment.setProperty("DATABASE_URL", "postgresql://u:p@platform.example/db");
+        environment.setProperty("DATABASE_JDBC_URL", "jdbc:postgresql://chosen.example/iota");
+        processor.postProcessEnvironment(environment, null);
+
+        assertThat(environment.getProperty("spring.datasource.url"))
+                .isEqualTo("jdbc:postgresql://chosen.example/iota");
+    }
+
+    @Test
+    @DisplayName("an override left as empty quotes falls through to DATABASE_URL")
+    void emptyOverrideIsIgnored() {
+        MockEnvironment environment = new MockEnvironment();
+        environment.setProperty("DATABASE_URL", "postgresql://u:p@platform.example/db");
+        environment.setProperty("DATABASE_JDBC_URL", "\"\"");
+        processor.postProcessEnvironment(environment, null);
+
+        assertThat(environment.getProperty("spring.datasource.url"))
+                .isEqualTo("jdbc:postgresql://platform.example/db");
+    }
+
+    @Test
     @DisplayName("a quoted JDBC URL is republished without the quotes")
     void cleansQuotedJdbcUrl() {
         MockEnvironment environment = process("\"jdbc:postgresql://db.internal:5432/iota\"");
