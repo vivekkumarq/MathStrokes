@@ -37,6 +37,15 @@ class DatabaseUrlEnvironmentPostProcessorTest {
     }
 
     @Test
+    @DisplayName("a quoted JDBC URL is republished without the quotes")
+    void cleansQuotedJdbcUrl() {
+        MockEnvironment environment = process("\"jdbc:postgresql://db.internal:5432/iota\"");
+
+        assertThat(environment.getProperty("spring.datasource.url"))
+                .isEqualTo("jdbc:postgresql://db.internal:5432/iota");
+    }
+
+    @Test
     @DisplayName("a value wrapped in quotes by the host is still recognised")
     void toleratesQuotedValue() {
         MockEnvironment environment =
