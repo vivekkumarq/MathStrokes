@@ -31,6 +31,18 @@ public class DatabaseUrlEnvironmentPostProcessor implements EnvironmentPostProce
     @Override
     public void postProcessEnvironment(ConfigurableEnvironment environment,
                                        SpringApplication application) {
+        // An explicit JDBC URL is a deliberate override. This class publishes with
+        // addFirst, so without standing down it would quietly beat the very setting
+        // someone reached for to get around it.
+        String override = unwrap(environment.getProperty("DATABASE_JDBC_URL"));
+        if (override != null && !override.isBlank()) {
+            // Publish the unwrapped value rather than leaving the placeholder to resolve the raw
+            // one: a template that ships DATABASE_JDBC_URL="" can arrive as two literal quote
+            // characters, which is neither blank nor a URL.
+            publish(environment, Map.<String, Object>of("spring.datasource.url", override));
+            return;
+        }
+
         String original = environment.getProperty("DATABASE_URL");
         String raw = unwrap(original);
         if (raw == null || raw.isBlank()) {

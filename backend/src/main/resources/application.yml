@@ -4,7 +4,12 @@ spring:
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/mathstrokes}
+    # DATABASE_JDBC_URL is the escape hatch. Some hosts inject a DATABASE_URL this
+    # application cannot use and will not let you override it; setting a plain JDBC URL
+    # here takes precedence and sidesteps the translation entirely. Supply
+    # DATABASE_USERNAME and DATABASE_PASSWORD alongside it, because a JDBC URL set this
+    # way carries no credentials of its own.
+    url: ${DATABASE_JDBC_URL:${DATABASE_URL:jdbc:postgresql://localhost:5432/mathstrokes}}
     username: ${DATABASE_USERNAME:mathstrokes}
     password: ${DATABASE_PASSWORD:mathstrokes}
     hikari:
