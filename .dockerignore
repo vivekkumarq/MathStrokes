@@ -1,0 +1,9 @@
+# The root build only needs backend/. Everything else just makes the context bigger and the
+# upload slower - and backups/ holds database dumps with real student names and phone numbers,
+# which must never leave this machine even into a build context.
+backups/
+frontend/
+docs/
+scripts/
+.git/
+*.md
