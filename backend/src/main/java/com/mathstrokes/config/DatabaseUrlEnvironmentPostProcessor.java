@@ -31,11 +31,28 @@ public class DatabaseUrlEnvironmentPostProcessor implements EnvironmentPostProce
     @Override
     public void postProcessEnvironment(ConfigurableEnvironment environment,
                                        SpringApplication application) {
-        String raw = unwrap(environment.getProperty("DATABASE_URL"));
-        if (raw == null || raw.isBlank() || raw.startsWith("jdbc:")) {
+        String original = environment.getProperty("DATABASE_URL");
+        String raw = unwrap(original);
+        if (raw == null || raw.isBlank()) {
             return;
         }
+
+        // Already a JDBC URL. If unwrapping changed it, the stray characters are still in the
+        // value the pool would resolve, so republish the cleaned one rather than returning and
+        // letting Hikari fail on quotes nobody can see.
+        if (raw.startsWith("jdbc:")) {
+            if (!raw.equals(original)) {
+                publish(environment, Map.<String, Object>of("spring.datasource.url", raw));
+            }
+            return;
+        }
+
         if (!raw.startsWith("postgres://") && !raw.startsWith("postgresql://")) {
+            // Nothing here can translate it, and the failure it causes downstream names Hikari
+            // rather than this. Say what arrived - the shape only, never the credentials.
+            System.err.println("DATABASE_URL is not a URL this application recognises: "
+                    + raw.length() + " characters beginning \""
+                    + raw.substring(0, Math.min(12, raw.length())) + "\"");
             return;
         }
 
@@ -66,7 +83,11 @@ public class DatabaseUrlEnvironmentPostProcessor implements EnvironmentPostProce
             }
         }
 
-        // addFirst so this beats the DATABASE_URL placeholder in application.yml.
+        publish(environment, resolved);
+    }
+
+    /** addFirst so this beats the DATABASE_URL placeholder in application.yml. */
+    private void publish(ConfigurableEnvironment environment, Map<String, Object> resolved) {
         environment.getPropertySources().addFirst(new MapPropertySource(SOURCE_NAME, resolved));
     }
 
