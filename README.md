@@ -25,19 +25,22 @@ data model, every endpoint, the admin question-authoring flow and deployment.
 | Piece | Status | Where |
 |---|---|---|
 | Frontend | **Live** | https://iota-jee.netlify.app (Netlify) |
-| Backend API | **Live** | `iota-api-jjai.onrender.com/api` — container from `backend/Dockerfile` |
-| Database | **Live** | Render PostgreSQL 18.6, private network only |
+| Backend API | **Live** | `iota-api.antideploy.com/api` — container from the root `Dockerfile` |
+| Database | **Live** | Neon PostgreSQL 18.6, project `iota`, Singapore |
 
 Netlify serves static files and **cannot run a JVM**, so the API has its own host. The browser
 calls it directly rather than through the Netlify proxy — [Where it lives](#where-it-lives)
 explains why.
 
-> **The database is on a 30-day timer.** Free Render PostgreSQL instances expire 30 days after
-> creation, allow a 14-day grace period, and are then deleted along with their data. The free tier
-> supports no backup mechanism at all. A move to Northflank, whose free tier is always-on and
-> permits scheduled backups, is written up in
-> [`docs/MIGRATING-TO-NORTHFLANK.md`](docs/MIGRATING-TO-NORTHFLANK.md). Until that lands, take a
-> copy with `scripts/backup-db.sh` and keep it somewhere other than this machine.
+> **Render is kept as the rollback.** It still redeploys on every push, so it stays current, but
+> nothing points at it. To go back, put `https://iota-api-jjai.onrender.com/api` into **both**
+> `netlify.toml` and `frontend/src/environments/environment.prod.ts`, then redeploy the frontend.
+> Its own database expires on 29 September 2026, after which the rollback is compute only.
+
+> **There is no push-to-deploy for the backend.** Antideploy's GitHub app callback points at a
+> host that now only redirects, so the installation never registers. Every backend release is a
+> manual folder upload of a `git archive` export — never the working directory, which contains
+> `backups/`.
 
 ---
 
@@ -97,8 +100,9 @@ explains why.
 │   ├── ARCHITECTURE.md         12 decision records
 │   └── DEPLOYMENT.md           hosting walkthrough
 ├── e2e/                        end-to-end checks (105 assertions)
+├── Dockerfile                  backend image, built from the repository root
 ├── netlify.toml                frontend build, API proxy, SPA fallback, headers
-└── render.yaml                 backend service and database blueprint
+└── render.yaml                 rollback host's blueprint
 ```
 
 The backend package names are `com.mathstrokes.*` and the database is `mathstrokes`. Those are
@@ -342,8 +346,9 @@ the per-row costs and the ratios are what carry over.
 | Layer | Host | Address | Notes |
 |---|---|---|---|
 | Frontend | Netlify CDN | `iota-jee.netlify.app` | Static Angular bundle. No data at rest. |
-| API | Render, Docker, Singapore | `iota-api-jjai.onrender.com/api` | Free plan |
-| Database | Render PostgreSQL 18.6 | `iota-db`, private network only | No public ingress |
+| API | Antideploy, Docker, Cloud Run | `iota-api.antideploy.com/api` | Free plan, 1 vCPU / 1 GiB, scales to zero |
+| API (rollback) | Render, Docker, Singapore | `iota-api-jjai.onrender.com/api` | Free plan, 0.15 CPU / 512 MB. Running, unused |
+| Database | Neon PostgreSQL 18.6 | project `iota`, Singapore | Free plan, scales to zero after 5 min |
 
 Development runs PostgreSQL 17 and production is on 18.6, which is worth knowing because Flyway
 11.7.2 logs a warning on every production boot: its latest tested version is 17. Nothing has
@@ -358,32 +363,48 @@ day into a 504. Going direct costs a CORS preflight of a few milliseconds and re
 since the browser's own timeout is measured in minutes. CORS is configured for the Netlify origin
 instead.
 
-The database has no public endpoint, which is the right default but has a practical consequence:
-it cannot be opened from a laptop with pgAdmin or `psql`. Everything about production has to be
-reached through the API.
+Neon's endpoint is public and reachable with `psql` from a laptop, which the previous host's was
+not. Treat that as a responsibility rather than a convenience: the connection string is the only
+thing standing between a laptop and every student record.
 
-It also has an expiry date. Free Render PostgreSQL instances are deleted 30 days after creation
-plus a 14-day grace period, and the free tier offers no backups, so the only durable copy is one
-taken deliberately with `scripts/backup-db.sh`. That script refuses to run when the local
-`pg_dump` is older than the server — development is on 17 and production on 18.6, so the client
-that works locally cannot back up production, and finding that out during an emergency would be
-the wrong time. The planned move to an always-on host with scheduled backups is in
-[`docs/MIGRATING-TO-NORTHFLANK.md`](docs/MIGRATING-TO-NORTHFLANK.md).
+Neon's free plan has no expiry, but it does have a hard ceiling: **100 CU-hours per project per
+month**, after which compute is suspended until the next billing month. Data is never deleted, but
+the site goes down. At the 0.25 CU baseline that is roughly 400 hours of active database time,
+which is ample — *provided the database is allowed to sleep*. Two things would break that, and
+both are easy to do by accident:
+
+- Raising `DB_POOL_MIN` above 0. Held connections keep the compute awake.
+- Adding an uptime pinger that hits `/api/actuator/health`. That endpoint checks the datasource,
+  so a ping every ten minutes keeps Neon awake around the clock — 730 hours × 0.25 CU is 182
+  CU-hours, and the month runs out around day 17.
+
+Backups are still deliberate: `scripts/backup-db.sh`. It refuses to run when the local `pg_dump`
+is older than the server — development is on 17 and production on 18.6, so the client that works
+locally cannot back up production, and finding that out during an emergency would be the wrong
+time.
 
 ### How the connection is wired
 
-Render injects `DATABASE_URL` through `fromDatabase` in `render.yaml`, so the password is generated
-by the platform and never written into the repository. It arrives in libpq form, which JDBC cannot
-parse:
+Both hosts inject `DATABASE_URL` themselves, so the password is never written into the repository.
+It arrives in libpq form, which JDBC cannot parse:
 
 ```
-Render provides   postgresql://user:pass@host/db
-JDBC needs        jdbc:postgresql://host/db  + user and password supplied separately
+Platform provides   postgresql://user:pass@host/db
+JDBC needs          jdbc:postgresql://host/db  + user and password supplied separately
 ```
 
 `DatabaseUrlEnvironmentPostProcessor` rewrites it. It is registered in `META-INF/spring.factories`
 as an `EnvironmentPostProcessor` rather than declared as a bean, because by the time beans are
 constructed the datasource has already tried to start and failed.
+
+It also tolerates a value that arrives wrapped in quotes or padded with whitespace, which a host
+that reads its variable names out of a committed `.env` file can produce. That is not a
+hypothetical: it cost three failed deploys, because the resulting error names Hikari
+(`'url' must start with "jdbc"`) and says nothing about the two stray characters behind it.
+
+When a host owns `DATABASE_URL` and will not let you replace it, set **`DATABASE_JDBC_URL`**
+instead. It takes precedence, carries no credentials of its own, and pairs with
+`DATABASE_USERNAME` and `DATABASE_PASSWORD`. The post-processor stands down when it is set.
 
 ### Seventeen tables in four layers
 
@@ -514,13 +535,12 @@ the part that feels large because it was authored by hand — is a rounding erro
 attempts will eventually occupy. Adding a tenth chapter of questions costs less than two students
 sitting one test.
 
-The 1 GB figure is Render's documented free-tier allowance, and it is fixed rather than a soft
-quota. The open question beside it — whether the free instance carries an expiry date — has since
-been answered, and badly: it expires 30 days after creation, allows 14 days' grace, and is then
-deleted with its data, with no backup mechanism on that tier. That matters more than anything
-below, because it ends with the data gone rather than merely slow. The creation date of `iota-db`
-is therefore the single most important number about this deployment, and it is only visible on the
-Render dashboard.
+That 1 GB figure was Render's allowance. Neon's free plan gives **0.5 GB per project**, of which
+the current database uses about 37 MB — roughly 7%, or room for something like twenty thousand
+questions. Size is not the constraint. Compute is: see the CU-hour ceiling under
+[Where it lives](#where-it-lives), which suspends the database rather than growing a bill.
+
+The expiry that used to dominate this section is gone. Neon's free plan has no deletion date.
 
 ### What runs out first
 
@@ -529,7 +549,8 @@ has already happened. The database's *size* is not near the top; its *expiry* is
 
 | Limit | Severity | Detail |
 |---|---|---|
-| Free database expiry | **Worst** | Free Render PostgreSQL expires 30 days after creation, allows 14 days' grace, then is deleted with its data — and the free tier supports no backups. This is the only limit here that destroys work rather than delaying it. `scripts/backup-db.sh` is the interim answer; [migrating off](docs/MIGRATING-TO-NORTHFLANK.md) is the real one. |
+| Neon compute ceiling | **Worst** | 100 CU-hours per project per month, then compute suspends until the next billing month. Data survives; the site does not. Roughly 400 hours of active database time at the 0.25 CU baseline, which is plenty *only while the database is allowed to sleep* — so never raise `DB_POOL_MIN` above 0 and never point an uptime pinger at `/api/actuator/health`, which checks the datasource. The old worst entry here, Render's 30-day database expiry, no longer applies. |
+| Login burst | Bad, and the one a class will hit | BCrypt is strength 12, so each sign-in costs a real hash. Measured on the current host: 50 simultaneous logins clear in ~20 s, median wait 11–13 s, slowest ~20 s. Nothing fails, but a class signing in at the bell all sees a spinner. Stagger sign-ins over ten minutes and the queue never forms. The same burst on the rollback host takes roughly 75 s. |
 | Cold start | Bad, and poorly understood | The free service sleeps after ~15 minutes idle. Measured after a deliberate 17-minute idle: a 0.49 s preflight and a 7.97 s sign-in, against 1.4 s warm. But two keep-alive runs got no response at all within 120 s, and that has not been reproduced on demand, so the wake cost is usually seconds and occasionally far worse for reasons not yet established. A preflight answering in 0.49 s beside a 7.97 s login points at the connection pool, not a JVM boot — the preflight never touches the database. |
 | The keep-warm Action | Ineffective | Scheduled `*/10`, it fired **four times in 21 hours** against an expected 126. GitHub deprioritises high-frequency schedules on shared runners; no cron tuning fixes that. An external pinger or an always-on host is the answer. |
 | 126 inserts on start | By design | The price of historical integrity, paid where the student is watching. Fixed per attempt, but thirty students starting together is 3,780 inserts arriving at once, and that shape has not been load-tested. |
@@ -878,12 +899,15 @@ documented here because they are the behaviours the platform is judged on:
 ## Deployment
 
 Detailed instructions, including free-tier hosting, are in
-[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md). The move from Render to Northflank — why, and the
-step-by-step — is in [`docs/MIGRATING-TO-NORTHFLANK.md`](docs/MIGRATING-TO-NORTHFLANK.md). In
+[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+[`docs/MIGRATING-TO-NORTHFLANK.md`](docs/MIGRATING-TO-NORTHFLANK.md) describes a move that was
+never made — the backend went to Antideploy and the database to Neon instead. It is kept because
+its backup-and-verify sequence is the one actually used, but read it as a method, not a plan. In
 outline:
 
-- **Backend** — a container built from `backend/Dockerfile`, deployable to any free-tier host that
-  runs containers. Configure it entirely through environment variables.
+- **Backend** — a container built from the root `Dockerfile` (identical to `backend/Dockerfile`
+  but with the build context at the repository root, which some hosts require), deployable to any
+  free-tier host that runs containers. Configure it entirely through environment variables.
 - **Database** — any managed PostgreSQL. Flyway migrates on first boot.
 - **Frontend** — `npm run build` produces static files for any static host or CDN.
 
