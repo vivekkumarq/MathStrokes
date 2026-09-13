@@ -3,6 +3,12 @@
 The application is one container plus a PostgreSQL database plus a folder of static files. That is
 deliberately the whole shape of it — there is nothing to orchestrate.
 
+> **What is actually deployed today:** frontend on Netlify (`iota-jee.netlify.app`), backend on
+> Antideploy (`iota-api.antideploy.com`, built from the **root** `Dockerfile`), database on Neon
+> (project `iota`, Singapore). Render is kept running as a rollback and nothing points at it.
+> The rest of this document is generic guidance and still names Render in places, because it is
+> written for whoever deploys this next rather than for the current deployment.
+
 ---
 
 ## What you need
