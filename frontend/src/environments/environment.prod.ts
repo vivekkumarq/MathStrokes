@@ -21,5 +21,5 @@
  */
 export const environment = {
   production: true,
-  apiBaseUrl: 'https://iota-api.antideploy.com/api',
+  apiBaseUrl: 'https://iota-api-jjai.onrender.com/api',
 };
