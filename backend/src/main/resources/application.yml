@@ -14,7 +14,13 @@ spring:
     password: ${DATABASE_PASSWORD:mathstrokes}
     hikari:
       pool-name: mathstrokes-pool
-      maximum-pool-size: ${DB_POOL_MAX:10}
+      # Sized for a class, not for one person clicking. Ten was the Hikari default and it is
+      # too few: thirty students sitting a test at once means roughly thirty requests in
+      # flight, so the eleventh waits on connection-timeout below and surfaces as a 500 that
+      # blames nothing in particular. Measured: a 30-student run collapsed with 26 gateway
+      # timeouts against a pool of 10. Connections are cheap here - Neon allows 901 - and an
+      # idle pool costs nothing because minimum-idle is 0.
+      maximum-pool-size: ${DB_POOL_MAX:30}
       # Idle connections keep a serverless Postgres awake, and Neon's free plan meters compute
       # by the hour: exhaust the monthly allowance and it suspends the database until the next
       # billing month. A pool that holds connections open overnight would spend the entire
