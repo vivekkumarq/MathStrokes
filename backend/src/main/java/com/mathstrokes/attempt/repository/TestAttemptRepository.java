@@ -90,6 +90,17 @@ public interface TestAttemptRepository extends JpaRepository<TestAttempt, Long> 
             """)
     List<Long> findExpiredActiveAttemptIds(@Param("now") Instant now, Pageable pageable);
 
+    /**
+     * The latest deadline among attempts still in progress, or null when there are none. Read
+     * once per boot so the expiry sweep knows how long it must keep running for attempts that
+     * started before a restart.
+     */
+    @Query("""
+            select max(a.expiresAt) from TestAttempt a
+            where a.status = com.mathstrokes.common.enums.AttemptStatus.ACTIVE
+            """)
+    Instant findLatestActiveDeadline();
+
     long countByStatus(AttemptStatus status);
 
     @Query("select count(a) from TestAttempt a where a.startedAt >= :since")
