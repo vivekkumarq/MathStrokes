@@ -48,6 +48,7 @@ public class AttemptService {
     private final AttemptSnapshotService snapshotService;
     private final UserRepository userRepository;
     private final AttemptMapper mapper;
+    private final AttemptDeadlineTracker deadlines;
 
     public AttemptService(TestAttemptRepository attemptRepository,
                           AttemptQuestionRepository attemptQuestionRepository,
@@ -57,7 +58,8 @@ public class AttemptService {
                           QuestionSelectionService selectionService,
                           AttemptSnapshotService snapshotService,
                           UserRepository userRepository,
-                          AttemptMapper mapper) {
+                          AttemptMapper mapper,
+                          AttemptDeadlineTracker deadlines) {
         this.attemptRepository = attemptRepository;
         this.attemptQuestionRepository = attemptQuestionRepository;
         this.answerRepository = answerRepository;
@@ -67,6 +69,7 @@ public class AttemptService {
         this.snapshotService = snapshotService;
         this.userRepository = userRepository;
         this.mapper = mapper;
+        this.deadlines = deadlines;
     }
 
     /**
@@ -156,6 +159,9 @@ public class AttemptService {
 
         try {
             attemptRepository.saveAndFlush(attempt);
+            // Wakes the expiry sweep until this deadline has passed. Only ever raises the
+            // tracked value, so reporting it here cannot race a sweep into missing it.
+            deadlines.cover(attempt.getExpiresAt());
         } catch (DataIntegrityViolationException ex) {
             // Two "start" clicks landing together: the partial unique index on ACTIVE attempts
             // lets exactly one through. Return whichever won rather than showing an error.
