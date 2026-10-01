@@ -374,9 +374,12 @@ which is ample — *provided the database is allowed to sleep*. Two things would
 both are easy to do by accident:
 
 - Raising `DB_POOL_MIN` above 0. Held connections keep the compute awake.
-- Adding an uptime pinger that hits `/api/actuator/health`. That endpoint checks the datasource,
-  so a ping every ten minutes keeps Neon awake around the clock — 730 hours × 0.25 CU is 182
-  CU-hours, and the month runs out around day 17.
+- Re-enabling the database health check. `management.health.db.enabled` is false so that
+  `/api/actuator/health` never touches the datasource. With it on, any monitor polling that
+  endpoint every ten minutes keeps Neon awake around the clock — 730 hours × 0.25 CU is 182
+  CU-hours, and the month runs out around day 17. September 2026 went this way: a keep-warm
+  Action kept a backend connected to Neon awake, its health checks and a 30-second expiry sweep
+  (both since fixed) kept the database busy, and the quota ran out on the 29th.
 
 Backups are still deliberate: `scripts/backup-db.sh`. It refuses to run when the local `pg_dump`
 is older than the server — development is on 17 and production on 18.6, so the client that works
@@ -549,10 +552,9 @@ has already happened. The database's *size* is not near the top; its *expiry* is
 
 | Limit | Severity | Detail |
 |---|---|---|
-| Neon compute ceiling | **Worst** | 100 CU-hours per project per month, then compute suspends until the next billing month. Data survives; the site does not. Roughly 400 hours of active database time at the 0.25 CU baseline, which is plenty *only while the database is allowed to sleep* — so never raise `DB_POOL_MIN` above 0 and never point an uptime pinger at `/api/actuator/health`, which checks the datasource. The old worst entry here, Render's 30-day database expiry, no longer applies. |
+| Neon compute ceiling | **Worst** | 100 CU-hours per project per month, then compute suspends until the next billing month. Data survives; the site does not. Roughly 400 hours of active database time at the 0.25 CU baseline, which is plenty *only while the database is allowed to sleep* — so never raise `DB_POOL_MIN` above 0 and never re-enable the database health check, or any monitor polling `/api/actuator/health` keeps it awake. The old worst entry here, Render's 30-day database expiry, no longer applies. |
 | Login burst | Bad, and the one a class will hit | BCrypt is strength 12, so each sign-in costs a real hash. Measured on the current host: 50 simultaneous logins clear in ~20 s, median wait 11–13 s, slowest ~20 s. Nothing fails, but a class signing in at the bell all sees a spinner. Stagger sign-ins over ten minutes and the queue never forms. The same burst on the rollback host takes roughly 75 s. |
-| Cold start | Bad, and the reason the browser calls the API directly | The container scales to zero when idle, and a full JVM boot from cold measured **44.5 s** — against 0.6 s warm. A partially-warm container answered in 2.8 s, which is how this gets under-estimated: measure it after a real idle period or the number is meaningless. 44 s is comfortably past Netlify's ~29 s proxy ceiling, which is precisely why `environment.prod.ts` calls the backend directly; through the proxy this would be a 504 rather than a slow success. **To warm it before a class, request `/api/actuator/info`** — it returns in about a second and, unlike `/api/actuator/health`, does not touch the datasource, so it wakes the JVM without waking Neon and spending CU-hours. |
-| The keep-warm Action | Ineffective | Scheduled `*/10`, it fired **four times in 21 hours** against an expected 126. GitHub deprioritises high-frequency schedules on shared runners; no cron tuning fixes that. An external pinger or an always-on host is the answer. |
+| Cold start | Bad, and the reason the browser calls the API directly | The container scales to zero when idle, and a full JVM boot from cold measured **44.5 s** — against 0.6 s warm. A partially-warm container answered in 2.8 s, which is how this gets under-estimated: measure it after a real idle period or the number is meaningless. 44 s is comfortably past Netlify's ~29 s proxy ceiling, which is precisely why `environment.prod.ts` calls the backend directly; through the proxy this would be a 504 rather than a slow success. **To warm it before a class, request `/api/actuator/health`** — it returns in about a second and does not touch the datasource, so it wakes the JVM without waking Neon and spending CU-hours. |
 | 126 inserts on start | By design | The price of historical integrity, paid where the student is watching. Fixed per attempt, but thirty students starting together is 3,780 inserts arriving at once, and that shape has not been load-tested. |
 | Connection pool | Watch | Local PostgreSQL allows 100 connections; free hosted tiers usually allow considerably fewer, and the pool is sized for the generous case. The failure mode is connection exhaustion surfacing as timeouts rather than as a clear error. Worth pinning the pool size once the real limit is known. |
 | Sequential scans on `questions` | Latent | Fine at 1,522 questions. The first thing to revisit at ten times that. |
