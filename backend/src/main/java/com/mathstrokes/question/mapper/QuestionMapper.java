@@ -2,6 +2,7 @@ package com.mathstrokes.question.mapper;
 
 import java.util.List;
 
+import com.mathstrokes.common.util.LatexExcerpt;
 import com.mathstrokes.question.dto.QuestionOptionResponse;
 import com.mathstrokes.question.dto.QuestionResponse;
 import com.mathstrokes.question.dto.QuestionSummaryResponse;
@@ -44,7 +45,7 @@ public class QuestionMapper {
                 question.getExamPattern(),
                 question.getDifficulty(),
                 question.getQuestionType(),
-                preview(question.getQuestionContent()),
+                LatexExcerpt.of(question.getQuestionContent(), PREVIEW_LENGTH),
                 question.getStatus(),
                 question.getOptions().size(),
                 question.getUpdatedAt(),
@@ -58,19 +59,5 @@ public class QuestionMapper {
                 .map(o -> new QuestionOptionResponse(o.getId(), o.getOptionKey(), o.getContent(),
                         o.getDisplayOrder(), o.isCorrect()))
                 .toList();
-    }
-
-    /**
-     * Short excerpt for the grid. LaTeX is left as-is rather than stripped: a truncated formula
-     * still tells the teacher which question this is, and the grid does not render maths.
-     */
-    private String preview(String content) {
-        if (content == null) {
-            return "";
-        }
-        String collapsed = content.replaceAll("\\s+", " ").trim();
-        return collapsed.length() <= PREVIEW_LENGTH
-                ? collapsed
-                : collapsed.substring(0, PREVIEW_LENGTH) + "...";
     }
 }
