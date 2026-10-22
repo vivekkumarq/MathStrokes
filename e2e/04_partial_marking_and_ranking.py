@@ -6,11 +6,10 @@ API = os.environ.get('MATHSTROKES_API', 'http://localhost:8080/api')
 DB_NAME = os.environ.get('MATHSTROKES_DB', 'mathstrokes')
 DB_USER = os.environ.get('MATHSTROKES_DB_USER', 'mathstrokes')
 DB_PASSWORD = os.environ.get('MATHSTROKES_DB_PASSWORD', 'mathstrokes')
-PSQL = os.environ.get('PSQL_PATH', r'C:\Program Files\PostgreSQLin\psql.exe')
+PSQL = os.environ.get('PSQL_PATH', r'C:\Program Files\PostgreSQL\17\bin\psql.exe')
 STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.state.json')
 
 
-PSQL = r'C:\Program Files\PostgreSQL\17\bin\psql.exe'
 
 def call(method, path, token=None, body=None):
     data = json.dumps(body).encode() if body is not None else None
