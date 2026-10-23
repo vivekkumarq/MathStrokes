@@ -64,6 +64,11 @@
 
     @if (loading()) {
       <p class="empty">Loading your attempts...</p>
+    } @else if (historyFailed()) {
+      <p class="empty">
+        Your attempts could not be loaded just now.
+        <a routerLink="/student/tests">Browse the available tests</a> meanwhile, or reload the page.
+      </p>
     } @else if (recent().length === 0) {
       <p class="empty">
         You have not sat a test yet.
