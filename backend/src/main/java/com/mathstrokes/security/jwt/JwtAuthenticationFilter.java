@@ -23,10 +23,15 @@ import org.springframework.web.filter.OncePerRequestFilter;
  *
  * The principal is rebuilt purely from token claims, so a request costs no database round trip.
  * A malformed or expired token is not an error here: the context is simply left empty and the
- * entry point produces the 401, which keeps anonymous endpoints reachable.
+ * entry point produces the 401, which keeps anonymous endpoints reachable. Why the token was
+ * refused is left on the request, so that 401 can say TOKEN_EXPIRED rather than a bare
+ * AUTHENTICATION_FAILED - the client refreshes only on the former.
  */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    /** Request attribute holding the {@code ErrorCode} a presented bearer token was refused with. */
+    public static final String REJECTION_ATTRIBUTE = JwtAuthenticationFilter.class.getName() + ".rejection";
 
     private static final String BEARER_PREFIX = "Bearer ";
 
@@ -52,6 +57,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } catch (ApiException ex) {
                 SecurityContextHolder.clearContext();
+                request.setAttribute(REJECTION_ATTRIBUTE, ex.getErrorCode());
                 logger.debug("Rejected bearer token: " + ex.getMessage());
             }
         }
