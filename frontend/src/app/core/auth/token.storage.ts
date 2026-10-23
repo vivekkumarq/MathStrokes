@@ -50,6 +50,17 @@ export class TokenStorage {
     this.writeRaw(EXPIRES_AT_KEY, String(expiresAt));
   }
 
+  /**
+   * Replaces the in-memory copy with what is persisted. For when another tab has rotated the
+   * tokens or signed out: the memory copy otherwise wins every read and goes stale.
+   */
+  reloadFromStorage(): void {
+    this.memoryTokens = this.readJson<AuthTokens>(TOKENS_KEY);
+    this.memoryUser = this.readJson<AuthUser>(USER_KEY);
+    this.memoryExpiresAt = null;
+    this.memoryExpiresAt = this.readExpiresAt();
+  }
+
   clear(): void {
     this.memoryTokens = null;
     this.memoryUser = null;

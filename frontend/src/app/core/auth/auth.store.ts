@@ -31,6 +31,20 @@ export class AuthStore {
       this.tokensSignal.set(tokens);
       this.userSignal.set(user);
     }
+
+    // Refresh tokens rotate, so when another tab refreshes, the token this tab holds is spent.
+    // Presenting it would be refused - and the server reads a spent token as a stolen one and
+    // revokes every session, the exam running in the other tab included. Follow the other tab.
+    window.addEventListener('storage', (event) => {
+      if (event.key !== null && !event.key.startsWith('iota.auth.')) {
+        return;
+      }
+      this.storage.reloadFromStorage();
+      const latestTokens = this.storage.readTokens();
+      const latestUser = this.storage.readUser();
+      this.tokensSignal.set(latestTokens && latestUser ? latestTokens : null);
+      this.userSignal.set(latestTokens && latestUser ? latestUser : null);
+    });
   }
 
   /** Read outside the reactive graph — the interceptor needs a plain value, not a signal read. */
