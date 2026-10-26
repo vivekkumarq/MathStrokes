@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
 import {
   AbstractControl,
   FormArray,
@@ -21,7 +21,11 @@ import {
   QuestionResponse,
   QuestionStatus,
 } from '../../../../core/models';
-import { applyServerErrors, clearServerErrors } from '../../../../shared/forms/server-errors';
+import {
+  applyServerErrors,
+  clearServerErrors,
+  serverErrorOf,
+} from '../../../../shared/forms/server-errors';
 import { hasUnclosedDelimiter } from '../../../../shared/math/latex-renderer';
 import { MathContent } from '../../../../shared/math/math-content';
 import { AdminCatalogService } from '../../data/admin-catalog.service';
@@ -58,7 +62,7 @@ function correctAnswerRule(group: AbstractControl): ValidationErrors | null {
   templateUrl: './question-editor.html',
   styleUrl: './question-editor.scss',
 })
-export class QuestionEditor {
+export class QuestionEditor implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly questions = inject(QuestionService);
   private readonly catalog = inject(AdminCatalogService);
@@ -71,6 +75,9 @@ export class QuestionEditor {
   protected readonly difficulties = DIFFICULTIES;
   protected readonly types = QUESTION_TYPES;
   protected readonly optionKeys = OPTION_KEYS;
+  /** The server's message for a field, e.g. HTML refused in the stem. Without it on screen a
+   * refused save looked like a button that did nothing. */
+  protected readonly serverErrorOf = serverErrorOf;
 
   protected readonly chapters = signal<ChapterResponse[]>([]);
   protected readonly loading = signal(false);
@@ -127,7 +134,13 @@ export class QuestionEditor {
     this.form.controls.options.valueChanges.subscribe((options) =>
       this.optionPreviews.set(options.map((o) => o.content ?? '')),
     );
+  }
 
+  /**
+   * Not in the constructor: the router binds `id` after construction, so read there it is always
+   * undefined, and every existing question opened as a blank form.
+   */
+  ngOnInit(): void {
     const id = this.id();
     if (id !== undefined && id !== 'new') {
       this.load(Number(id));
