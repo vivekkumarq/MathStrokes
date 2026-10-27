@@ -16,8 +16,7 @@
  *
  * That reasoning outlives the host it was written for. This backend also scales to zero,
  * so the cold start it describes is still there and the proxy would still time out on it.
- * The previous host stays running as a rollback: put its URL back here and in
- * netlify.toml, redeploy, and the site is served by it again.
+ * The previous host, Render, was suspended on 30 September 2026 and is not a rollback.
  */
 export const environment = {
   production: true,

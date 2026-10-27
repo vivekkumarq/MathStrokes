@@ -2,9 +2,8 @@
 
 **An online Mathematics examination platform for JEE aspirants.**
 
-> **Live:** https://iota-jee.netlify.app
-> The frontend is deployed. The API is not yet hosted, so sign-in does not work on the public
-> site — see [Deployment status](#deployment-status).
+> **Live:** https://iota-jee.netlify.app — frontend, API and database are all hosted; see
+> [Deployment status](#deployment-status).
 
 *iota* is the Greek letter iota, the standard name in Indian mathematics teaching for the
 imaginary unit $i = \sqrt{-1}$, and also the word for the smallest quantity.
@@ -32,10 +31,9 @@ Netlify serves static files and **cannot run a JVM**, so the API has its own hos
 calls it directly rather than through the Netlify proxy — [Where it lives](#where-it-lives)
 explains why.
 
-> **Render is kept as the rollback.** It still redeploys on every push, so it stays current, but
-> nothing points at it. To go back, put `https://iota-api-jjai.onrender.com/api` into **both**
-> `netlify.toml` and `frontend/src/environments/environment.prod.ts`, then redeploy the frontend.
-> Its own database expires on 29 September 2026, after which the rollback is compute only.
+> **Render is not a rollback.** The previous host was suspended on 30 September 2026 and its
+> `DATABASE_URL` removed, because its old code was still connected to Neon and spending the free
+> plan's compute. Its database expired on 29 September. `render.yaml` is kept only as a record.
 
 > **There is no push-to-deploy for the backend.** Antideploy's GitHub app callback points at a
 > host that now only redirects, so the installation never registers. Every backend release is a
@@ -87,7 +85,7 @@ explains why.
 │   │   ├── security/           JWT, filters, authorisation
 │   │   └── common/             error envelope, enums, shared DTOs
 │   ├── src/main/resources/db/migration/    V1..V5 Flyway migrations
-│   ├── src/test/java/                      63 unit tests
+│   ├── src/test/java/                      80 unit tests
 │   └── Dockerfile
 ├── frontend/                   Angular 22 (standalone, zoneless, signals)
 │   └── src/app/
@@ -102,7 +100,7 @@ explains why.
 ├── e2e/                        end-to-end checks (117 assertions)
 ├── Dockerfile                  backend image, built from the repository root
 ├── netlify.toml                frontend build, API proxy, SPA fallback, headers
-└── render.yaml                 rollback host's blueprint
+└── render.yaml                 blueprint of the suspended Render host, kept as a record
 ```
 
 The backend package names are `com.mathstrokes.*` and the database is `mathstrokes`. Those are
@@ -347,7 +345,6 @@ the per-row costs and the ratios are what carry over.
 |---|---|---|---|
 | Frontend | Netlify CDN | `iota-jee.netlify.app` | Static Angular bundle. No data at rest. |
 | API | Antideploy, Docker, Cloud Run | `iota-api.antideploy.com/api` | Free plan, 1 vCPU / 1 GiB, scales to zero |
-| API (rollback) | Render, Docker, Singapore | `iota-api-jjai.onrender.com/api` | Free plan, 0.15 CPU / 512 MB. Running, unused |
 | Database | Neon PostgreSQL 18.6 | project `iota`, Singapore | Free plan, scales to zero after 5 min |
 
 Development runs PostgreSQL 17 and production is on 18.6, which is worth knowing because Flyway
@@ -553,7 +550,7 @@ has already happened. The database's *size* is not near the top; its *expiry* is
 | Limit | Severity | Detail |
 |---|---|---|
 | Neon compute ceiling | **Worst** | 100 CU-hours per project per month, then compute suspends until the next billing month. Data survives; the site does not. Roughly 400 hours of active database time at the 0.25 CU baseline, which is plenty *only while the database is allowed to sleep* — so never raise `DB_POOL_MIN` above 0 and never re-enable the database health check, or any monitor polling `/api/actuator/health` keeps it awake. The old worst entry here, Render's 30-day database expiry, no longer applies. |
-| Login burst | Bad, and the one a class will hit | BCrypt is strength 12, so each sign-in costs a real hash. Measured on the current host: 50 simultaneous logins clear in ~20 s, median wait 11–13 s, slowest ~20 s. Nothing fails, but a class signing in at the bell all sees a spinner. Stagger sign-ins over ten minutes and the queue never forms. The same burst on the rollback host takes roughly 75 s. |
+| Login burst | Bad, and the one a class will hit | BCrypt is strength 12, so each sign-in costs a real hash. Measured on the current host: 50 simultaneous logins clear in ~20 s, median wait 11–13 s, slowest ~20 s. Nothing fails, but a class signing in at the bell all sees a spinner. Stagger sign-ins over ten minutes and the queue never forms. The same burst on the old Render host took roughly 75 s. |
 | Cold start | Bad, and the reason the browser calls the API directly | The container scales to zero when idle, and a full JVM boot from cold measured **44.5 s** — against 0.6 s warm. A partially-warm container answered in 2.8 s, which is how this gets under-estimated: measure it after a real idle period or the number is meaningless. 44 s is comfortably past Netlify's ~29 s proxy ceiling, which is precisely why `environment.prod.ts` calls the backend directly; through the proxy this would be a 504 rather than a slow success. **To warm it before a class, request `/api/actuator/health`** — it returns in about a second and does not touch the datasource, so it wakes the JVM without waking Neon and spending CU-hours. |
 | 126 inserts on start | By design | The price of historical integrity, paid where the student is watching. Fixed per attempt, but thirty students starting together is 3,780 inserts arriving at once, and that shape has not been load-tested. |
 | Connection pool | Watch | Local PostgreSQL allows 100 connections; free hosted tiers usually allow considerably fewer, and the pool is sized for the generous case. The failure mode is connection exhaustion surfacing as timeouts rather than as a clear error. Worth pinning the pool size once the real limit is known. |
@@ -862,7 +859,7 @@ cd backend
 ./mvnw test            # unit tests, no database required
 ```
 
-56 tests covering the parts where being wrong is expensive:
+80 tests covering the parts where being wrong is expensive:
 
 | Area | What is asserted |
 |---|---|
