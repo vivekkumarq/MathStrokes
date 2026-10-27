@@ -45,6 +45,12 @@ public interface QuestionRepository
      *
      * {@code excludedIds} must never be empty - pass a sentinel such as List.of(-1L) - because
      * PostgreSQL rejects an empty IN list.
+     *
+     * A question on a class test that has not happened yet is left out. Writing a class-test
+     * question publishes it, so without this a practice paper published today could hand
+     * students tomorrow's exam question. The exclusion is deliberately temporary: once the class
+     * test is closed, archived or past its window the question rejoins the pool, or a term of
+     * weekly class tests would slowly hollow out the bank the draws depend on.
      */
     @Query(value = """
             SELECT q.id FROM questions q
@@ -53,6 +59,12 @@ public interface QuestionRepository
               AND q.status = 'PUBLISHED'
               AND (CAST(:difficulty AS text) IS NULL OR q.difficulty = CAST(:difficulty AS text))
               AND q.id NOT IN (:excludedIds)
+              AND NOT EXISTS (
+                  SELECT 1 FROM test_questions tq JOIN tests t ON t.id = tq.test_id
+                  WHERE tq.question_id = q.id
+                    AND t.test_kind = 'CLASS_TEST'
+                    AND t.status IN ('DRAFT', 'PUBLISHED')
+                    AND (t.scheduled_end_at IS NULL OR t.scheduled_end_at > now()))
             ORDER BY random()
             LIMIT :maxResults
             """, nativeQuery = true)

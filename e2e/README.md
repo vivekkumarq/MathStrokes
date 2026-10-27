@@ -26,6 +26,7 @@ python e2e/03_submit_and_score.py
 python e2e/04_partial_marking_and_ranking.py
 python e2e/05_historical_integrity.py
 python e2e/06_expiry_and_autosubmit.py
+python e2e/07_class_test_question_pool.py
 ```
 
 A clean run against a freshly migrated database reports **109 assertions passed across 6
@@ -71,3 +72,4 @@ The demo student is registered by script 01 rather than assumed.
 | `04_partial_marking_and_ranking` | JEE Advanced partial marking arithmetic (10 exact, 5 partial, 5 wrong -> 35), and a four-student cohort producing ranks 1, 2, 3, 4 with percentiles 100.00, 75.00, 75.00, 25.00 |
 | `05_historical_integrity` | A rank correctly moving from 1-of-1 to 2-of-4 as others finish, and a question whose stem is rewritten, whose answer key is flipped, and which is then archived leaving an existing result byte-identical |
 | `06_expiry_and_autosubmit` | Answers refused past the deadline, `timing.expired`, the scheduled sweep finalising an abandoned attempt and scoring the saved work, time capped at the paper duration, and a late manual submit returning the result rather than a conflict |
+| `07_class_test_question_pool` | A question on a class test whose window is still open is never drawn into a practice paper - a paper that would need it is refused - and rejoins the pool once the class test is closed |
