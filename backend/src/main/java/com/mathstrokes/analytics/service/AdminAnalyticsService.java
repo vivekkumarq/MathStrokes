@@ -17,6 +17,7 @@ import com.mathstrokes.common.enums.AttemptStatus;
 import com.mathstrokes.common.enums.QuestionStatus;
 import com.mathstrokes.common.enums.RoleName;
 import com.mathstrokes.common.enums.TestStatus;
+import com.mathstrokes.common.util.LatexExcerpt;
 import com.mathstrokes.exam.repository.ExamTestRepository;
 import com.mathstrokes.question.entity.Question;
 import com.mathstrokes.question.repository.QuestionRepository;
@@ -104,7 +105,7 @@ public class AdminAnalyticsService {
                     question == null ? null : question.getChapter().getName(),
                     question == null ? null : question.getExamPattern(),
                     question == null ? null : question.getDifficulty(),
-                    question == null ? "" : preview(question.getQuestionContent()),
+                    question == null ? "" : LatexExcerpt.of(question.getQuestionContent(), PREVIEW_LENGTH),
                     timesShown,
                     attempted,
                     correct,
@@ -146,15 +147,5 @@ public class AdminAnalyticsService {
         return BigDecimal.valueOf(numerator)
                 .multiply(BigDecimal.valueOf(100))
                 .divide(BigDecimal.valueOf(denominator), 2, RoundingMode.HALF_UP);
-    }
-
-    private String preview(String content) {
-        if (content == null) {
-            return "";
-        }
-        String collapsed = content.trim();
-        return collapsed.length() <= PREVIEW_LENGTH
-                ? collapsed
-                : collapsed.substring(0, PREVIEW_LENGTH) + "...";
     }
 }
