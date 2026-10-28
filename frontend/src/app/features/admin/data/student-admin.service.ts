@@ -49,11 +49,15 @@ export class StudentAdminService {
     );
   }
 
-  /** Enable or disable a student's access. */
+  /**
+   * Enable or disable a student's access. A query parameter, as on the other toggles: sent as a
+   * JSON body the server never saw it and refused every request as malformed.
+   */
   setEnabled(id: number, enabled: boolean): Observable<StudentSummaryResponse> {
     return this.http.patch<StudentSummaryResponse>(
       `${this.baseUrl}/admin/students/${id}/enabled`,
-      { enabled },
+      null,
+      { params: { enabled } },
     );
   }
 }

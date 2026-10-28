@@ -14,6 +14,7 @@ SCRIPTS=(
   04_partial_marking_and_ranking.py
   05_historical_integrity.py
   06_expiry_and_autosubmit.py
+  07_class_test_question_pool.py
 )
 
 rm -f .state.json

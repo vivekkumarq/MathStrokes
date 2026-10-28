@@ -17,7 +17,9 @@
             Publish
           </button>
         }
-        @if (status() === 'PUBLISHED') {
+        <!-- Archived too: an archived question is read-only, and the server's message tells the
+             teacher to restore it to a draft - this is the only way to. -->
+        @if (status() === 'PUBLISHED' || status() === 'ARCHIVED') {
           <button class="ms-btn ms-btn--ghost" type="button" [disabled]="saving()" (click)="transition('draft')">
             Move to draft
           </button>
@@ -109,6 +111,9 @@
             <p class="ms-hint">
               Dollar delimiters only. Blank lines are preserved as paragraph breaks.
             </p>
+            @if (serverErrorOf(form.controls.questionContent); as message) {
+              <span class="ms-error" role="alert">{{ message }}</span>
+            }
           </div>
           <div class="pane">
             <span class="pane-label">Live preview</span>
@@ -178,6 +183,9 @@
               rows="8"
               spellcheck="false"
             ></textarea>
+            @if (serverErrorOf(form.controls.solutionContent); as message) {
+              <span class="ms-error" role="alert">{{ message }}</span>
+            }
           </div>
           <div class="pane">
             <span class="pane-label">Live preview</span>

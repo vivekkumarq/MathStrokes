@@ -99,7 +99,7 @@ explains why.
 │   ├── API.md                  endpoint reference and error contract
 │   ├── ARCHITECTURE.md         12 decision records
 │   └── DEPLOYMENT.md           hosting walkthrough
-├── e2e/                        end-to-end checks (109 assertions)
+├── e2e/                        end-to-end checks (117 assertions)
 ├── Dockerfile                  backend image, built from the repository root
 ├── netlify.toml                frontend build, API proxy, SPA fallback, headers
 └── render.yaml                 rollback host's blueprint

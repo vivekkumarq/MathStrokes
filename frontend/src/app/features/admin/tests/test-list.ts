@@ -97,10 +97,14 @@ export class AdminTestList {
     { validators: blueprintAddsUp },
   );
 
-  protected readonly blueprintTotal = computed(() => {
+  /**
+   * A method, not computed(): a reactive form is not a signal, so a computed() over it ran once,
+   * cached the initial 25 and kept showing "25 / 10" however the split was edited.
+   */
+  protected blueprintTotal(): number {
     const v = this.form.getRawValue();
     return Number(v.easyCount) + Number(v.mediumCount) + Number(v.hardCount);
-  });
+  }
 
   /** Drives which half of the form is relevant: a drawn blueprint, or a hand-picked paper. */
   protected readonly kindValue = signal<(typeof TEST_KINDS)[number]>('PRACTICE');
@@ -218,6 +222,9 @@ export class AdminTestList {
             : `Created "${created.title}". Publish it to make it visible to students.`,
         );
         this.showForm.set(false);
+        // Otherwise the next "New test" opens on this test's title and settings, and a teacher
+        // making this week's class test from last week's form gets two papers of one name.
+        this.form.reset();
         this.load();
       },
       error: (err: unknown) => {
