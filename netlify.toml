@@ -3,7 +3,7 @@
 # static files and edge functions only - so the API lives on a container host and Netlify
 # proxies through to it.
 #
-# The backend runs on Antideploy as `iota-api`, with Render kept as a rollback.
+# The backend runs on Antideploy as `iota-api`. Render, the previous host, is suspended.
 #
 # The hostname lives in TWO places, not one: the /api/* rule below, and apiBaseUrl in
 # frontend/src/environments/environment.prod.ts. Production uses the second - the bundle calls
