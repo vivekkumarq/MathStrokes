@@ -138,7 +138,7 @@
       </div>
 
       <div class="right">
-        <span class="save-state" aria-live="polite">{{ saving() ? 'Saving…' : 'Saved' }}</span>
+        <span class="save-state" aria-live="polite">{{ offline() ? 'Offline – retrying…' : saving() ? 'Saving…' : 'Saved' }}</span>
         <button
           type="button"
           class="ms-btn ms-btn--primary"
@@ -176,7 +176,11 @@
     <div class="scrim">
       <div class="ms-card confirm">
         <h2>Submitting…</h2>
-        <p class="muted">Marking your paper. This takes a moment.</p>
+        @if (offline()) {
+          <p class="muted">Waiting for the connection to save your last answers. Keep this tab open.</p>
+        } @else {
+          <p class="muted">Marking your paper. This takes a moment.</p>
+        }
       </div>
     </div>
   }

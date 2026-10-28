@@ -85,8 +85,15 @@ export class ExamRunner implements OnDestroy {
   private sequence = 0;
   private ticker?: ReturnType<typeof setInterval>;
   private readonly debounceTimers = new Map<number, ReturnType<typeof setTimeout>>();
-  private readonly saveQueue = new Subject<SaveAnswerRequest>();
+  /** attemptQuestionId -> clientSequence of the newest save enqueued for it. */
+  private readonly latestSequence = new Map<number, number>();
+  /** Saves, and finally the submit, run strictly one after another. */
+  private readonly queue = new Subject<() => Promise<void>>();
   private autoSubmitted = false;
+  private destroyed = false;
+
+  /** A save could not reach the server and is being retried. */
+  protected readonly offline = signal(false);
 
   /** Drives the countdown; re-read every second so the computed values refresh. */
   private readonly tick = signal(Date.now());
@@ -136,11 +143,11 @@ export class ExamRunner implements OnDestroy {
   );
 
   constructor() {
-    this.saveQueue
+    this.queue
       .pipe(
         // concatMap, not switchMap: every question's save must reach the server. Cancelling an
         // in-flight save because a different question changed would silently drop an answer.
-        concatMap((request) => this.sendSave(request)),
+        concatMap((task) => task()),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
@@ -150,6 +157,7 @@ export class ExamRunner implements OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.destroyed = true;
     this.stopTicker();
     this.debounceTimers.forEach((timer) => clearTimeout(timer));
     this.debounceTimers.clear();
@@ -367,20 +375,22 @@ export class ExamRunner implements OnDestroy {
       return;
     }
     this.sequence += 1;
-    this.saveQueue.next({
+    this.latestSequence.set(questionId, this.sequence);
+    const request: SaveAnswerRequest = {
       attemptQuestionId: questionId,
       selectedOptionIds: state.selectedOptionIds,
       markedForReview: state.markedForReview,
       visited: state.visited,
       clientSequence: this.sequence,
-    });
+    };
+    this.queue.next(() => this.sendSave(request));
   }
 
-  private sendSave(request: SaveAnswerRequest) {
+  private sendSave(request: SaveAnswerRequest): Promise<void> {
     const attemptId = this.attempt()?.attemptId;
     this.saving.set(true);
     return new Promise<void>((resolve) => {
-      if (!attemptId) {
+      if (!attemptId || this.destroyed) {
         this.saving.set(false);
         resolve();
         return;
@@ -388,14 +398,21 @@ export class ExamRunner implements OnDestroy {
       this.exam.saveAnswer(attemptId, request).subscribe({
         next: (ack) => {
           this.saving.set(false);
+          this.offline.set(false);
           this.syncClock(ack.timing.serverTime, ack.timing.expiresAt);
           this.sequence = Math.max(this.sequence, ack.clientSequence);
           // The server reports what it actually holds. When our write lost a race this is
           // the NEWER state, not ours, so adopt it rather than keeping the optimistic value.
+          // But not when the student has changed this question again since: then the ack is
+          // older than what is on screen, and adopting it would put back the answer they just
+          // replaced - and the pending save would then read that and send it.
+          const id = ack.attemptQuestionId;
+          const superseded =
+            this.debounceTimers.has(id) || ack.clientSequence < (this.latestSequence.get(id) ?? 0);
           const states = { ...this.states() };
-          const existing = states[ack.attemptQuestionId];
-          if (existing) {
-            states[ack.attemptQuestionId] = {
+          const existing = states[id];
+          if (existing && !superseded) {
+            states[id] = {
               ...existing,
               selectedOptionIds: [...ack.selectedOptionIds],
               markedForReview: ack.markedForReview,
@@ -406,13 +423,20 @@ export class ExamRunner implements OnDestroy {
           resolve();
         },
         error: (error: unknown) => {
-          this.saving.set(false);
           const failure = toApiFailure(error);
+          if (failure.offline) {
+            // Never reached the server. Retry in place rather than dropping it: the queue stays
+            // blocked meanwhile, so later saves and the submit cannot overtake this one.
+            this.offline.set(true);
+            setTimeout(() => void this.sendSave(request).then(resolve), 3000);
+            return;
+          }
+          this.saving.set(false);
           if (isAttemptClosedFailure(failure)) {
             // Time ran out, or the sweep finalised it. Stop accepting input and collect the
             // result rather than leaving the student typing into a closed paper.
             this.autoSubmit();
-          } else if (!failure.offline) {
+          } else {
             this.failure.set(failure);
           }
           resolve();
@@ -469,23 +493,32 @@ export class ExamRunner implements OnDestroy {
     });
     this.debounceTimers.clear();
 
-    this.exam.submit(attemptId).subscribe({
-      next: () => {
-        this.submitting.set(false);
-        void this.router.navigate(['/results', attemptId]);
-      },
-      error: (error: unknown) => {
-        this.submitting.set(false);
-        const failure = toApiFailure(error);
-        // Submission is idempotent server-side, so a conflict here means it is already
-        // finalised - which is a success from the student's point of view.
-        if (isAttemptClosedFailure(failure)) {
-          void this.router.navigate(['/results', attemptId]);
-          return;
-        }
-        this.failure.set(failure);
-      },
-    });
+    // Queued behind every save, never sent alongside them: a submit that overtakes a save marks
+    // the paper without that answer, and the save then bounces off the closed attempt.
+    this.queue.next(
+      () =>
+        new Promise<void>((resolve) => {
+          this.exam.submit(attemptId).subscribe({
+            next: () => {
+              this.submitting.set(false);
+              void this.router.navigate(['/results', attemptId]);
+              resolve();
+            },
+            error: (error: unknown) => {
+              this.submitting.set(false);
+              const failure = toApiFailure(error);
+              // Submission is idempotent server-side, so a conflict here means it is already
+              // finalised - which is a success from the student's point of view.
+              if (isAttemptClosedFailure(failure)) {
+                void this.router.navigate(['/results', attemptId]);
+              } else {
+                this.failure.set(failure);
+              }
+              resolve();
+            },
+          });
+        }),
+    );
   }
 
   protected togglePalette(): void {

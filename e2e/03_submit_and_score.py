@@ -6,7 +6,7 @@ API = os.environ.get('MATHSTROKES_API', 'http://localhost:8080/api')
 DB_NAME = os.environ.get('MATHSTROKES_DB', 'mathstrokes')
 DB_USER = os.environ.get('MATHSTROKES_DB_USER', 'mathstrokes')
 DB_PASSWORD = os.environ.get('MATHSTROKES_DB_PASSWORD', 'mathstrokes')
-PSQL = os.environ.get('PSQL_PATH', r'C:\Program Files\PostgreSQLin\psql.exe')
+PSQL = os.environ.get('PSQL_PATH', r'C:\Program Files\PostgreSQL\17\bin\psql.exe')
 STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.state.json')
 
 
@@ -107,7 +107,14 @@ check('leaderboard flags the current user', board['entries'][0]['isCurrentUser']
 check('leaderboard exposes no phone number', 'phoneNumber' not in json.dumps(board))
 
 print('\nATTEMPT LIMIT')
+# V5 seeds the demo papers with 5 attempts each, not 1, so use up the rest before expecting a refusal.
+_, tests = call('GET', '/tests', TOK)
+limit = next(t for t in tests if t['id'] == 1)['maxAttemptsPerStudent']
+for n in range(2, limit + 1):
+    status, res = call('POST', '/attempts', TOK, {'testId': 1})
+    check('retake %d of %d allowed' % (n, limit), status == 200, status)
+    call('POST', '/attempts/%d/submit' % res['attemptId'], TOK)
 status, res = call('POST', '/attempts', TOK, {'testId': 1})
-check('cannot retake a one-attempt test', status == 409, status)
+check('cannot start past the attempt limit', status == 409, status)
 
 print('\n' + ('ALL PASSED' if not failures else 'FAILURES: ' + str(failures)))

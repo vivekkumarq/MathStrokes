@@ -28,13 +28,13 @@ python e2e/05_historical_integrity.py
 python e2e/06_expiry_and_autosubmit.py
 ```
 
-A clean run against a freshly migrated database reports **105 assertions passed across 6
+A clean run against a freshly migrated database reports **109 assertions passed across 6
 scripts**.
 
 Run them in order, **against a freshly migrated database**. They are a one-shot suite, not
-idempotent: 03 continues the attempt 02 leaves behind, and 01 sits a test whose seeded
-configuration allows a single attempt per student, so a second run of 01 correctly fails with
-"You have already used all 1 attempt(s)". Re-create the database to run them again.
+idempotent: 03 continues the attempt 02 leaves behind, and then uses up all five attempts the
+seeded configuration allows on test 1, so a second run of 01 is correctly refused. Re-create the
+database to run them again.
 
 ```bash
 psql -U postgres -c "DROP DATABASE IF EXISTS mathstrokes_dev"

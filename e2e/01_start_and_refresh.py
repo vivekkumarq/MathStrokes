@@ -6,7 +6,7 @@ API = os.environ.get('MATHSTROKES_API', 'http://localhost:8080/api')
 DB_NAME = os.environ.get('MATHSTROKES_DB', 'mathstrokes')
 DB_USER = os.environ.get('MATHSTROKES_DB_USER', 'mathstrokes')
 DB_PASSWORD = os.environ.get('MATHSTROKES_DB_PASSWORD', 'mathstrokes')
-PSQL = os.environ.get('PSQL_PATH', r'C:\Program Files\PostgreSQLin\psql.exe')
+PSQL = os.environ.get('PSQL_PATH', r'C:\Program Files\PostgreSQL\17\bin\psql.exe')
 STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.state.json')
 
 
@@ -54,7 +54,9 @@ for t in tests:
     print('   #{} {}  [{}]  {}q/{}min  canStart={}'.format(
         t['id'], t['title'], t['examPattern'], t['questionCount'],
         t['durationMinutes'], t['canStart']))
-main_test = next(t for t in tests if t['examPattern'] == 'JEE_MAIN')
+# ---- test 1, not the first JEE Main paper listed: 03 and 06 hard-code test 1, and since V6 the
+# ---- list opens with a full-syllabus paper, which has no chapter and so no chapter breakdown.
+main_test = next(t for t in tests if t['id'] == 1)
 
 # ---- start the attempt
 print('\nSTART ATTEMPT')
