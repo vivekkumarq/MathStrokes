@@ -85,7 +85,7 @@ explains why.
 │   │   ├── security/           JWT, filters, authorisation
 │   │   └── common/             error envelope, enums, shared DTOs
 │   ├── src/main/resources/db/migration/    V1..V5 Flyway migrations
-│   ├── src/test/java/                      80 unit tests
+│   ├── src/test/java/                      87 unit tests
 │   └── Dockerfile
 ├── frontend/                   Angular 22 (standalone, zoneless, signals)
 │   └── src/app/
@@ -859,7 +859,7 @@ cd backend
 ./mvnw test            # unit tests, no database required
 ```
 
-80 tests covering the parts where being wrong is expensive:
+87 tests covering the parts where being wrong is expensive:
 
 | Area | What is asserted |
 |---|---|
