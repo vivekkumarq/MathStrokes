@@ -29,7 +29,7 @@ python e2e/06_expiry_and_autosubmit.py
 python e2e/07_class_test_question_pool.py
 ```
 
-A clean run against a freshly migrated database reports **109 assertions passed across 6
+A clean run against a freshly migrated database reports **117 assertions passed across 7
 scripts**.
 
 Run them in order, **against a freshly migrated database**. They are a one-shot suite, not
