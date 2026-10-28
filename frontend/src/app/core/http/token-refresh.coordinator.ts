@@ -12,6 +12,10 @@ import { AuthStore } from '../auth/auth.store';
  * its own refresh. With a ROTATING refresh token that is not merely wasteful — the first
  * refresh invalidates the token the others are holding, so the rest fail and the student
  * is logged out mid-exam. One in-flight refresh, shared by every waiter.
+ *
+ * Other tabs pick the rotated token up through AuthStore's storage listener.
+ * ponytail: no cross-tab lock, so two tabs refreshing in the same instant still collide and sign
+ * the student out; wrap the refresh in navigator.locks if that is ever seen.
  */
 @Injectable({ providedIn: 'root' })
 export class TokenRefreshCoordinator {

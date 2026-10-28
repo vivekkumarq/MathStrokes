@@ -29,6 +29,9 @@ export class StudentHome {
   protected readonly performance = signal<StudentPerformanceResponse | null>(null);
   protected readonly recent = signal<AttemptHistoryItem[]>([]);
   protected readonly loading = signal(true);
+  /** A failed load is not an empty history: telling a student with ten papers behind them
+   * that they have never sat one is worse than saying nothing loaded. */
+  protected readonly historyFailed = signal(false);
 
   constructor() {
     this.students.performance().subscribe({
@@ -43,7 +46,10 @@ export class StudentHome {
         this.recent.set(page.content);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.historyFailed.set(true);
+        this.loading.set(false);
+      },
     });
   }
 

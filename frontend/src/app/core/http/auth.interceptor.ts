@@ -38,8 +38,13 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
         return throwError(() => error);
       }
 
-      // An anonymous request that 401s is simply unauthorised; there is nothing to refresh.
+      // No session to refresh. Every request that reaches here is for a signed-in page (sign-in
+      // and recovery calls skip this interceptor), so the session ended - signed out in another
+      // tab, or wiped - and the screen behind it is a dead end. Send them to sign in.
       if (!store.refreshToken()) {
+        void router.navigate(['/login'], {
+          queryParams: { returnUrl: router.url, reason: 'session-expired' },
+        });
         return throwError(() => error);
       }
 

@@ -51,9 +51,14 @@ public class RefreshTokenService {
     /**
      * Verifies the presented token, revokes it, and issues a replacement.
      *
+     * noRollbackFor, because the replay branch revokes and then throws: under the default rollback
+     * rule that exception undid the revocation it had just made, so a replayed token never revoked
+     * anything. No other path writes before it throws, so nothing else commits that should not.
+     * AuthService.refresh, the caller whose transaction this joins, carries the same rule.
+     *
      * @return the new refresh token
      */
-    @Transactional
+    @Transactional(noRollbackFor = ApiException.class)
     public RotationResult rotate(String presentedToken) {
         Claims claims = jwtService.parse(presentedToken,
                 com.mathstrokes.security.jwt.TokenType.REFRESH);

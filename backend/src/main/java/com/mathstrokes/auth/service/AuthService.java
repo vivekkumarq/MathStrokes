@@ -126,7 +126,8 @@ public class AuthService {
         return issueTokens(user);
     }
 
-    @Transactional
+    /** noRollbackFor so a replay's family revocation in {@link RefreshTokenService#rotate} commits. */
+    @Transactional(noRollbackFor = ApiException.class)
     public AuthResponse refresh(String presentedRefreshToken) {
         RefreshTokenService.RotationResult rotation =
                 refreshTokenService.rotate(presentedRefreshToken);

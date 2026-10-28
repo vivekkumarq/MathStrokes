@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import {
   ApiFailure,
@@ -21,7 +21,7 @@ import { Logo } from '../../../shared/brand/logo';
  */
 @Component({
   selector: 'app-test-list',
-  imports: [NgTemplateOutlet, Logo],
+  imports: [NgTemplateOutlet, Logo, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './test-list.html',
   styleUrl: './test-list.scss',
